@@ -17,7 +17,6 @@ TextureFilterInput::TextureFilterInput(std::shared_ptr<Texture> texture,
 TextureFilterInput::~TextureFilterInput() = default;
 
 std::optional<Snapshot> TextureFilterInput::GetSnapshot(
-    const std::string& label,
     const ContentContext& renderer,
     const Entity& entity,
     std::optional<Rect> coverage_limit,

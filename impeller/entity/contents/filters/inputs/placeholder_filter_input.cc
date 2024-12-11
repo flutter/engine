@@ -14,7 +14,6 @@ PlaceholderFilterInput::PlaceholderFilterInput(Rect coverage_rect)
 PlaceholderFilterInput::~PlaceholderFilterInput() = default;
 
 std::optional<Snapshot> PlaceholderFilterInput::GetSnapshot(
-    const std::string& label,
     const ContentContext& renderer,
     const Entity& entity,
     std::optional<Rect> coverage_limit,

@@ -14,8 +14,7 @@ class ContentsFilterInput final : public FilterInput {
   ~ContentsFilterInput() override;
 
   // |FilterInput|
-  std::optional<Snapshot> GetSnapshot(const std::string& label,
-                                      const ContentContext& renderer,
+  std::optional<Snapshot> GetSnapshot(const ContentContext& renderer,
                                       const Entity& entity,
                                       std::optional<Rect> coverage_limit,
                                       int32_t mip_count) const override;

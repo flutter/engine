@@ -30,6 +30,24 @@
 
 namespace impeller {
 
+namespace {
+
+#ifdef IMPELLER_DEBUG
+
+#define _IMPELLER_BLEND_MODE_FILTER_NAME_LIST(blend_mode) \
+  "Blend Filter " #blend_mode,
+
+static constexpr const char* kBlendModeFilterNames[] = {
+    IMPELLER_FOR_EACH_BLEND_MODE(_IMPELLER_BLEND_MODE_FILTER_NAME_LIST)};
+
+const std::string_view BlendModeToFilterString(BlendMode blend_mode) {
+  return kBlendModeFilterNames[static_cast<std::underlying_type_t<BlendMode>>(
+      blend_mode)];
+}
+#endif  // IMPELLER_DEBUG
+
+}  // namespace
+
 std::optional<BlendMode> InvertPorterDuffBlend(BlendMode blend_mode) {
   switch (blend_mode) {
     case BlendMode::kClear:
@@ -98,8 +116,7 @@ static std::optional<Entity> AdvancedBlend(
     return std::nullopt;
   }
 
-  auto dst_snapshot =
-      inputs[0]->GetSnapshot("AdvancedBlend(Dst)", renderer, entity);
+  auto dst_snapshot = inputs[0]->GetSnapshot(renderer, entity);
   if (!dst_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -112,8 +129,7 @@ static std::optional<Entity> AdvancedBlend(
   std::optional<Snapshot> src_snapshot;
   std::array<Point, 4> src_uvs;
   if (!foreground_color.has_value()) {
-    src_snapshot =
-        inputs[1]->GetSnapshot("AdvancedBlend(Src)", renderer, entity);
+    src_snapshot = inputs[1]->GetSnapshot(renderer, entity);
     if (!src_snapshot.has_value()) {
       if (!dst_snapshot.has_value()) {
         return std::nullopt;
@@ -173,8 +189,7 @@ static std::optional<Entity> AdvancedBlend(
     PipelineRef pipeline = std::invoke(pipeline_proc, renderer, options);
 
 #ifdef IMPELLER_DEBUG
-    pass.SetCommandLabel(
-        SPrintF("Advanced Blend Filter (%s)", BlendModeToString(blend_mode)));
+    pass.SetCommandLabel(BlendModeToFilterString(blend_mode));
 #endif  // IMPELLER_DEBUG
     pass.SetVertexBuffer(std::move(vtx_buffer));
     pass.SetPipeline(pipeline);
@@ -270,8 +285,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     BlendMode blend_mode,
     std::optional<Scalar> alpha,
     ColorFilterContents::AbsorbOpacity absorb_opacity) const {
-  auto dst_snapshot =
-      input->GetSnapshot("ForegroundAdvancedBlend", renderer, entity);
+  auto dst_snapshot = input->GetSnapshot(renderer, entity);
   if (!dst_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -296,8 +310,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
         CreateVertexBuffer(vertices, renderer.GetTransientsBuffer());
 
 #ifdef IMPELLER_DEBUG
-    pass.SetCommandLabel(SPrintF("Foreground Advanced Blend Filter (%s)",
-                                 BlendModeToString(blend_mode)));
+    pass.SetCommandLabel(BlendModeToFilterString(blend_mode));
 #endif  // IMPELLER_DEBUG
     pass.SetVertexBuffer(std::move(vtx_buffer));
     auto options = OptionsFromPassAndEntity(pass, entity);
@@ -418,8 +431,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     return std::nullopt;
   }
 
-  auto dst_snapshot =
-      input->GetSnapshot("ForegroundPorterDuffBlend", renderer, entity);
+  auto dst_snapshot = input->GetSnapshot(renderer, entity);
   if (!dst_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -449,8 +461,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
         CreateVertexBuffer(vertices, renderer.GetTransientsBuffer());
 
 #ifdef IMPELLER_DEBUG
-    pass.SetCommandLabel(SPrintF("Foreground PorterDuff Blend Filter (%s)",
-                                 BlendModeToString(blend_mode)));
+    pass.SetCommandLabel(BlendModeToFilterString(blend_mode));
 #endif  // IMPELLER_DEBUG
     pass.SetVertexBuffer(std::move(vtx_buffer));
     auto options = OptionsFromPassAndEntity(pass, entity);
@@ -522,8 +533,7 @@ static std::optional<Entity> PipelineBlend(
   using VS = TexturePipeline::VertexShader;
   using FS = TexturePipeline::FragmentShader;
 
-  auto dst_snapshot =
-      inputs[0]->GetSnapshot("PipelineBlend(Dst)", renderer, entity);
+  auto dst_snapshot = inputs[0]->GetSnapshot(renderer, entity);
   if (!dst_snapshot.has_value()) {
     return std::nullopt;  // Nothing to render.
   }
@@ -548,8 +558,7 @@ static std::optional<Entity> PipelineBlend(
     auto& host_buffer = renderer.GetTransientsBuffer();
 
 #ifdef IMPELLER_DEBUG
-    pass.SetCommandLabel(
-        SPrintF("Pipeline Blend Filter (%s)", BlendModeToString(blend_mode)));
+    pass.SetCommandLabel(BlendModeToFilterString(blend_mode));
 #endif  // IMPELLER_DEBUG
     auto options = OptionsFromPass(pass);
     options.primitive_type = PrimitiveType::kTriangleStrip;
@@ -611,8 +620,7 @@ static std::optional<Entity> PipelineBlend(
 
       for (auto texture_i = inputs.begin() + 1; texture_i < inputs.end();
            texture_i++) {
-        auto src_input = texture_i->get()->GetSnapshot("PipelineBlend(Src)",
-                                                       renderer, entity);
+        auto src_input = texture_i->get()->GetSnapshot(renderer, entity);
         if (!add_blend_command(src_input)) {
           return true;
         }
@@ -683,8 +691,7 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
   FML_DCHECK(inputs.size() == 2u ||
              (inputs.size() == 1u && foreground_color.has_value()));
 
-  auto dst_snapshot =
-      inputs[0]->GetSnapshot("ForegroundAdvancedBlend", renderer, entity);
+  auto dst_snapshot = inputs[0]->GetSnapshot(renderer, entity);
   if (!dst_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -744,8 +751,7 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
       if (foreground_color.has_value()) {
         src_texture = foreground_texture;
       } else {
-        auto src_snapshot =
-            inputs[0]->GetSnapshot("ForegroundAdvancedBlend", renderer, entity);
+        auto src_snapshot = inputs[0]->GetSnapshot(renderer, entity);
         if (!src_snapshot.has_value()) {
           return false;
         }
