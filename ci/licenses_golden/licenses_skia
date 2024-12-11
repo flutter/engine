@@ -1,4 +1,4 @@
-Signature: e99672bef53628139c48a8b95d3e04de
+Signature: 0c1d31ca2a846ee1c7dc2eb3af31a823
 
 ====================================================================================================
 LIBRARY: etc1
@@ -3304,9 +3304,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/pathops/SkPathOpsConic.h + ../../.
 ORIGIN: ../../../flutter/third_party/skia/src/pathops/SkPathOpsCurve.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pathops/SkPathOpsWinding.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkDocument_PDF_None.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkJpegInfo.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkJpegInfo_libjpegturbo.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkJpegInfo_none.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -3582,9 +3579,6 @@ FILE: ../../../flutter/third_party/skia/src/pathops/SkPathOpsConic.h
 FILE: ../../../flutter/third_party/skia/src/pathops/SkPathOpsCurve.cpp
 FILE: ../../../flutter/third_party/skia/src/pathops/SkPathOpsWinding.cpp
 FILE: ../../../flutter/third_party/skia/src/pdf/SkDocument_PDF_None.cpp
-FILE: ../../../flutter/third_party/skia/src/pdf/SkJpegInfo.h
-FILE: ../../../flutter/third_party/skia/src/pdf/SkJpegInfo_libjpegturbo.cpp
-FILE: ../../../flutter/third_party/skia/src/pdf/SkJpegInfo_none.cpp
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.cpp
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.h
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.cpp
