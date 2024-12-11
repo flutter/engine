@@ -648,7 +648,7 @@ TEST(DisplayListColorSource, SweepGradientARGBConstructor) {
     colors[i * 4 + 3] = kTestColors[i].getBlueF();
   }
   std::shared_ptr<DlColorSource> source = DlColorSource::MakeSweep(
-      kTestPoints[0], 10.f, 20.f, kTestStopCount, kTestColors, kTestStops,
+      kTestPoints[0], 10.f, 20.f, kTestStopCount, colors.data(), kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_TRUE(source);
   ASSERT_TRUE(source->asSweepGradient());
@@ -657,9 +657,9 @@ TEST(DisplayListColorSource, SweepGradientARGBConstructor) {
   EXPECT_EQ(source->asSweepGradient()->end(), 20.f);
   EXPECT_EQ(source->asSweepGradient()->stop_count(), kTestStopCount);
   for (int i = 0; i < kTestStopCount; i++) {
-    EXPECT_EQ(source->asConicalGradient()->colors()[i],
+    EXPECT_EQ(source->asSweepGradient()->colors()[i],
               kTestColors[i].withColorSpace(DlColorSpace::kExtendedSRGB));
-    EXPECT_EQ(source->asConicalGradient()->stops()[i], kTestStops[i]);
+    EXPECT_EQ(source->asSweepGradient()->stops()[i], kTestStops[i]);
   }
   EXPECT_EQ(source->asSweepGradient()->tile_mode(), DlTileMode::kClamp);
   EXPECT_EQ(source->asSweepGradient()->matrix(), kTestMatrix1);

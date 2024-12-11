@@ -171,8 +171,7 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed =
-      CalculateGradientSize<DlSweepGradientColorSource>(stop_count);
+  size_t needed = CalculateGradientSize<DlSweepGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlSweepGradientColorSource> ret;
@@ -192,8 +191,7 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed =
-      CalculateGradientSize<DlSweepGradientColorSource>(stop_count);
+  size_t needed = CalculateGradientSize<DlSweepGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlSweepGradientColorSource> ret;
