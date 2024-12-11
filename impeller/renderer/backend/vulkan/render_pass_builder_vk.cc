@@ -136,31 +136,34 @@ vk::UniqueRenderPass RenderPassBuilderVK::Build(
       vk::AttachmentReference resolve_ref;
       resolve_ref.attachment = attachments_index;
       resolve_ref.layout = vk::ImageLayout::eGeneral;
-      resolve_refs[resolve_index++] = resolve_ref;
-      attachments[attachments_index++] = color0_resolve_.value();
+      resolve_refs.at(resolve_index++) = resolve_ref;
+      attachments.at(attachments_index++) = color0_resolve_.value();
     }
   }
 
   for (const auto& color : colors_) {
+    if (color_index >= kMaxColorAttachments) {
+      break;
+    }
     vk::AttachmentReference color_ref;
     color_ref.attachment = attachments_index;
     color_ref.layout = vk::ImageLayout::eGeneral;
-    color_refs[color_index++] = color_ref;
-    attachments[attachments_index++] = color.second;
+    color_refs.at(color_index++) = color_ref;
+    attachments.at(attachments_index++) = color.second;
 
     if (auto found = resolves_.find(color.first); found != resolves_.end()) {
       vk::AttachmentReference resolve_ref;
       resolve_ref.attachment = attachments_index;
       resolve_ref.layout = vk::ImageLayout::eGeneral;
-      resolve_refs[resolve_index++] = resolve_ref;
-      attachments[attachments_index++] = found->second;
+      resolve_refs.at(resolve_index++) = resolve_ref;
+      attachments.at(attachments_index++) = found->second;
     }
   }
 
   if (depth_stencil_.has_value()) {
     depth_stencil_ref.attachment = attachments_index;
     depth_stencil_ref.layout = vk::ImageLayout::eGeneral;
-    attachments[attachments_index++] = depth_stencil_.value();
+    attachments.at(attachments_index++) = depth_stencil_.value();
   }
 
   vk::SubpassDescription subpass0;

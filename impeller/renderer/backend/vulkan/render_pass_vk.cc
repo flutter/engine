@@ -58,9 +58,9 @@ static size_t GetVKClearValues(
   target.IterateAllColorAttachments(
       [&values, &offset](size_t index,
                          const ColorAttachment& attachment) -> bool {
-        values[offset++] = VKClearValueFromColor(attachment.clear_color);
+        values.at(offset++) = VKClearValueFromColor(attachment.clear_color);
         if (attachment.resolve_texture) {
-          values[offset++] = VKClearValueFromColor(attachment.clear_color);
+          values.at(offset++) = VKClearValueFromColor(attachment.clear_color);
         }
         return true;
       });
@@ -69,10 +69,10 @@ static size_t GetVKClearValues(
   const auto& stencil = target.GetStencilAttachment();
 
   if (depth.has_value()) {
-    values[offset++] = VKClearValueFromDepthStencil(
+    values.at(offset++) = VKClearValueFromDepthStencil(
         stencil ? stencil->clear_stencil : 0u, depth->clear_depth);
   } else if (stencil.has_value()) {
-    values[offset++] = VKClearValueFromDepthStencil(
+    values.at(offset++) = VKClearValueFromDepthStencil(
         stencil->clear_stencil, depth ? depth->clear_depth : 0.0f);
   }
   return offset;
