@@ -10,6 +10,22 @@
 
 namespace flutter {
 
+namespace {
+
+// Names of the messages sent by the controller in response to window events.
+constexpr char kOnWindowChangedMethod[] = "onWindowChanged";
+constexpr char kOnWindowCreatedMethod[] = "onWindowCreated";
+constexpr char kOnWindowDestroyedMethod[] = "onWindowDestroyed";
+
+// Keys used in the onWindow* messages sent through the channel.
+constexpr char kIsMovingKey[] = "isMoving";
+constexpr char kParentViewIdKey[] = "parentViewId";
+constexpr char kRelativePositionKey[] = "relativePosition";
+constexpr char kSizeKey[] = "size";
+constexpr char kViewIdKey[] = "viewId";
+
+}  // namespace
+
 FlutterHostWindowController::FlutterHostWindowController(
     FlutterWindowsEngine* engine)
     : engine_(engine) {}
@@ -263,14 +279,14 @@ void FlutterHostWindowController::SendOnWindowChanged(
   if (channel_) {
     WindowSize const size = GetWindowSize(view_id);
     channel_->InvokeMethod(
-        "onWindowChanged",
+        kOnWindowChangedMethod,
         std::make_unique<EncodableValue>(EncodableMap{
-            {EncodableValue("viewId"), EncodableValue(view_id)},
-            {EncodableValue("size"),
+            {EncodableValue(kViewIdKey), EncodableValue(view_id)},
+            {EncodableValue(kSizeKey),
              EncodableValue(EncodableList{EncodableValue(size.width),
                                           EncodableValue(size.height)})},
-            {EncodableValue("relativePosition"), EncodableValue()},
-            {EncodableValue("isMoving"), EncodableValue()}}));
+            {EncodableValue(kRelativePositionKey), EncodableValue()},
+            {EncodableValue(kIsMovingKey), EncodableValue()}}));
   }
 }
 
@@ -279,10 +295,10 @@ void FlutterHostWindowController::SendOnWindowCreated(
     std::optional<FlutterViewId> parent_view_id) const {
   if (channel_) {
     channel_->InvokeMethod(
-        "onWindowCreated",
+        kOnWindowCreatedMethod,
         std::make_unique<EncodableValue>(EncodableMap{
-            {EncodableValue("viewId"), EncodableValue(view_id)},
-            {EncodableValue("parentViewId"),
+            {EncodableValue(kViewIdKey), EncodableValue(view_id)},
+            {EncodableValue(kParentViewIdKey),
              parent_view_id ? EncodableValue(parent_view_id.value())
                             : EncodableValue()}}));
   }
@@ -292,9 +308,9 @@ void FlutterHostWindowController::SendOnWindowDestroyed(
     FlutterViewId view_id) const {
   if (channel_) {
     channel_->InvokeMethod(
-        "onWindowDestroyed",
+        kOnWindowDestroyedMethod,
         std::make_unique<EncodableValue>(EncodableMap{
-            {EncodableValue("viewId"), EncodableValue(view_id)},
+            {EncodableValue(kViewIdKey), EncodableValue(view_id)},
         }));
   }
 }

@@ -24,14 +24,13 @@ class FlutterHostWindow {
  public:
   // Creates a native Win32 window with a child view confined to its client
   // area. |controller| manages the window. |title| is the window title.
-  // |client_size| is the preferred size of the client rectangle in logical
-  // coordinates. The window style is defined by |archetype|. For
+  // |preferred_client_size| is the preferred size of the client rectangle in
+  // logical coordinates. The window style is defined by |archetype|. For
   // |WindowArchetype::satellite| and |WindowArchetype::popup|, both |owner|
   // and |positioner| must be provided, with |positioner| used only for these
   // archetypes. For |WindowArchetype::dialog|, a modal dialog is created if
   // |owner| is provided; otherwise, it is modeless. For
-  // |WindowArchetype::regular|, |positioner| and |parent_view_id| must be
-  // std::nullopt.
+  // |WindowArchetype::regular|, |positioner| and |owner| must be std::nullopt.
   // On success, a valid window handle can be retrieved via
   // |FlutterHostWindow::GetWindowHandle|.
   FlutterHostWindow(FlutterHostWindowController* controller,

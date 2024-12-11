@@ -13,7 +13,7 @@
 
 namespace {
 
-static constexpr wchar_t kWindowClassName[] = L"FLUTTER_HOST_WINDOW";
+constexpr wchar_t kWindowClassName[] = L"FLUTTER_HOST_WINDOW";
 
 // Dynamically loads the |EnableNonClientDpiScaling| from the User32 module
 // so that the non-client area automatically responds to changes in DPI.
