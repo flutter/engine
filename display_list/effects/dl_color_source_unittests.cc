@@ -333,6 +333,32 @@ TEST(DisplayListColorSource, RadialGradientConstructor) {
       DlTileMode::kClamp, &kTestMatrix1);
 }
 
+TEST(DisplayListColorSource, RadialGradientARGBConstructor) {
+  std::array<DlScalar, kTestStopCount * 4> colors;
+  for (int i = 0; i < kTestStopCount; ++i) {
+    colors[i * 4 + 0] = kTestColors[i].getAlphaF();  //
+    colors[i * 4 + 1] = kTestColors[i].getRedF();    //
+    colors[i * 4 + 2] = kTestColors[i].getGreenF();  //
+    colors[i * 4 + 3] = kTestColors[i].getBlueF();
+  }
+  std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
+      kTestPoints[0], 10.f, kTestStopCount, colors.data(), kTestStops,
+      DlTileMode::kClamp, &kTestMatrix1);
+  ASSERT_TRUE(source);
+  ASSERT_TRUE(source->asRadialGradient());
+  EXPECT_EQ(source->asRadialGradient()->center(), kTestPoints[0]);
+  EXPECT_EQ(source->asRadialGradient()->radius(), 10.f);
+  EXPECT_EQ(source->asRadialGradient()->stop_count(), kTestStopCount);
+  for (int i = 0; i < kTestStopCount; i++) {
+    EXPECT_EQ(source->asRadialGradient()->colors()[i],
+              kTestColors[i].withColorSpace(DlColorSpace::kExtendedSRGB));
+    EXPECT_EQ(source->asRadialGradient()->stops()[i], kTestStops[i]);
+  }
+  EXPECT_EQ(source->asRadialGradient()->tile_mode(), DlTileMode::kClamp);
+  EXPECT_EQ(source->asRadialGradient()->matrix(), kTestMatrix1);
+  EXPECT_EQ(source->is_opaque(), true);
+}
+
 TEST(DisplayListColorSource, RadialGradientShared) {
   std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
       kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,

@@ -95,6 +95,27 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
   return ret;
 }
 
+std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
+    DlPoint center,
+    DlScalar radius,
+    uint32_t stop_count,
+    const DlScalar* colors_argb,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix) {
+  size_t needed = sizeof(DlRadialGradientColorSource) +
+                  (stop_count * (sizeof(DlColor) + sizeof(float)));
+
+  void* storage = ::operator new(needed);
+
+  std::shared_ptr<DlRadialGradientColorSource> ret;
+  ret.reset(
+      new (storage) DlRadialGradientColorSource(
+          center, radius, stop_count, colors_argb, stops, tile_mode, matrix),
+      DlGradientDeleter);
+  return ret;
+}
+
 std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
     DlPoint start_center,
     DlScalar start_radius,

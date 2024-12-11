@@ -20,6 +20,20 @@ DlRadialGradientColorSource::DlRadialGradientColorSource(DlPoint center,
 }
 
 DlRadialGradientColorSource::DlRadialGradientColorSource(
+    DlPoint center,
+    DlScalar radius,
+    uint32_t stop_count,
+    const DlScalar* colors_argb,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix)
+    : DlGradientColorSourceBase(stop_count, tile_mode, matrix),
+      center_(center),
+      radius_(radius) {
+  store_color_stops(this + 1, colors_argb, stops);
+}
+
+DlRadialGradientColorSource::DlRadialGradientColorSource(
     const DlRadialGradientColorSource* source)
     : DlGradientColorSourceBase(source->stop_count(),
                                 source->tile_mode(),

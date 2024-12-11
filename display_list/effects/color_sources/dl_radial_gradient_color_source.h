@@ -41,6 +41,14 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
                               DlTileMode tile_mode,
                               const DlMatrix* matrix = nullptr);
 
+  DlRadialGradientColorSource(DlPoint center,
+                              DlScalar radius,
+                              uint32_t stop_count,
+                              const DlScalar* colors_argb,
+                              const float* stops,
+                              DlTileMode tile_mode,
+                              const DlMatrix* matrix = nullptr);
+
   explicit DlRadialGradientColorSource(
       const DlRadialGradientColorSource* source);
 
