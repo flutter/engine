@@ -241,6 +241,8 @@ void(glDepthRange)(GLdouble n, GLdouble f);
 #define FOR_EACH_IMPELLER_GLES3_PROC(PROC) \
   PROC(FenceSync);                         \
   PROC(DeleteSync);                        \
+  PROC(MapBufferRange);                    \
+  PROC(UnmapBuffer);                       \
   PROC(GetActiveUniformBlockiv);           \
   PROC(GetActiveUniformBlockName);         \
   PROC(GetUniformBlockIndex);              \
@@ -257,6 +259,7 @@ void(glDepthRange)(GLdouble n, GLdouble f);
   PROC(PopDebugGroupKHR);                   \
   PROC(ObjectLabelKHR);                     \
   PROC(RenderbufferStorageMultisampleEXT);  \
+  PROC(BufferStorageEXT);                   \
   PROC(GenQueriesEXT);                      \
   PROC(DeleteQueriesEXT);                   \
   PROC(GetQueryObjectui64vEXT);             \

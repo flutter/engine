@@ -138,6 +138,8 @@ class ReactorGLES {
   ///
   const ProcTableGLES& GetProcTable() const;
 
+  bool CanReactOnCurrentThread() const;
+
   //----------------------------------------------------------------------------
   /// @brief      Returns the OpenGL handle for a reactor handle if one is
   ///             available. This is typically only safe to call within a
@@ -305,8 +307,6 @@ class ReactorGLES {
   bool ReactOnce();
 
   bool HasPendingOperations() const;
-
-  bool CanReactOnCurrentThread() const;
 
   bool ConsolidateHandles();
 

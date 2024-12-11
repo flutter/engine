@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_
 
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/runtime_types.h"
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
@@ -19,6 +20,12 @@
 #include "impeller/renderer/context.h"
 
 namespace impeller {
+
+struct GlobalStateGLES {
+  GLuint fbo_id = GL_NONE;
+  std::optional<Viewport> viewport = std::nullopt;
+  std::optional<ISize> target_size = std::nullopt;
+};
 
 class ContextGLES final : public Context,
                           public BackendCast<ContextGLES, Context>,
@@ -44,6 +51,8 @@ class ContextGLES final : public Context,
 
   std::shared_ptr<GPUTracerGLES> GetGPUTracer() const { return gpu_tracer_; }
 
+  GlobalStateGLES* GetGlobalState() const { return global_state_.get(); }
+
  private:
   std::shared_ptr<ReactorGLES> reactor_;
   std::shared_ptr<ShaderLibraryGLES> shader_library_;
@@ -51,6 +60,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<SamplerLibraryGLES> sampler_library_;
   std::shared_ptr<AllocatorGLES> resource_allocator_;
   std::shared_ptr<CommandQueue> command_queue_;
+  std::shared_ptr<GlobalStateGLES> global_state_;
   std::shared_ptr<GPUTracerGLES> gpu_tracer_;
 
   // Note: This is stored separately from the ProcTableGLES CapabilitiesGLES

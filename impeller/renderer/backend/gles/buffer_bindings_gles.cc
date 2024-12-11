@@ -126,6 +126,8 @@ bool BufferBindingsGLES::ReadUniformsBindingsV3(const ProcTableGLES& gl,
     gl.GetActiveUniformBlockName(program, i, name_length, &length, name.data());
 
     GLuint block_index = gl.GetUniformBlockIndex(program, name.data());
+    gl.UniformBlockBinding(program_handle_, block_index, i);
+
     ubo_locations_[std::string{name.data(), static_cast<size_t>(length)}] =
         std::make_pair(block_index, i);
   }
@@ -219,8 +221,8 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
 
 bool BufferBindingsGLES::BindUniformData(
     const ProcTableGLES& gl,
-    const std::vector<TextureAndSampler>& bound_textures,
-    const std::vector<BufferResource>& bound_buffers,
+    const TextureAndSampler bound_textures[],
+    const BufferResource bound_buffers[],
     Range texture_range,
     Range buffer_range) {
   for (auto i = 0u; i < buffer_range.length; i++) {
@@ -336,7 +338,6 @@ bool BufferBindingsGLES::BindUniformBufferV3(
     return BindUniformBufferV2(gl, buffer, metadata, device_buffer_gles);
   }
   const auto& [block_index, binding_point] = it->second;
-  gl.UniformBlockBinding(program_handle_, block_index, binding_point);
 
   if (!device_buffer_gles.BindAndUploadDataIfNecessary(
           DeviceBufferGLES::BindingType::kUniformBuffer)) {
@@ -444,7 +445,7 @@ bool BufferBindingsGLES::BindUniformBufferV2(
 
 std::optional<size_t> BufferBindingsGLES::BindTextures(
     const ProcTableGLES& gl,
-    const std::vector<TextureAndSampler>& bound_textures,
+    const TextureAndSampler bound_textures[],
     Range texture_range,
     ShaderStage stage,
     size_t unit_start_index) {
