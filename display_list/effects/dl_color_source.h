@@ -61,7 +61,7 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
 
   /// @brief Make a linear gradient.
   /// @param colors_argb Array of DlScalars that represents colors in the ARGB
-  /// format.
+  /// format, in the extended srgb colorspace.
   static std::shared_ptr<DlColorSource> MakeLinear(
       const DlPoint start_point,
       const DlPoint end_point,
@@ -82,7 +82,7 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
 
   /// @brief Make a radial gradient.
   /// @param colors_argb Array of DlScalars that represents colors in the ARGB
-  /// format.
+  /// format, in the extended srgb colorspace.
   static std::shared_ptr<DlColorSource> MakeRadial(
       DlPoint center,
       DlScalar radius,
@@ -105,7 +105,7 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
 
   /// @brief Make a conical gradient.
   /// @param colors_argb colors_argb Array of DlScalars that represents colors
-  /// in the ARGB format.
+  /// in the ARGB format, in the extended srgb colorspace.
   static std::shared_ptr<DlColorSource> MakeConical(
       DlPoint start_center,
       DlScalar start_radius,
@@ -127,6 +127,9 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
       DlTileMode tile_mode,
       const DlMatrix* matrix = nullptr);
 
+  /// @brief Make a sweep gradient.
+  /// @param colors_argb Array of DlScalars that represents colors in the ARGB
+  /// format, in the extended srgb colorspace.
   static std::shared_ptr<DlColorSource> MakeSweep(
       DlPoint center,
       DlScalar start,
