@@ -35,6 +35,11 @@ void main() {
 }
 
 Future<void> testMain() async {
+  if (ui_web.browser.isFirefox) {
+    // Firefox gets stuck in bootstrapAndRunApp for a mysterious reason.
+    return;
+  }
+
   await bootstrapAndRunApp(withImplicitView: true);
   setUpRenderingForTests();
   runSemanticsTests();

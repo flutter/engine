@@ -89,7 +89,7 @@ class BrowserPlatform extends PlatformPlugin {
         .add(_createSourceHandler())
 
         // Serves files from the root of web_ui. Some tests download assets that are embedded
-        // directly in the test folder, such as test/engine/image/sample_image1.png etc
+        // directly in the test folder, such as test/html/image/sample_image1.png etc
         .add(createStaticHandler(env.environment.webUiRootDir.path))
 
         // Serves absolute package URLs (i.e. not /packages/* but /Users/user/*/hosted/pub.dartlang.org/*).
@@ -1121,10 +1121,10 @@ class BrowserManager {
   /// Closes the manager and releases any resources it owns, including closing
   /// the browser.
   Future<void> close() => _closeMemoizer.runOnce(() {
-        if (Configuration.current.pauseAfterLoad) {
+        // if (Configuration.current.pauseAfterLoad) {
           print('Test run finished. Press enter to close browser...');
           stdin.readLineSync();
-        }
+        // }
         _closed = true;
         _timer.cancel();
         _pauseCompleter?.complete();
