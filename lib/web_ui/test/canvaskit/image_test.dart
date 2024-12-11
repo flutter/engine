@@ -40,7 +40,7 @@ void testMain() {
       createdImage = image;
     };
 
-    final ui.Image  image1 = await _createImage();
+    final ui.Image image1 = await _createImage();
 
     expect(onCreateInvokedCount, 1);
     expect(createdImage, image1);
@@ -59,12 +59,16 @@ void testMain() {
       disposedImage = image;
     };
 
-    final ui.Image image1 = await _createImage()..dispose();
+    final ui.Image image1 =
+        await _createImage()
+          ..dispose();
 
     expect(onDisposeInvokedCount, 1);
     expect(disposedImage, image1);
 
-    final ui.Image image2 = await _createImage()..dispose();
+    final ui.Image image2 =
+        await _createImage()
+          ..dispose();
 
     expect(onDisposeInvokedCount, 2);
     expect(disposedImage, image2);
@@ -73,7 +77,10 @@ void testMain() {
   test('fetchImage fetches image in chunks', () async {
     final List<int> cumulativeBytesLoadedInvocations = <int>[];
     final List<int> expectedTotalBytesInvocations = <int>[];
-    final Uint8List result = await fetchImage('/long_test_payload?length=100000&chunk=1000', (int cumulativeBytesLoaded, int expectedTotalBytes) {
+    final Uint8List result = await fetchImage('/long_test_payload?length=100000&chunk=1000', (
+      int cumulativeBytesLoaded,
+      int expectedTotalBytes,
+    ) {
       cumulativeBytesLoadedInvocations.add(cumulativeBytesLoaded);
       expectedTotalBytesInvocations.add(expectedTotalBytes);
     });
@@ -96,10 +103,7 @@ void testMain() {
     expect(cumulativeBytesLoadedInvocations.last, 100000);
 
     // Check the contents of the returned data.
-    expect(
-      result,
-      List<int>.generate(100000, (int i) => i & 0xFF),
-    );
+    expect(result, List<int>.generate(100000, (int i) => i & 0xFF));
   });
 
   test('scaledImageSize scales to a target width with no target height', () {
@@ -115,12 +119,14 @@ void testMain() {
 
     final ui.Image image = await _createImage();
     final ByteData? imageData = await image.toByteData(format: ui.ImageByteFormat.png);
-    final ui.ImmutableBuffer imageBuffer = await ui.ImmutableBuffer.fromUint8List(imageData!.buffer.asUint8List());
+    final ui.ImmutableBuffer imageBuffer = await ui.ImmutableBuffer.fromUint8List(
+      imageData!.buffer.asUint8List(),
+    );
     image.dispose();
 
     final ui.Codec codec = await ui.instantiateImageCodecWithSize(
       imageBuffer,
-      getTargetSize: (w, h) => ui.TargetImageSize(width: w ~/ 2, height: h ~/ 2)
+      getTargetSize: (w, h) => ui.TargetImageSize(width: w ~/ 2, height: h ~/ 2),
     );
     final ui.FrameInfo frameInfo = await codec.getNextFrame();
 
