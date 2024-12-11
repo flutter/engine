@@ -207,23 +207,24 @@ void do_store_color_stops(void* pod,
   }
 }
 
-class DlScalerToDlColorIt {
+class DlScalerToDlColorIterator {
  public:
-  explicit DlScalerToDlColorIt(const DlScalar* ptr) : ptr_(ptr) {}
-  DlScalerToDlColorIt(DlScalerToDlColorIt&&) = default;
-  DlScalerToDlColorIt(const DlScalerToDlColorIt&) = delete;
-  DlScalerToDlColorIt& operator=(const DlScalerToDlColorIt&) = delete;
+  explicit DlScalerToDlColorIterator(const DlScalar* ptr) : ptr_(ptr) {}
+  DlScalerToDlColorIterator(DlScalerToDlColorIterator&&) = default;
+  DlScalerToDlColorIterator(const DlScalerToDlColorIterator&) = delete;
+  DlScalerToDlColorIterator& operator=(const DlScalerToDlColorIterator&) =
+      delete;
 
   DlColor operator*() {
     return DlColor(ptr_[0], ptr_[1], ptr_[2], ptr_[3],
                    DlColorSpace::kExtendedSRGB);
   }
-  DlScalerToDlColorIt operator++(int) {
-    auto result = DlScalerToDlColorIt(ptr_);
+  DlScalerToDlColorIterator operator++(int) {
+    auto result = DlScalerToDlColorIterator(ptr_);
     ptr_ += 4;
     return result;
   }
-  bool operator<(const DlScalerToDlColorIt& that) const {
+  bool operator<(const DlScalerToDlColorIterator& that) const {
     return ptr_ < that.ptr_;
   }
 
@@ -243,9 +244,9 @@ void DlGradientColorSourceBase::store_color_stops(
     void* pod,
     const DlScalar* color_data_argb,
     const float* stop_data) {
-  do_store_color_stops(pod, DlScalerToDlColorIt(color_data_argb),
-                       DlScalerToDlColorIt(color_data_argb + stop_count_ * 4),
-                       stop_data);
+  do_store_color_stops(
+      pod, DlScalerToDlColorIterator(color_data_argb),
+      DlScalerToDlColorIterator(color_data_argb + stop_count_ * 4), stop_data);
 }
 
 }  // namespace flutter
