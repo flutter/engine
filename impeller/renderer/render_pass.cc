@@ -81,9 +81,13 @@ const std::shared_ptr<const Context>& RenderPass::GetContext() const {
   return context_;
 }
 
+void RenderPass::SetPipeline(PipelineRef pipeline) {
+  pending_.pipeline = pipeline;
+}
+
 void RenderPass::SetPipeline(
     const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
-  pending_.pipeline = pipeline;
+  SetPipeline(PipelineRef(pipeline));
 }
 
 void RenderPass::SetCommandLabel(std::string_view label) {
@@ -233,7 +237,7 @@ bool RenderPass::BindResource(ShaderStage stage,
                               const SampledImageSlot& slot,
                               const ShaderMetadata* metadata,
                               std::shared_ptr<const Texture> texture,
-                              const std::unique_ptr<const Sampler>& sampler) {
+                              raw_ptr<const Sampler> sampler) {
   if (!sampler) {
     return false;
   }
@@ -265,7 +269,7 @@ bool RenderPass::BindDynamicResource(
     const SampledImageSlot& slot,
     std::unique_ptr<ShaderMetadata> metadata,
     std::shared_ptr<const Texture> texture,
-    const std::unique_ptr<const Sampler>& sampler) {
+    raw_ptr<const Sampler> sampler) {
   if (!sampler) {
     return false;
   }
@@ -292,7 +296,7 @@ bool RenderPass::BindBuffer(ShaderStage stage,
 bool RenderPass::BindTexture(ShaderStage stage,
                              const SampledImageSlot& slot,
                              TextureResource resource,
-                             const std::unique_ptr<const Sampler>& sampler) {
+                             raw_ptr<const Sampler> sampler) {
   TextureAndSampler data = TextureAndSampler{
       .stage = stage,
       .texture = std::move(resource),

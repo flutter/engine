@@ -45,7 +45,11 @@ class RenderPass : public ResourceBinder {
 
   //----------------------------------------------------------------------------
   /// The pipeline to use for this command.
-  virtual void SetPipeline(
+  virtual void SetPipeline(PipelineRef pipeline);
+
+  //----------------------------------------------------------------------------
+  /// The pipeline to use for this command.
+  void SetPipeline(
       const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline);
 
   //----------------------------------------------------------------------------
@@ -181,7 +185,7 @@ class RenderPass : public ResourceBinder {
       const SampledImageSlot& slot,
       const ShaderMetadata* metadata,
       std::shared_ptr<const Texture> texture,
-      const std::unique_ptr<const Sampler>& sampler) override;
+      raw_ptr<const Sampler>) override;
 
   /// @brief Bind with dynamically generated shader metadata.
   virtual bool BindDynamicResource(
@@ -190,7 +194,7 @@ class RenderPass : public ResourceBinder {
       const SampledImageSlot& slot,
       std::unique_ptr<ShaderMetadata> metadata,
       std::shared_ptr<const Texture> texture,
-      const std::unique_ptr<const Sampler>& sampler);
+      raw_ptr<const Sampler>);
 
   /// @brief Bind with dynamically generated shader metadata.
   virtual bool BindDynamicResource(ShaderStage stage,
@@ -285,7 +289,7 @@ class RenderPass : public ResourceBinder {
   bool BindTexture(ShaderStage stage,
                    const SampledImageSlot& slot,
                    TextureResource resource,
-                   const std::unique_ptr<const Sampler>& sampler);
+                   raw_ptr<const Sampler>);
 
   Command pending_;
   std::optional<size_t> bound_buffers_start_ = std::nullopt;

@@ -20,8 +20,7 @@ class RecordingRenderPass : public RenderPass {
   const std::vector<Command>& GetCommands() const override { return commands_; }
 
   // |RenderPass|
-  void SetPipeline(
-      const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) override;
+  void SetPipeline(PipelineRef pipeline) override;
 
   void SetCommandLabel(std::string_view label) override;
 
@@ -57,7 +56,7 @@ class RecordingRenderPass : public RenderPass {
                     const SampledImageSlot& slot,
                     const ShaderMetadata* metadata,
                     std::shared_ptr<const Texture> texture,
-                    const std::unique_ptr<const Sampler>& sampler) override;
+                    raw_ptr<const Sampler> sampler) override;
 
   // |RenderPass|
   bool BindDynamicResource(ShaderStage stage,
@@ -73,7 +72,7 @@ class RecordingRenderPass : public RenderPass {
       const SampledImageSlot& slot,
       std::unique_ptr<ShaderMetadata> metadata,
       std::shared_ptr<const Texture> texture,
-      const std::unique_ptr<const Sampler>& sampler) override;
+      raw_ptr<const Sampler> sampler) override;
 
   // |RenderPass|
   void OnSetLabel(std::string_view label) override;

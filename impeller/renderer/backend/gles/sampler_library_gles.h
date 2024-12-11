@@ -21,12 +21,12 @@ class SamplerLibraryGLES final : public SamplerLibrary {
  private:
   friend class ContextGLES;
 
-  std::vector<std::pair<uint64_t, std::unique_ptr<const Sampler>>> samplers_;
+  std::vector<std::pair<uint64_t, std::shared_ptr<const Sampler>>> samplers_;
 
   SamplerLibraryGLES();
 
   // |SamplerLibrary|
-  const std::unique_ptr<const Sampler>& GetSampler(
+raw_ptr<const Sampler> GetSampler(
       const SamplerDescriptor& descriptor) override;
 
   bool supports_decal_sampler_address_mode_ = false;

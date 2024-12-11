@@ -5,6 +5,7 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_
 #define FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_
 
+#include "impeller/core/raw_ptr.h"
 #include "impeller/core/sampler.h"
 #include "impeller/core/sampler_descriptor.h"
 
@@ -23,7 +24,7 @@ class SamplerLibrary {
   ///        The sampler library implementations must cache this sampler object
   ///        and guarantee that the reference will continue to be valid
   ///        throughout the lifetime of the Impeller context.
-  virtual const std::unique_ptr<const Sampler>& GetSampler(
+  virtual raw_ptr<const Sampler> GetSampler(
       const SamplerDescriptor& descriptor) = 0;
 
  protected:

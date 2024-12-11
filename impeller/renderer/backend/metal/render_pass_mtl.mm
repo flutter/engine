@@ -210,7 +210,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
 static bool Bind(PassBindingsCacheMTL& pass,
                  ShaderStage stage,
                  size_t bind_index,
-                 const std::unique_ptr<const Sampler>& sampler,
+                 raw_ptr<const Sampler> sampler,
                  const Texture& texture) {
   if (!sampler || !texture.IsValid()) {
     return false;
@@ -233,8 +233,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
 }
 
 // |RenderPass|
-void RenderPassMTL::SetPipeline(
-    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
+void RenderPassMTL::SetPipeline(PipelineRef pipeline) {
   const PipelineDescriptor& pipeline_desc = pipeline->GetDescriptor();
   primitive_type_ = pipeline_desc.GetPrimitiveType();
   pass_bindings_.SetRenderPipelineState(
@@ -407,7 +406,7 @@ bool RenderPassMTL::BindResource(
     const SampledImageSlot& slot,
     const ShaderMetadata* metadata,
     std::shared_ptr<const Texture> texture,
-    const std::unique_ptr<const Sampler>& sampler) {
+    raw_ptr<const Sampler> sampler) {
   if (!texture) {
     return false;
   }
@@ -420,7 +419,7 @@ bool RenderPassMTL::BindDynamicResource(
     const SampledImageSlot& slot,
     std::unique_ptr<ShaderMetadata> metadata,
     std::shared_ptr<const Texture> texture,
-    const std::unique_ptr<const Sampler>& sampler) {
+    raw_ptr<const Sampler> sampler) {
   if (!texture) {
     return false;
   }

@@ -24,12 +24,12 @@ class SamplerLibraryVK final
   friend class ContextVK;
 
   std::weak_ptr<DeviceHolderVK> device_holder_;
-  std::vector<std::pair<uint64_t, std::unique_ptr<const Sampler>>> samplers_;
+  std::vector<std::pair<uint64_t, std::shared_ptr<const Sampler>>> samplers_;
 
   explicit SamplerLibraryVK(const std::weak_ptr<DeviceHolderVK>& device_holder);
 
   // |SamplerLibrary|
-  const std::unique_ptr<const Sampler>& GetSampler(
+  raw_ptr<const Sampler> GetSampler(
       const SamplerDescriptor& descriptor) override;
 
   SamplerLibraryVK(const SamplerLibraryVK&) = delete;

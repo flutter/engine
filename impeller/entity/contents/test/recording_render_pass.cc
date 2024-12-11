@@ -15,8 +15,7 @@ RecordingRenderPass::RecordingRenderPass(
     : RenderPass(context, render_target), delegate_(std::move(delegate)) {}
 
 // |RenderPass|
-void RecordingRenderPass::SetPipeline(
-    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
+void RecordingRenderPass::SetPipeline(PipelineRef pipeline) {
   pending_.pipeline = pipeline;
   if (delegate_) {
     delegate_->SetPipeline(pipeline);
@@ -136,7 +135,7 @@ bool RecordingRenderPass::BindDynamicResource(
     const SampledImageSlot& slot,
     std::unique_ptr<ShaderMetadata> metadata,
     std::shared_ptr<const Texture> texture,
-    const std::unique_ptr<const Sampler>& sampler) {
+    raw_ptr<const Sampler> sampler) {
   if (delegate_) {
     return delegate_->BindDynamicResource(
         stage, type, slot, std::move(metadata), texture, sampler);
@@ -150,7 +149,7 @@ bool RecordingRenderPass::BindResource(
     const SampledImageSlot& slot,
     const ShaderMetadata* metadata,
     std::shared_ptr<const Texture> texture,
-    const std::unique_ptr<const Sampler>& sampler) {
+    raw_ptr<const Sampler> sampler) {
   if (delegate_) {
     return delegate_->BindResource(stage, type, slot, metadata, texture,
                                    sampler);

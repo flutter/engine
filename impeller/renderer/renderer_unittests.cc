@@ -75,7 +75,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  const std::unique_ptr<const Sampler>& sampler =
+  raw_ptr<const Sampler> sampler =
       context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
@@ -238,7 +238,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   auto device_buffer = context->GetResourceAllocator()->CreateBufferWithCopy(
       reinterpret_cast<uint8_t*>(&cube), sizeof(cube));
 
-  const std::unique_ptr<const Sampler>& sampler =
+  raw_ptr<const Sampler> sampler =
       context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
@@ -320,7 +320,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  const std::unique_ptr<const Sampler>& sampler =
+  raw_ptr<const Sampler> sampler =
       context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
@@ -398,7 +398,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  const std::unique_ptr<const Sampler>& sampler =
+  raw_ptr<const Sampler> sampler =
       context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
@@ -553,7 +553,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  const std::unique_ptr<const Sampler>& sampler =
+  raw_ptr<const Sampler> sampler =
       context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
@@ -656,7 +656,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  const std::unique_ptr<const Sampler>& sampler =
+  raw_ptr<const Sampler> sampler =
       context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
@@ -742,7 +742,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
         frag_info.lod = 0;
         FS::BindFragInfo(*pass, host_buffer->EmplaceUniform(frag_info));
 
-        const std::unique_ptr<const Sampler>& sampler =
+        raw_ptr<const Sampler> sampler =
             context->GetSamplerLibrary()->GetSampler({});
         auto buffer_view = DeviceBuffer::AsBufferView(device_buffer);
         auto texture =
@@ -872,7 +872,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
         SamplerDescriptor sampler_desc;
         sampler_desc.mip_filter = mip_filters[selected_mip_filter];
         sampler_desc.min_filter = min_filters[selected_min_filter];
-        const std::unique_ptr<const Sampler>& sampler =
+        raw_ptr<const Sampler> sampler =
             context->GetSamplerLibrary()->GetSampler(sampler_desc);
         FS::BindTex(*pass, boston, sampler);
 
@@ -1244,7 +1244,7 @@ TEST_P(RendererTest, StencilMask) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  const std::unique_ptr<const Sampler>& sampler =
+  raw_ptr<const Sampler> sampler =
       context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
@@ -1621,7 +1621,7 @@ TEST_P(RendererTest, BindingNullTexturesDoesNotCrash) {
   using FS = BoxFadeFragmentShader;
 
   auto context = GetContext();
-  const std::unique_ptr<const Sampler>& sampler =
+  raw_ptr<const Sampler> sampler =
       context->GetSamplerLibrary()->GetSampler({});
   auto command_buffer = context->CreateCommandBuffer();
 

@@ -12,8 +12,6 @@
 
 namespace impeller {
 
-static const std::unique_ptr<const Sampler> kNullSampler = nullptr;
-
 SamplerLibraryGLES::SamplerLibraryGLES(bool supports_decal_sampler_address_mode)
     : supports_decal_sampler_address_mode_(
           supports_decal_sampler_address_mode) {}
@@ -22,7 +20,7 @@ SamplerLibraryGLES::SamplerLibraryGLES(bool supports_decal_sampler_address_mode)
 SamplerLibraryGLES::~SamplerLibraryGLES() = default;
 
 // |SamplerLibrary|
-const std::unique_ptr<const Sampler>& SamplerLibraryGLES::GetSampler(
+raw_ptr<const Sampler> SamplerLibraryGLES::GetSampler(
     const SamplerDescriptor& descriptor) {
   if (!supports_decal_sampler_address_mode_ &&
       (descriptor.width_address_mode == SamplerAddressMode::kDecal ||
@@ -30,19 +28,19 @@ const std::unique_ptr<const Sampler>& SamplerLibraryGLES::GetSampler(
        descriptor.depth_address_mode == SamplerAddressMode::kDecal)) {
     VALIDATION_LOG << "SamplerAddressMode::kDecal is not supported by the "
                       "current OpenGLES backend.";
-    return kNullSampler;
+    return raw_ptr<const Sampler>{nullptr};
   }
   uint64_t p_key = SamplerDescriptor::ToKey(descriptor);
   for (const auto& [key, value] : samplers_) {
     if (key == p_key) {
-      return value;
+      return raw_ptr(value);
     }
   }
 
   auto sampler = std::unique_ptr<SamplerGLES>(new SamplerGLES(descriptor));
   samplers_.push_back(std::make_pair(p_key, std::move(sampler)));
 
-  return samplers_.back().second;
+  return raw_ptr(samplers_.back().second);
 }
 
 }  // namespace impeller

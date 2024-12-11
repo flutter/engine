@@ -29,7 +29,7 @@ struct SamplerDescriptor final {
                     MinMagFilter mag_filter,
                     MipFilter mip_filter);
 
-  static uint32_t ToKey(const SamplerDescriptor& d) {
+  static uint64_t ToKey(const SamplerDescriptor& d) {
     static_assert(sizeof(MinMagFilter) == 1);
     static_assert(sizeof(MipFilter) == 1);
     static_assert(sizeof(SamplerAddressMode) == 1);
