@@ -49,6 +49,8 @@ class SurfacePool {
 
   ~SurfacePool();
 
+  bool HasLayer() const { return layers_.size() >= 1; }
+
   // Gets a layer from the pool if available, or allocates a new one.
   // Finally, it marks the layer as used. That is, it increments
   // `available_layer_index_`.
@@ -75,6 +77,8 @@ class SurfacePool {
 
   // Returns true if the current pool has layers in use.
   bool HasLayers();
+
+  void TrimLayers();
 
  private:
   // The index of the entry in the layers_ vector that determines the beginning
