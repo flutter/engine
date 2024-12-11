@@ -142,9 +142,6 @@ vk::UniqueRenderPass RenderPassBuilderVK::Build(
   }
 
   for (const auto& color : colors_) {
-    if (color_index >= kMaxColorAttachments) {
-      break;
-    }
     vk::AttachmentReference color_ref;
     color_ref.attachment = attachments_index;
     color_ref.layout = vk::ImageLayout::eGeneral;
