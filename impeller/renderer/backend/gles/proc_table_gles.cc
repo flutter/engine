@@ -6,9 +6,9 @@
 
 #include <sstream>
 
-#include "fml/closure.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/comparable.h"
+#include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/capabilities.h"
@@ -120,7 +120,11 @@ ProcTableGLES::ProcTableGLES(  // NOLINT(google-readability-function-size)
         reinterpret_cast<decltype(proc_ivar.function)>(fn_ptr); \
     proc_ivar.error_fn = error_fn;                              \
   }
-  FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
+
+  if (description_->GetGlVersion().IsAtLeast(Version(3))) {
+    FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
+  }
+
   FOR_EACH_IMPELLER_EXT_PROC(IMPELLER_PROC);
 
 #undef IMPELLER_PROC
@@ -175,12 +179,12 @@ void ProcTableGLES::ShaderSourceMapping(
 std::optional<std::string> ProcTableGLES::ComputeShaderWithDefines(
     const fml::Mapping& mapping,
     const std::vector<Scalar>& defines) const {
-  auto shader_source = std::string{
+  std::string shader_source = std::string{
       reinterpret_cast<const char*>(mapping.GetMapping()), mapping.GetSize()};
 
   // Look for the first newline after the '#version' header, which impellerc
   // will always emit as the first line of a compiled shader.
-  auto index = shader_source.find('\n');
+  size_t index = shader_source.find('\n');
   if (index == std::string::npos) {
     VALIDATION_LOG << "Failed to append constant data to shader";
     return std::nullopt;
@@ -241,24 +245,24 @@ static const char* AttachmentTypeString(GLint type) {
 
 static std::string DescribeFramebufferAttachment(const ProcTableGLES& gl,
                                                  GLenum attachment) {
-  GLint param = GL_NONE;
+  GLint type = GL_NONE;
   gl.GetFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER,                         // target
       attachment,                             // attachment
       GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE,  // parameter name
-      &param                                  // parameter
+      &type                                   // parameter
   );
 
-  if (param != GL_NONE) {
-    param = GL_NONE;
+  if (type != GL_NONE) {
+    GLint object = GL_NONE;
     gl.GetFramebufferAttachmentParameteriv(
         GL_FRAMEBUFFER,                         // target
         attachment,                             // attachment
         GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME,  // parameter name
-        &param                                  // parameter
+        &object                                 // parameter
     );
     std::stringstream stream;
-    stream << AttachmentTypeString(param) << "(" << param << ")";
+    stream << AttachmentTypeString(type) << "(" << object << ")";
     return stream.str();
   }
 
@@ -268,11 +272,15 @@ static std::string DescribeFramebufferAttachment(const ProcTableGLES& gl,
 std::string ProcTableGLES::DescribeCurrentFramebuffer() const {
   GLint framebuffer = GL_NONE;
   GetIntegerv(GL_FRAMEBUFFER_BINDING, &framebuffer);
+  if (framebuffer == GL_NONE) {
+    return "The default framebuffer (FBO0) was bound.";
+  }
   if (IsFramebuffer(framebuffer) == GL_FALSE) {
-    return "No framebuffer or the default window framebuffer is bound.";
+    return SPrintF("The framebuffer binding (%d) was not a valid framebuffer.",
+                   framebuffer);
   }
 
-  GLenum status = CheckFramebufferStatus(framebuffer);
+  GLenum status = CheckFramebufferStatus(GL_FRAMEBUFFER);
   std::stringstream stream;
   stream << "FBO "
          << ((framebuffer == GL_NONE) ? "(Default)"
@@ -287,10 +295,10 @@ std::string ProcTableGLES::DescribeCurrentFramebuffer() const {
   stream << "Color Attachment: "
          << DescribeFramebufferAttachment(*this, GL_COLOR_ATTACHMENT0)
          << std::endl;
-  stream << "Color Attachment: "
+  stream << "Depth Attachment: "
          << DescribeFramebufferAttachment(*this, GL_DEPTH_ATTACHMENT)
          << std::endl;
-  stream << "Color Attachment: "
+  stream << "Stencil Attachment: "
          << DescribeFramebufferAttachment(*this, GL_STENCIL_ATTACHMENT)
          << std::endl;
   return stream.str();
@@ -303,7 +311,7 @@ bool ProcTableGLES::IsCurrentFramebufferComplete() const {
     // The default framebuffer is always complete.
     return true;
   }
-  GLenum status = CheckFramebufferStatus(framebuffer);
+  GLenum status = CheckFramebufferStatus(GL_FRAMEBUFFER);
   return status == GL_FRAMEBUFFER_COMPLETE;
 }
 
@@ -321,6 +329,8 @@ static std::optional<GLenum> ToDebugIdentifier(DebugResourceType type) {
       return GL_RENDERBUFFER;
     case DebugResourceType::kFrameBuffer:
       return GL_FRAMEBUFFER;
+    case DebugResourceType::kFence:
+      return GL_SYNC_FENCE;
   }
   FML_UNREACHABLE();
 }
@@ -341,13 +351,15 @@ static bool ResourceIsLive(const ProcTableGLES& gl,
       return gl.IsRenderbuffer(name);
     case DebugResourceType::kFrameBuffer:
       return gl.IsFramebuffer(name);
+    case DebugResourceType::kFence:
+      return true;
   }
   FML_UNREACHABLE();
 }
 
 bool ProcTableGLES::SetDebugLabel(DebugResourceType type,
                                   GLint name,
-                                  const std::string& label) const {
+                                  std::string_view label) const {
   if (debug_label_max_length_ <= 0) {
     return true;
   }

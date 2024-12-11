@@ -30,6 +30,10 @@ bool CommandBuffer::SubmitCommands() {
   return SubmitCommands(nullptr);
 }
 
+void CommandBuffer::WaitUntilCompleted() {
+  return OnWaitUntilCompleted();
+}
+
 void CommandBuffer::WaitUntilScheduled() {
   return OnWaitUntilScheduled();
 }

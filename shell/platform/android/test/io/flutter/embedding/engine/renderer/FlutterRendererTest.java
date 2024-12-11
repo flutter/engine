@@ -288,14 +288,20 @@ public class FlutterRendererTest {
     metrics.width = 1000;
     metrics.height = 1000;
     metrics.devicePixelRatio = 2;
-    metrics.displayFeatures.add(
-        new FlutterRenderer.DisplayFeature(
-            new Rect(10, 20, 30, 40),
-            FlutterRenderer.DisplayFeatureType.FOLD,
-            FlutterRenderer.DisplayFeatureState.POSTURE_HALF_OPENED));
-    metrics.displayFeatures.add(
-        new FlutterRenderer.DisplayFeature(
-            new Rect(50, 60, 70, 80), FlutterRenderer.DisplayFeatureType.CUTOUT));
+    metrics
+        .getDisplayFeatures()
+        .add(
+            new FlutterRenderer.DisplayFeature(
+                new Rect(10, 20, 30, 40),
+                FlutterRenderer.DisplayFeatureType.FOLD,
+                FlutterRenderer.DisplayFeatureState.POSTURE_HALF_OPENED));
+    metrics
+        .getDisplayCutouts()
+        .add(
+            new FlutterRenderer.DisplayFeature(
+                new Rect(50, 60, 70, 80),
+                FlutterRenderer.DisplayFeatureType.CUTOUT,
+                FlutterRenderer.DisplayFeatureState.UNKNOWN));
 
     // Execute the behavior under test.
     flutterRenderer.setViewportMetrics(metrics);
@@ -825,5 +831,44 @@ public class FlutterRendererTest {
 
     // Verify.
     latch.await();
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerSchedulesFrameIfQueueNotEmpty() throws Exception {
+    FlutterRenderer flutterRenderer = spy(engineRule.getFlutterEngine().getRenderer());
+    TextureRegistry.SurfaceProducer producer = flutterRenderer.createSurfaceProducer();
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        (FlutterRenderer.ImageReaderSurfaceProducer) producer;
+    texture.disableFenceForTest();
+    texture.setSize(1, 1);
+
+    // Render two frames.
+    for (int i = 0; i < 2; i++) {
+      Surface surface = texture.getSurface();
+      assertNotNull(surface);
+      Canvas canvas = surface.lockHardwareCanvas();
+      canvas.drawARGB(255, 255, 0, 0);
+      surface.unlockCanvasAndPost(canvas);
+      shadowOf(Looper.getMainLooper()).idle();
+    }
+
+    // Each enqueue of an image should result in a call to scheduleEngineFrame.
+    verify(flutterRenderer, times(2)).scheduleEngineFrame();
+
+    // Consume the first image.
+    Image image = texture.acquireLatestImage();
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // The dequeue should call scheduleEngineFrame because another image
+    // remains in the queue.
+    verify(flutterRenderer, times(3)).scheduleEngineFrame();
+
+    // Consume the second image.
+    image = texture.acquireLatestImage();
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // The dequeue should not call scheduleEngineFrame because the queue
+    // is now empty.
+    verify(flutterRenderer, times(3)).scheduleEngineFrame();
   }
 }

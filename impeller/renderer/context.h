@@ -203,6 +203,45 @@ class Context {
   /// operation completes in order to clear the cache.
   virtual void DisposeThreadLocalCachedResources() {}
 
+  /// @brief Enqueue command_buffer for submission by the end of the frame.
+  ///
+  /// Certain backends may immediately flush the command buffer if batch
+  /// submission is not supported. This functionality is not thread safe
+  /// and should only be used via the ContentContext for rendering a
+  /// 2D workload.
+  ///
+  /// Returns true if submission has succeeded. If the buffer is enqueued
+  /// then no error may be returned until FlushCommandBuffers is called.
+  [[nodiscard]] virtual bool EnqueueCommandBuffer(
+      std::shared_ptr<CommandBuffer> command_buffer);
+
+  /// @brief Flush all pending command buffers.
+  ///
+  /// Returns whether or not submission was successful. This functionality
+  /// is not threadsafe and should only be used via the ContentContext for
+  /// rendering a 2D workload.
+  [[nodiscard]] virtual bool FlushCommandBuffers();
+
+  virtual bool AddTrackingFence(const std::shared_ptr<Texture>& texture) const;
+
+  virtual std::shared_ptr<const IdleWaiter> GetIdleWaiter() const;
+
+  //----------------------------------------------------------------------------
+  /// Resets any thread local state that may interfere with embedders.
+  ///
+  /// Today, only the OpenGL backend can trample on thread local state that the
+  /// embedder can access. This call puts the GL state in a sane "clean" state.
+  ///
+  /// Impeller itself is resilient to a dirty thread local state table.
+  ///
+  virtual void ResetThreadLocalState() const;
+
+  /// @brief Retrieve the runtime stage for this context type.
+  ///
+  /// This is used by the engine shell and other subsystems for loading the
+  /// correct shader types.
+  virtual RuntimeStageBackend GetRuntimeStageBackend() const = 0;
+
  protected:
   Context();
 

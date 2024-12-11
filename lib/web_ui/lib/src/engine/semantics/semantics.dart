@@ -424,6 +424,7 @@ abstract class SemanticRole {
     addLiveRegion();
     addRouteName();
     addLabelAndValue(preferredRepresentation: preferredLabelRepresentation);
+    addSelectableBehavior();
   }
 
   /// Initializes a blank role for a [semanticsObject].
@@ -442,6 +443,9 @@ abstract class SemanticRole {
 
   /// The semantics object managed by this role.
   final SemanticsObject semanticsObject;
+
+  /// The ID of the Flutter View that this [SemanticRole] belongs to.
+  int get viewId => semanticsObject.owner.viewId;
 
   /// Whether this role accepts pointer events.
   ///
@@ -567,6 +571,16 @@ abstract class SemanticRole {
   /// Adds generic functionality for handling taps and clicks.
   void addTappable() {
     addSemanticBehavior(Tappable(semanticsObject, this));
+  }
+
+  /// Adds the [Selectable] behavior, if the node is selectable but not checkable.
+  void addSelectableBehavior() {
+    // Do not use the [Selectable] behavior on checkables. Checkables use
+    // special ARIA roles and `aria-checked`. Adding `aria-selected` in addition
+    // to `aria-checked` would be confusing.
+    if (semanticsObject.isSelectable && !semanticsObject.isCheckable) {
+      addSemanticBehavior(Selectable(semanticsObject, this));
+    }
   }
 
   /// Adds a semantic behavior to this role.
@@ -752,6 +766,9 @@ abstract class SemanticBehavior {
   final SemanticsObject semanticsObject;
 
   final SemanticRole owner;
+
+  /// The ID of the Flutter View that this [SemanticBehavior] belongs to.
+  int get viewId => semanticsObject.owner.viewId;
 
   /// Whether this role accepts pointer events.
   ///
@@ -1111,9 +1128,23 @@ class SemanticsObject {
     _dirtyFields |= _platformViewIdIndex;
   }
 
-  /// See [ui.SemanticsUpdateBuilder.updateNode].
-  int get headingLevel => _headingLevel;
+  // This field is not exposed publicly because code that applies heading levels
+  // should use [effectiveHeadingLevel] instead.
   int _headingLevel = 0;
+
+  /// The effective heading level value to be used when rendering this node as
+  /// a heading.
+  ///
+  /// If a heading is rendered from a header, uses heading level 2.
+  int get effectiveHeadingLevel {
+    if (_headingLevel != 0) {
+      return _headingLevel;
+    } else {
+      // This branch may be taken when a heading is rendered from a header,
+      // where the heading level is not provided.
+      return 2;
+    }
+  }
 
   static const int _headingLevelIndex = 1 << 24;
 
@@ -1123,6 +1154,36 @@ class SemanticsObject {
   void _markHeadingLevelDirty() {
     _dirtyFields |= _headingLevelIndex;
   }
+
+  /// Whether this object represents a heading.
+  ///
+  /// Typically, a heading is a prominent piece of text that provides a title
+  /// for a section in the UI.
+  ///
+  /// Labeled empty headers are treated as headings too.
+  ///
+  /// See also:
+  ///
+  /// * [isHeader], which also describes the rest of the screen, and is
+  ///   sometimes presented to the user as a heading.
+  bool get isHeading => _headingLevel != 0 || isHeader && hasLabel && !hasChildren;
+
+  /// Whether this object represents a header.
+  ///
+  /// A header is used for one of two purposes:
+  ///
+  /// * Introduce the content of the main screen or a page. In this case, the
+  ///   header is a, possibly labeled, container of widgets that together
+  ///   provide the description of the screen.
+  /// * Provide a heading (like [isHeading]). Native mobile apps do not have a
+  ///   notion of "heading". It is common to mark headings as headers instead
+  ///   and the screen readers will announce "heading". Labeled empty headers
+  ///   are treated as heading by the web engine.
+  ///
+  /// See also:
+  ///
+  ///  * [isHeading], which determines whether this node represents a heading.
+  bool get isHeader => hasFlag(ui.SemanticsFlag.isHeader);
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   String? get identifier => _identifier;
@@ -1259,24 +1320,8 @@ class SemanticsObject {
   /// Whether this object represents an editable text field.
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
 
-  /// Whether this object represents a heading element.
-  ///
-  /// Typically, a heading is a prominent piece of text that describes what the
-  /// rest of the screen or page is about.
-  ///
-  /// Not to be confused with [isHeader].
-  bool get isHeading => headingLevel != 0;
-
   /// Whether this object represents an interactive link.
   bool get isLink => hasFlag(ui.SemanticsFlag.isLink);
-
-  /// Whether this object represents a header.
-  ///
-  /// A header is a group of widgets that introduce the content of the screen
-  /// or a page.
-  ///
-  /// Not to be confused with [isHeading].
-  bool get isHeader => hasFlag(ui.SemanticsFlag.isHeader);
 
   /// Whether this object needs screen readers attention right away.
   bool get isLiveRegion =>
@@ -1674,6 +1719,8 @@ class SemanticsObject {
     if (isPlatformView) {
       return SemanticRoleKind.platformView;
     } else if (isHeading) {
+      // IMPORTANT: because headings also cover certain kinds of headers, the
+      //            `heading` role has precedence over the `header` role.
       return SemanticRoleKind.heading;
     } else if (isTextField) {
       return SemanticRoleKind.textField;
@@ -1778,9 +1825,34 @@ class SemanticsObject {
   /// "hamburger" menu, etc.
   bool get isTappable => hasAction(ui.SemanticsAction.tap);
 
+  /// If true, this node represents something that can be in a "checked" or
+  /// "toggled" state, such as checkboxes, radios, and switches.
+  ///
+  /// Because such widgets require the use of specific ARIA roles and HTML
+  /// elements, they are managed by the [SemanticCheckable] role, and they do
+  /// not use the [Selectable] behavior.
   bool get isCheckable =>
       hasFlag(ui.SemanticsFlag.hasCheckedState) ||
       hasFlag(ui.SemanticsFlag.hasToggledState);
+
+  /// If true, this node represents something that can be annotated as
+  /// "selected", such as a tab, or an item in a list.
+  ///
+  /// Selectability is managed by `aria-selected` and is compatible with
+  /// multiple ARIA roles (tabs, gridcells, options, rows, etc). It is therefore
+  /// mapped onto the [Selectable] behavior.
+  ///
+  /// [Selectable] and [SemanticCheckable] are not used together on the same
+  /// node. [SemanticCheckable] has precendence over [Selectable].
+  ///
+  /// See also:
+  ///
+  ///   * [isSelected], which indicates whether the node is currently selected.
+  bool get isSelectable => hasFlag(ui.SemanticsFlag.hasSelectedState);
+
+  /// If [isSelectable] is true, indicates whether the node is currently
+  /// selected.
+  bool get isSelected => hasFlag(ui.SemanticsFlag.isSelected);
 
   /// Role-specific adjustment of the vertical position of the child container.
   ///
@@ -1966,7 +2038,9 @@ class SemanticsObject {
   void dispose() {
     assert(!_isDisposed);
     _isDisposed = true;
-    element.remove();
+
+    EnginePlatformDispatcher.instance.viewManager.safeRemoveSync(element);
+
     _parent = null;
     semanticRole?.dispose();
     semanticRole = null;
@@ -2313,11 +2387,14 @@ class EngineSemantics {
 
 /// The top-level service that manages everything semantics-related.
 class EngineSemanticsOwner {
-  EngineSemanticsOwner(this.semanticsHost) {
+  EngineSemanticsOwner(this.viewId, this.semanticsHost) {
     registerHotRestartListener(() {
       _rootSemanticsElement?.remove();
     });
   }
+
+  /// The ID of the Flutter View that this semantics owner belongs to.
+  final int viewId;
 
   /// The permanent element in the view's DOM structure that hosts the semantics
   /// tree.

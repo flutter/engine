@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/save_layer_utils.h"
+#include "impeller/geometry/scalar.h"
 
 namespace impeller {
 
@@ -11,6 +12,8 @@ bool SizeDifferenceUnderThreshold(Size a, Size b, Scalar threshold) {
   return (std::abs(a.width - b.width) / b.width) < threshold &&
          (std::abs(a.height - b.height) / b.height) < threshold;
 }
+
+static constexpr Scalar kDefaultSizeThreshold = 0.3;
 }  // namespace
 
 std::optional<Rect> ComputeSaveLayerCoverage(
@@ -25,11 +28,8 @@ std::optional<Rect> ComputeSaveLayerCoverage(
   // first is the presence of a backdrop filter on the saveLayer. The second is
   // the presence of a color filter that effects transparent black on the
   // saveLayer. The last is the presence of unbounded content within the
-  // saveLayer (such as a drawPaint, bdf, et cetera). Note that currently
-  // only the presence of a backdrop filter impacts this flag, while color
-  // filters are not yet handled
-  // (https://github.com/flutter/flutter/issues/154035) and unbounded coverage
-  // is handled in the display list dispatcher.
+  // saveLayer (such as a drawPaint, bdf, et cetera). Note that unbounded
+  // coverage is handled in the display list dispatcher.
   //
   // Backdrop filters apply before the saveLayer is restored. The presence of
   // a backdrop filter causes the content coverage of the saveLayer to be
@@ -86,7 +86,8 @@ std::optional<Rect> ComputeSaveLayerCoverage(
         transformed_coverage.Intersection(source_coverage_limit.value());
     if (intersected_coverage.has_value() &&
         SizeDifferenceUnderThreshold(transformed_coverage.GetSize(),
-                                     intersected_coverage->GetSize(), 0.2)) {
+                                     intersected_coverage->GetSize(),
+                                     kDefaultSizeThreshold)) {
       // Returning the transformed coverage is always correct, it just may
       // be larger than the clip area or onscreen texture.
       return transformed_coverage;
@@ -109,8 +110,22 @@ std::optional<Rect> ComputeSaveLayerCoverage(
 
   // Transform the input coverage into the global coordinate space before
   // computing the bounds limit intersection.
-  return coverage.TransformBounds(effect_transform)
-      .Intersection(coverage_limit);
+  Rect transformed_coverage = coverage.TransformBounds(effect_transform);
+  std::optional<Rect> intersection =
+      transformed_coverage.Intersection(coverage_limit);
+  if (!intersection.has_value()) {
+    return std::nullopt;
+  }
+  // The the resulting coverage rect is nearly the same as the coverage_limit,
+  // round up to the coverage_limit.
+  Rect intersect_rect = intersection.value();
+  if (SizeDifferenceUnderThreshold(intersect_rect.GetSize(),
+                                   coverage_limit.GetSize(),
+                                   kDefaultSizeThreshold)) {
+    return coverage_limit;
+  }
+
+  return intersect_rect;
 }
 
 }  // namespace impeller

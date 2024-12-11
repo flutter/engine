@@ -6,6 +6,7 @@
 
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 
+#include "flutter/display_list/effects/image_filters/dl_blur_image_filter.h"
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/fml/trace_event.h"
@@ -52,9 +53,10 @@ void DlSkCanvasAdapter::Save() {
   delegate_->save();
 }
 
-void DlSkCanvasAdapter::SaveLayer(std::optional<const DlRect>& bounds,
+void DlSkCanvasAdapter::SaveLayer(const std::optional<DlRect>& bounds,
                                   const DlPaint* paint,
-                                  const DlImageFilter* backdrop) {
+                                  const DlImageFilter* backdrop,
+                                  std::optional<int64_t> backdrop_id) {
   sk_sp<SkImageFilter> sk_backdrop = ToSk(backdrop);
   SkOptionalPaint sk_paint(paint);
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
@@ -149,10 +151,10 @@ void DlSkCanvasAdapter::ClipOval(const DlRect& bounds,
                        is_aa);
 }
 
-void DlSkCanvasAdapter::ClipRRect(const SkRRect& rrect,
-                                  ClipOp clip_op,
-                                  bool is_aa) {
-  delegate_->clipRRect(rrect, ToSk(clip_op), is_aa);
+void DlSkCanvasAdapter::ClipRoundRect(const DlRoundRect& rrect,
+                                      ClipOp clip_op,
+                                      bool is_aa) {
+  delegate_->clipRRect(ToSkRRect(rrect), ToSk(clip_op), is_aa);
 }
 
 void DlSkCanvasAdapter::ClipPath(const DlPath& path,
@@ -222,14 +224,15 @@ void DlSkCanvasAdapter::DrawCircle(const DlPoint& center,
   delegate_->drawCircle(ToSkPoint(center), radius, ToSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawRRect(const SkRRect& rrect, const DlPaint& paint) {
-  delegate_->drawRRect(rrect, ToSk(paint));
+void DlSkCanvasAdapter::DrawRoundRect(const DlRoundRect& rrect,
+                                      const DlPaint& paint) {
+  delegate_->drawRRect(ToSkRRect(rrect), ToSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawDRRect(const SkRRect& outer,
-                                   const SkRRect& inner,
-                                   const DlPaint& paint) {
-  delegate_->drawDRRect(outer, inner, ToSk(paint));
+void DlSkCanvasAdapter::DrawDiffRoundRect(const DlRoundRect& outer,
+                                          const DlRoundRect& inner,
+                                          const DlPaint& paint) {
+  delegate_->drawDRRect(ToSkRRect(outer), ToSkRRect(inner), ToSk(paint));
 }
 
 void DlSkCanvasAdapter::DrawPath(const DlPath& path, const DlPaint& paint) {

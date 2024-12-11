@@ -6,7 +6,6 @@
 #define FLUTTER_IMPELLER_RENDERER_RENDER_PASS_H_
 
 #include <cstddef>
-#include <string>
 
 #include "fml/status.h"
 #include "impeller/core/formats.h"
@@ -18,9 +17,6 @@
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
-
-class HostBuffer;
-class Allocator;
 
 //------------------------------------------------------------------------------
 /// @brief      Render passes encode render commands directed as one specific
@@ -45,18 +41,15 @@ class RenderPass : public ResourceBinder {
 
   virtual bool IsValid() const = 0;
 
-  void SetLabel(std::string label);
-
-  /// @brief Reserve [command_count] commands in the HAL command buffer.
-  ///
-  /// Note: this is not the native command buffer.
-  virtual void ReserveCommands(size_t command_count) {
-    commands_.reserve(command_count);
-  }
+  void SetLabel(std::string_view label);
 
   //----------------------------------------------------------------------------
   /// The pipeline to use for this command.
-  virtual void SetPipeline(
+  virtual void SetPipeline(PipelineRef pipeline);
+
+  //----------------------------------------------------------------------------
+  /// The pipeline to use for this command.
+  void SetPipeline(
       const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline);
 
   //----------------------------------------------------------------------------
@@ -90,6 +83,12 @@ class RenderPass : public ResourceBinder {
   virtual void SetScissor(IRect scissor);
 
   //----------------------------------------------------------------------------
+  /// The number of elements to draw. When only a vertex buffer is set, this is
+  /// the vertex count. When an index buffer is set, this is the index count.
+  ///
+  virtual void SetElementCount(size_t count);
+
+  //----------------------------------------------------------------------------
   /// The number of instances of the given set of vertices to render. Not all
   /// backends support rendering more than one instance at a time.
   ///
@@ -115,11 +114,9 @@ class RenderPass : public ResourceBinder {
   ///
   /// @param[in]  vertex_buffer  The buffer view to use for sourcing vertices.
   ///
-  /// @param[in]  vertex_count   The number of vertices to draw.
-  ///
   /// @return     Returns false if the given buffer view is invalid.
   ///
-  bool SetVertexBuffer(BufferView vertex_buffer, size_t vertex_count);
+  bool SetVertexBuffer(BufferView vertex_buffer);
 
   //----------------------------------------------------------------------------
   /// @brief      Specify a set of vertex buffers to use for this command.
@@ -131,12 +128,9 @@ class RenderPass : public ResourceBinder {
   /// @param[in]  vertex_buffers  The array of vertex buffer views to use.
   ///                             The maximum number of vertex buffers is 16.
   ///
-  /// @param[in]  vertex_count    The number of vertices to draw.
-  ///
   /// @return     Returns false if any of the given buffer views are invalid.
   ///
-  bool SetVertexBuffer(std::vector<BufferView> vertex_buffers,
-                       size_t vertex_count);
+  bool SetVertexBuffer(std::vector<BufferView> vertex_buffers);
 
   //----------------------------------------------------------------------------
   /// @brief      Specify a set of vertex buffers to use for this command.
@@ -152,22 +146,20 @@ class RenderPass : public ResourceBinder {
   /// @param[in]  vertex_buffer_count The number of vertex buffers to copy from
   ///                                 the array (max 16).
   ///
-  /// @param[in]  vertex_count        The number of vertices to draw.
-  ///
   /// @return     Returns false if any of the given buffer views are invalid.
   ///
   virtual bool SetVertexBuffer(BufferView vertex_buffers[],
-                               size_t vertex_buffer_count,
-                               size_t vertex_count);
+                               size_t vertex_buffer_count);
 
   //----------------------------------------------------------------------------
   /// @brief      Specify an index buffer to use for this command.
   ///             To unset the index buffer, pass IndexType::kNone to
   ///             index_type.
   ///
-  /// @param[in]  index_buffer  The buffer view to use for sourcing indices. The
-  ///                           total number of indices is inferred from the
-  ///                           buffer view size and index type.
+  /// @param[in]  index_buffer  The buffer view to use for sourcing indices.
+  ///                           When an index buffer is bound, the
+  ///                           `vertex_count` set via `SetVertexBuffer` is used
+  ///                           as the number of indices to draw.
   ///
   /// @param[in]  index_type    The size of each index in the index buffer. Pass
   ///                           IndexType::kNone to unset the index buffer.
@@ -183,24 +175,33 @@ class RenderPass : public ResourceBinder {
   virtual bool BindResource(ShaderStage stage,
                             DescriptorType type,
                             const ShaderUniformSlot& slot,
-                            const ShaderMetadata& metadata,
+                            const ShaderMetadata* metadata,
                             BufferView view) override;
-
-  virtual bool BindResource(
-      ShaderStage stage,
-      DescriptorType type,
-      const ShaderUniformSlot& slot,
-      const std::shared_ptr<const ShaderMetadata>& metadata,
-      BufferView view);
 
   // |ResourceBinder|
   virtual bool BindResource(
       ShaderStage stage,
       DescriptorType type,
       const SampledImageSlot& slot,
-      const ShaderMetadata& metadata,
+      const ShaderMetadata* metadata,
       std::shared_ptr<const Texture> texture,
       const std::unique_ptr<const Sampler>& sampler) override;
+
+  /// @brief Bind with dynamically generated shader metadata.
+  virtual bool BindDynamicResource(
+      ShaderStage stage,
+      DescriptorType type,
+      const SampledImageSlot& slot,
+      std::unique_ptr<ShaderMetadata> metadata,
+      std::shared_ptr<const Texture> texture,
+      const std::unique_ptr<const Sampler>& sampler);
+
+  /// @brief Bind with dynamically generated shader metadata.
+  virtual bool BindDynamicResource(ShaderStage stage,
+                                   DescriptorType type,
+                                   const ShaderUniformSlot& slot,
+                                   std::unique_ptr<ShaderMetadata> metadata,
+                                   BufferView view);
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
@@ -247,6 +248,9 @@ class RenderPass : public ResourceBinder {
   const ISize render_target_size_;
   const RenderTarget render_target_;
   std::vector<Command> commands_;
+  std::vector<BufferView> vertex_buffers_;
+  std::vector<BufferResource> bound_buffers_;
+  std::vector<TextureAndSampler> bound_textures_;
   const Matrix orthographic_;
 
   //----------------------------------------------------------------------------
@@ -269,7 +273,7 @@ class RenderPass : public ResourceBinder {
   static bool ValidateIndexBuffer(const BufferView& index_buffer,
                                   IndexType index_type);
 
-  virtual void OnSetLabel(std::string label) = 0;
+  virtual void OnSetLabel(std::string_view label) = 0;
 
   virtual bool OnEncodeCommands(const Context& context) const = 0;
 
@@ -278,7 +282,19 @@ class RenderPass : public ResourceBinder {
 
   RenderPass& operator=(const RenderPass&) = delete;
 
+  bool BindBuffer(ShaderStage stage,
+                  const ShaderUniformSlot& slot,
+                  BufferResource resource);
+
+  bool BindTexture(ShaderStage stage,
+                   const SampledImageSlot& slot,
+                   TextureResource resource,
+                   const std::unique_ptr<const Sampler>& sampler);
+
   Command pending_;
+  std::optional<size_t> bound_buffers_start_ = std::nullopt;
+  std::optional<size_t> bound_textures_start_ = std::nullopt;
+  std::optional<size_t> vertex_buffers_start_ = std::nullopt;
 };
 
 }  // namespace impeller

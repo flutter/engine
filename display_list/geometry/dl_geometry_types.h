@@ -7,10 +7,12 @@
 
 #include "flutter/impeller/geometry/matrix.h"
 #include "flutter/impeller/geometry/rect.h"
+#include "flutter/impeller/geometry/round_rect.h"
 #include "flutter/impeller/geometry/scalar.h"
 
 #include "flutter/third_party/skia/include/core/SkM44.h"
 #include "flutter/third_party/skia/include/core/SkMatrix.h"
+#include "flutter/third_party/skia/include/core/SkRRect.h"
 #include "flutter/third_party/skia/include/core/SkRect.h"
 #include "flutter/third_party/skia/include/core/SkSize.h"
 
@@ -21,12 +23,15 @@ using DlDegrees = impeller::Degrees;
 using DlRadians = impeller::Radians;
 
 using DlPoint = impeller::Point;
+using DlVector2 = impeller::Vector2;
 using DlIPoint = impeller::IPoint32;
 using DlSize = impeller::Size;
 using DlISize = impeller::ISize32;
 using DlRect = impeller::Rect;
 using DlIRect = impeller::IRect32;
+using DlRoundRect = impeller::RoundRect;
 using DlMatrix = impeller::Matrix;
+using DlQuad = impeller::Quad;
 
 static_assert(sizeof(SkPoint) == sizeof(DlPoint));
 static_assert(sizeof(SkIPoint) == sizeof(DlIPoint));
@@ -34,6 +39,20 @@ static_assert(sizeof(SkSize) == sizeof(DlSize));
 static_assert(sizeof(SkISize) == sizeof(DlISize));
 static_assert(sizeof(SkRect) == sizeof(DlRect));
 static_assert(sizeof(SkIRect) == sizeof(DlIRect));
+static_assert(sizeof(SkVector) == sizeof(DlSize));
+
+static constexpr DlScalar kEhCloseEnough = impeller::kEhCloseEnough;
+
+constexpr inline bool DlScalarNearlyZero(DlScalar x,
+                                         DlScalar tolerance = kEhCloseEnough) {
+  return impeller::ScalarNearlyZero(x, tolerance);
+}
+
+constexpr inline bool DlScalarNearlyEqual(DlScalar x,
+                                          DlScalar y,
+                                          DlScalar tolerance = kEhCloseEnough) {
+  return impeller::ScalarNearlyEqual(x, y, tolerance);
+}
 
 inline const DlPoint& ToDlPoint(const SkPoint& point) {
   return *reinterpret_cast<const DlPoint*>(&point);
@@ -75,6 +94,21 @@ inline const DlISize& ToDlISize(const SkISize& size) {
   return *reinterpret_cast<const DlISize*>(&size);
 }
 
+inline const DlSize& ToDlSize(const SkVector& vector) {
+  return *reinterpret_cast<const DlSize*>(&vector);
+}
+
+inline const DlRoundRect ToDlRoundRect(const SkRRect& rrect) {
+  return DlRoundRect::MakeRectRadii(
+      ToDlRect(rrect.rect()),
+      {
+          .top_left = ToDlSize(rrect.radii(SkRRect::kUpperLeft_Corner)),
+          .top_right = ToDlSize(rrect.radii(SkRRect::kUpperRight_Corner)),
+          .bottom_left = ToDlSize(rrect.radii(SkRRect::kLowerLeft_Corner)),
+          .bottom_right = ToDlSize(rrect.radii(SkRRect::kLowerRight_Corner)),
+      });
+}
+
 inline constexpr DlMatrix ToDlMatrix(const SkMatrix& matrix) {
   // clang-format off
   return DlMatrix::MakeColumn(
@@ -112,7 +146,7 @@ inline const SkRect* ToSkRect(const DlRect* rect) {
   return rect == nullptr ? nullptr : reinterpret_cast<const SkRect*>(rect);
 }
 
-inline const SkRect* ToSkRect(std::optional<const DlRect>& rect) {
+inline const SkRect* ToSkRect(const std::optional<DlRect>& rect) {
   return rect.has_value() ? &ToSkRect(rect.value()) : nullptr;
 }
 
@@ -127,6 +161,25 @@ inline const SkRect* ToSkRects(const DlRect* rects) {
 inline const SkISize& ToSkISize(const DlISize& size) {
   return *reinterpret_cast<const SkISize*>(&size);
 }
+
+inline const SkVector& ToSkVector(const DlSize& size) {
+  return *reinterpret_cast<const SkVector*>(&size);
+}
+
+inline const SkRRect ToSkRRect(const DlRoundRect& round_rect) {
+  SkVector radii[4];
+  radii[SkRRect::kUpperLeft_Corner] =
+      ToSkVector(round_rect.GetRadii().top_left);
+  radii[SkRRect::kUpperRight_Corner] =
+      ToSkVector(round_rect.GetRadii().top_right);
+  radii[SkRRect::kLowerLeft_Corner] =
+      ToSkVector(round_rect.GetRadii().bottom_left);
+  radii[SkRRect::kLowerRight_Corner] =
+      ToSkVector(round_rect.GetRadii().bottom_right);
+  SkRRect rrect;
+  rrect.setRectRadii(ToSkRect(round_rect.GetBounds()), radii);
+  return rrect;
+};
 
 inline constexpr SkMatrix ToSkMatrix(const DlMatrix& matrix) {
   return SkMatrix::MakeAll(matrix.m[0], matrix.m[4], matrix.m[12],  //

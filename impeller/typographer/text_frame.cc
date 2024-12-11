@@ -3,10 +3,24 @@
 // found in the LICENSE file.
 
 #include "impeller/typographer/text_frame.h"
+#include "impeller/geometry/scalar.h"
 #include "impeller/typographer/font.h"
 #include "impeller/typographer/font_glyph_pair.h"
 
 namespace impeller {
+
+namespace {
+static bool TextPropertiesEquals(const std::optional<GlyphProperties>& a,
+                                 const std::optional<GlyphProperties>& b) {
+  if (!a.has_value() && !b.has_value()) {
+    return true;
+  }
+  if (a.has_value() && b.has_value()) {
+    return GlyphProperties::Equal{}(a.value(), b.value());
+  }
+  return false;
+}
+}  // namespace
 
 TextFrame::TextFrame() = default;
 
@@ -37,7 +51,7 @@ bool TextFrame::HasColor() const {
 }
 
 // static
-Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
+Scalar TextFrame::RoundScaledFontSize(Scalar scale) {
   // An arbitrarily chosen maximum text scale to ensure that regardless of the
   // CTM, a glyph will fit in the atlas. If we clamp significantly, this may
   // reduce fidelity but is preferable to the alternative of failing to render.
@@ -84,27 +98,59 @@ Point TextFrame::ComputeSubpixelPosition(
   }
 }
 
-void TextFrame::CollectUniqueFontGlyphPairs(
-    FontGlyphMap& glyph_map,
-    Scalar scale,
-    Point offset,
-    const GlyphProperties& properties) const {
-  std::optional<GlyphProperties> lookup =
-      (properties.stroke || HasColor())
-          ? std::optional<GlyphProperties>(properties)
-          : std::nullopt;
-  for (const TextRun& run : GetRuns()) {
-    const Font& font = run.GetFont();
-    auto rounded_scale =
-        RoundScaledFontSize(scale, font.GetMetrics().point_size);
-    auto& set = glyph_map[ScaledFont{font, rounded_scale}];
-    for (const TextRun::GlyphPosition& glyph_position :
-         run.GetGlyphPositions()) {
-      Point subpixel = ComputeSubpixelPosition(
-          glyph_position, font.GetAxisAlignment(), offset, scale);
-      set.emplace(glyph_position.glyph, subpixel, lookup);
-    }
+void TextFrame::SetPerFrameData(Scalar scale,
+                                Point offset,
+                                std::optional<GlyphProperties> properties) {
+  if (!ScalarNearlyEqual(scale_, scale) ||
+      !ScalarNearlyEqual(offset_.x, offset.x) ||
+      !ScalarNearlyEqual(offset_.y, offset.y) ||
+      !TextPropertiesEquals(properties_, properties)) {
+    bound_values_.clear();
   }
+  scale_ = scale;
+  offset_ = offset;
+  properties_ = properties;
+}
+
+Scalar TextFrame::GetScale() const {
+  return scale_;
+}
+
+Point TextFrame::GetOffset() const {
+  return offset_;
+}
+
+std::optional<GlyphProperties> TextFrame::GetProperties() const {
+  return properties_;
+}
+
+void TextFrame::AppendFrameBounds(const FrameBounds& frame_bounds) {
+  bound_values_.push_back(frame_bounds);
+}
+
+void TextFrame::ClearFrameBounds() {
+  bound_values_.clear();
+}
+
+bool TextFrame::IsFrameComplete() const {
+  size_t run_size = 0;
+  for (const auto& x : runs_) {
+    run_size += x.GetGlyphCount();
+  }
+  return bound_values_.size() == run_size;
+}
+
+const FrameBounds& TextFrame::GetFrameBounds(size_t index) const {
+  return bound_values_[index];
+}
+
+std::pair<size_t, intptr_t> TextFrame::GetAtlasGenerationAndID() const {
+  return std::make_pair(generation_, atlas_id_);
+}
+
+void TextFrame::SetAtlasGeneration(size_t value, intptr_t atlas_id) {
+  generation_ = value;
+  atlas_id_ = atlas_id;
 }
 
 }  // namespace impeller

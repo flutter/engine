@@ -23,6 +23,9 @@ analyzer:
     - third_party
     - shell/platform/fuchsia
 
+formatter:
+  page_width: 100
+
 linter:
   rules:
     # This list is derived from the list of all available lints located at
@@ -50,6 +53,7 @@ linter:
     - avoid_init_to_null
     - avoid_js_rounded_ints
     # - avoid_multiple_declarations_per_line # seems to be a stylistic choice we don't subscribe to
+    - avoid_null_checks_in_equality_operators
     # - avoid_positional_boolean_parameters # would have been nice to enable this but by now there's too many places that break it
     - avoid_print
     # - avoid_private_typedef_functions # we prefer having typedef (discussion in https://github.com/flutter/flutter/pull/16356)
@@ -220,7 +224,6 @@ linter:
     - unnecessary_to_list_in_spreads
     - unreachable_from_main
     - unrelated_type_equality_checks
-    - unsafe_html
     - use_build_context_synchronously
     - use_colored_box
     # - use_decorated_box # leads to bugs: DecoratedBox and Container are not equivalent (Container inserts extra padding)

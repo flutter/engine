@@ -25,6 +25,18 @@ TEST(MatrixTest, Multiply) {
                                         11.0, 21.0, 0.0, 1.0)));
 }
 
+TEST(MatrixTest, Equals) {
+  Matrix x;
+  Matrix y = x;
+  EXPECT_TRUE(x.Equals(y));
+}
+
+TEST(MatrixTest, NotEquals) {
+  Matrix x;
+  Matrix y = x.Translate({1, 0, 0});
+  EXPECT_FALSE(x.Equals(y));
+}
+
 TEST(MatrixTest, HasPerspective2D) {
   EXPECT_FALSE(Matrix().HasPerspective2D());
 
@@ -66,6 +78,93 @@ TEST(MatrixTest, HasTranslation) {
   EXPECT_TRUE(Matrix::MakeTranslation({0, 100, 0}).HasTranslation());
   EXPECT_TRUE(Matrix::MakeTranslation({100, 0, 0}).HasTranslation());
   EXPECT_FALSE(Matrix().HasTranslation());
+}
+
+TEST(MatrixTest, IsTranslationOnly) {
+  EXPECT_TRUE(Matrix::MakeTranslation({100, 100, 0}).IsTranslationOnly());
+  EXPECT_TRUE(Matrix::MakeTranslation({100, 100, 0}).IsTranslationScaleOnly());
+  EXPECT_TRUE(Matrix::MakeTranslation({0, 100, 0}).IsTranslationOnly());
+  EXPECT_TRUE(Matrix::MakeTranslation({0, 100, 0}).IsTranslationScaleOnly());
+  EXPECT_TRUE(Matrix::MakeTranslation({100, 0, 0}).IsTranslationOnly());
+  EXPECT_TRUE(Matrix::MakeTranslation({100, 0, 0}).IsTranslationScaleOnly());
+  EXPECT_TRUE(Matrix().IsTranslationOnly());
+  EXPECT_TRUE(Matrix().IsTranslationScaleOnly());
+}
+
+TEST(MatrixTest, IsTranslationScaleOnly) {
+  EXPECT_FALSE(Matrix::MakeScale({100, 100, 1}).IsTranslationOnly());
+  EXPECT_TRUE(Matrix::MakeScale({100, 100, 1}).IsTranslationScaleOnly());
+  EXPECT_FALSE(Matrix::MakeScale({1, 100, 1}).IsTranslationOnly());
+  EXPECT_TRUE(Matrix::MakeScale({1, 100, 1}).IsTranslationScaleOnly());
+  EXPECT_FALSE(Matrix::MakeScale({100, 1, 1}).IsTranslationOnly());
+  EXPECT_TRUE(Matrix::MakeScale({100, 1, 1}).IsTranslationScaleOnly());
+  EXPECT_TRUE(Matrix().IsTranslationOnly());
+  EXPECT_TRUE(Matrix().IsTranslationScaleOnly());
+}
+
+TEST(MatrixTest, IsInvertibleGetDeterminant) {
+  EXPECT_TRUE(Matrix().IsInvertible());
+  EXPECT_NE(Matrix().GetDeterminant(), 0.0f);
+
+  EXPECT_TRUE(Matrix::MakeTranslation({100, 100, 0}).IsInvertible());
+  EXPECT_NE(Matrix::MakeTranslation({100, 100, 0}).GetDeterminant(), 0.0f);
+
+  EXPECT_TRUE(Matrix::MakeScale({100, 100, 1}).IsInvertible());
+  EXPECT_NE(Matrix::MakeScale({100, 100, 1}).GetDeterminant(), 0.0f);
+
+  EXPECT_TRUE(Matrix::MakeRotationX(Degrees(30)).IsInvertible());
+  EXPECT_NE(Matrix::MakeRotationX(Degrees(30)).GetDeterminant(), 0.0f);
+
+  EXPECT_TRUE(Matrix::MakeRotationY(Degrees(30)).IsInvertible());
+  EXPECT_NE(Matrix::MakeRotationY(Degrees(30)).GetDeterminant(), 0.0f);
+
+  EXPECT_TRUE(Matrix::MakeRotationZ(Degrees(30)).IsInvertible());
+  EXPECT_NE(Matrix::MakeRotationZ(Degrees(30)).GetDeterminant(), 0.0f);
+
+  EXPECT_FALSE(Matrix::MakeScale({0, 1, 1}).IsInvertible());
+  EXPECT_EQ(Matrix::MakeScale({0, 1, 1}).GetDeterminant(), 0.0f);
+  EXPECT_FALSE(Matrix::MakeScale({1, 0, 1}).IsInvertible());
+  EXPECT_EQ(Matrix::MakeScale({1, 0, 1}).GetDeterminant(), 0.0f);
+  EXPECT_FALSE(Matrix::MakeScale({1, 1, 0}).IsInvertible());
+  EXPECT_EQ(Matrix::MakeScale({1, 1, 0}).GetDeterminant(), 0.0f);
+}
+
+TEST(MatrixTest, IsFinite) {
+  EXPECT_TRUE(Matrix().IsFinite());
+
+  EXPECT_TRUE(Matrix::MakeTranslation({100, 100, 0}).IsFinite());
+  EXPECT_TRUE(Matrix::MakeScale({100, 100, 1}).IsFinite());
+
+  EXPECT_TRUE(Matrix::MakeRotationX(Degrees(30)).IsFinite());
+  EXPECT_TRUE(Matrix::MakeRotationY(Degrees(30)).IsFinite());
+  EXPECT_TRUE(Matrix::MakeRotationZ(Degrees(30)).IsFinite());
+
+  EXPECT_TRUE(Matrix::MakeScale({0, 1, 1}).IsFinite());
+  EXPECT_TRUE(Matrix::MakeScale({1, 0, 1}).IsFinite());
+  EXPECT_TRUE(Matrix::MakeScale({1, 1, 0}).IsFinite());
+
+  for (int i = 0; i < 16; i++) {
+    {
+      Matrix matrix;
+      ASSERT_TRUE(matrix.IsFinite());
+      matrix.m[i] = std::numeric_limits<Scalar>::infinity();
+      ASSERT_FALSE(matrix.IsFinite());
+    }
+
+    {
+      Matrix matrix;
+      ASSERT_TRUE(matrix.IsFinite());
+      matrix.m[i] = -std::numeric_limits<Scalar>::infinity();
+      ASSERT_FALSE(matrix.IsFinite());
+    }
+
+    {
+      Matrix matrix;
+      ASSERT_TRUE(matrix.IsFinite());
+      matrix.m[i] = -std::numeric_limits<Scalar>::quiet_NaN();
+      ASSERT_FALSE(matrix.IsFinite());
+    }
+  }
 }
 
 TEST(MatrixTest, IsAligned2D) {
@@ -197,6 +296,21 @@ TEST(MatrixTest, TranslateWithPerspective) {
                                                  0.0, 1.0, 0.0, 220.0,  //
                                                  0.0, 0.0, 1.0, 0.0,    //
                                                  0.0, 2.0, 0.0, 430.0)));
+}
+
+TEST(MatrixTest, MakeScaleTranslate) {
+  EXPECT_TRUE(MatrixNear(
+      Matrix::MakeTranslateScale({1, 1, 1.0 / 1024}, {10, 10, 1.0 / 1024}),
+      Matrix::MakeTranslation({10, 10, 1.0 / 1024}) *
+          Matrix::MakeScale({1, 1, 1.0 / 1024})));
+
+  EXPECT_TRUE(MatrixNear(
+      Matrix::MakeTranslateScale({2, 2, 2}, {10, 10, 0}),
+      Matrix::MakeTranslation({10, 10, 0}) * Matrix::MakeScale({2, 2, 2})));
+
+  EXPECT_TRUE(MatrixNear(
+      Matrix::MakeTranslateScale({0, 0, 0}, {0, 0, 0}),
+      Matrix::MakeTranslation({0, 0, 0}) * Matrix::MakeScale({0, 0, 0})));
 }
 
 }  // namespace testing

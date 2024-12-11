@@ -5,39 +5,11 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_CHANNEL_RESPONDER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_CHANNEL_RESPONDER_H_
 
-#include <gdk/gdk.h>
-
-#include "flutter/shell/platform/linux/fl_key_responder.h"
-#include "flutter/shell/platform/linux/fl_keyboard_handler.h"
+#include "flutter/shell/platform/linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
-
-typedef FlValue* (*FlValueConverter)(FlValue*);
-
-/**
- * FlKeyChannelResponderMock:
- *
- * Allows mocking of FlKeyChannelResponder methods and values. Only used in
- * unittests.
- */
-typedef struct _FlKeyChannelResponderMock {
-  /**
-   * FlKeyChannelResponderMock::value_converter:
-   * If #value_converter is not nullptr, then this function is applied to the
-   * reply of the message, whose return value is taken as the message reply.
-   */
-  FlValueConverter value_converter;
-
-  /**
-   * FlKeyChannelResponderMock::channel_name:
-   * Mocks the channel name to send the message.
-   */
-  const char* channel_name;
-} FlKeyChannelResponderMock;
 
 G_BEGIN_DECLS
 
-#define FL_TYPE_KEY_CHANNEL_RESPONDER fl_key_channel_responder_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
                      fl_key_channel_responder,
                      FL,
@@ -56,15 +28,51 @@ G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
 /**
  * fl_key_channel_responder_new:
  * @messenger: the messenger that the message channel should be built on.
- * @mock: options to mock several functionalities. Only used in unittests.
  *
  * Creates a new #FlKeyChannelResponder.
  *
  * Returns: a new #FlKeyChannelResponder.
  */
 FlKeyChannelResponder* fl_key_channel_responder_new(
-    FlBinaryMessenger* messenger,
-    FlKeyChannelResponderMock* mock = nullptr);
+    FlBinaryMessenger* messenger);
+
+/**
+ * fl_key_channel_responder_handle_event:
+ * @responder: the #FlKeyChannelResponder self.
+ * @event: the event to be handled. Must not be null. The object is managed by
+ * callee and must not be assumed available after this function.
+ * @specified_logical_key:
+ * @cancellable: (allow-none): a #GCancellable or %NULL.
+ * @callback: (scope async): a #GAsyncReadyCallback to call when the event has
+ * been processed.
+ * @user_data: (closure): user data to pass to @callback.
+ *
+ * Let the responder handle an event.
+ */
+void fl_key_channel_responder_handle_event(FlKeyChannelResponder* responder,
+                                           FlKeyEvent* event,
+                                           uint64_t specified_logical_key,
+                                           GCancellable* cancellable,
+                                           GAsyncReadyCallback callback,
+                                           gpointer user_data);
+
+/**
+ * fl_key_channel_responder_handle_event_finish:
+ * @responder: an #FlKeyChannelResponder.
+ * @result: a #GAsyncResult.
+ * @handled: location to write if this event was handled by the platform.
+ * @error: (allow-none): #GError location to store the error occurring, or %NULL
+ * to ignore.
+ *
+ * Completes request started with fl_key_channel_responder_handle_event().
+ *
+ * Returns %TRUE on success.
+ */
+gboolean fl_key_channel_responder_handle_event_finish(
+    FlKeyChannelResponder* responder,
+    GAsyncResult* result,
+    gboolean* handled,
+    GError** error);
 
 G_END_DECLS
 

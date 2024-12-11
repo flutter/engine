@@ -5,6 +5,7 @@
 #ifndef FLUTTER_DISPLAY_LIST_DL_CANVAS_H_
 #define FLUTTER_DISPLAY_LIST_DL_CANVAS_H_
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/display_list/dl_vertices.h"
@@ -60,9 +61,10 @@ class DlCanvas {
   virtual SkImageInfo GetImageInfo() const = 0;
 
   virtual void Save() = 0;
-  virtual void SaveLayer(std::optional<const DlRect>& bounds,
+  virtual void SaveLayer(const std::optional<DlRect>& bounds,
                          const DlPaint* paint = nullptr,
-                         const DlImageFilter* backdrop = nullptr) = 0;
+                         const DlImageFilter* backdrop = nullptr,
+                         std::optional<int64_t> backdrop_id = std::nullopt) = 0;
   virtual void Restore() = 0;
   virtual int GetSaveCount() const = 0;
   virtual void RestoreToCount(int restore_count) = 0;
@@ -96,9 +98,9 @@ class DlCanvas {
   virtual void ClipOval(const DlRect& bounds,
                         ClipOp clip_op = ClipOp::kIntersect,
                         bool is_aa = false) = 0;
-  virtual void ClipRRect(const SkRRect& rrect,
-                         ClipOp clip_op = ClipOp::kIntersect,
-                         bool is_aa = false) = 0;
+  virtual void ClipRoundRect(const DlRoundRect& rrect,
+                             ClipOp clip_op = ClipOp::kIntersect,
+                             bool is_aa = false) = 0;
   virtual void ClipPath(const DlPath& path,
                         ClipOp clip_op = ClipOp::kIntersect,
                         bool is_aa = false) = 0;
@@ -134,10 +136,11 @@ class DlCanvas {
   virtual void DrawCircle(const DlPoint& center,
                           DlScalar radius,
                           const DlPaint& paint) = 0;
-  virtual void DrawRRect(const SkRRect& rrect, const DlPaint& paint) = 0;
-  virtual void DrawDRRect(const SkRRect& outer,
-                          const SkRRect& inner,
-                          const DlPaint& paint) = 0;
+  virtual void DrawRoundRect(const DlRoundRect& rrect,
+                             const DlPaint& paint) = 0;
+  virtual void DrawDiffRoundRect(const DlRoundRect& outer,
+                                 const DlRoundRect& inner,
+                                 const DlPaint& paint) = 0;
   virtual void DrawPath(const DlPath& path, const DlPaint& paint) = 0;
   virtual void DrawArc(const DlRect& bounds,
                        DlScalar start,
@@ -233,9 +236,9 @@ class DlCanvas {
 
   void SaveLayer(const SkRect* bounds,
                  const DlPaint* paint = nullptr,
-                 const DlImageFilter* backdrop = nullptr) {
-    auto optional_bounds = ToOptDlRect(bounds);
-    SaveLayer(optional_bounds, paint, backdrop);
+                 const DlImageFilter* backdrop = nullptr,
+                 std::optional<int64_t> backdrop_id = std::nullopt) {
+    SaveLayer(ToOptDlRect(bounds), paint, backdrop, backdrop_id);
   }
 
   void Transform(const SkMatrix* matrix) {
@@ -279,11 +282,15 @@ class DlCanvas {
                 bool is_aa = false) {
     ClipRect(ToDlRect(rect), clip_op, is_aa);
   }
-
   void ClipOval(const SkRect& bounds,
                 ClipOp clip_op = ClipOp::kIntersect,
                 bool is_aa = false) {
     ClipOval(ToDlRect(bounds), clip_op, is_aa);
+  }
+  void ClipRRect(const SkRRect& rrect,
+                 ClipOp clip_op = ClipOp::kIntersect,
+                 bool is_aa = false) {
+    ClipRoundRect(ToDlRoundRect(rrect), clip_op, is_aa);
   }
   void ClipPath(const SkPath& path,
                 ClipOp clip_op = ClipOp::kIntersect,
@@ -312,6 +319,14 @@ class DlCanvas {
                   DlScalar radius,
                   const DlPaint& paint) {
     DrawCircle(ToDlPoint(center), radius, paint);
+  }
+  void DrawRRect(const SkRRect& rrect, const DlPaint& paint) {
+    DrawRoundRect(ToDlRoundRect(rrect), paint);
+  }
+  void DrawDRRect(const SkRRect& outer,
+                  const SkRRect& inner,
+                  const DlPaint& paint) {
+    DrawDiffRoundRect(ToDlRoundRect(outer), ToDlRoundRect(inner), paint);
   }
   void DrawPath(const SkPath& path, const DlPaint& paint) {
     DrawPath(DlPath(path), paint);

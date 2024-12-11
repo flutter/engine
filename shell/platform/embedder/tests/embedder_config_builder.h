@@ -11,8 +11,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_software.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 struct UniqueEngineTraits {
   static FlutterEngine InvalidValue() { return nullptr; }
@@ -44,31 +43,6 @@ class EmbedderConfigBuilder {
   ~EmbedderConfigBuilder();
 
   FlutterProjectArgs& GetProjectArgs();
-
-  void SetRendererConfig(EmbedderTestContextType type, SkISize surface_size);
-
-  void SetSoftwareRendererConfig(SkISize surface_size = SkISize::Make(1, 1));
-
-  void SetOpenGLRendererConfig(SkISize surface_size);
-
-  void SetMetalRendererConfig(SkISize surface_size);
-
-  void SetVulkanRendererConfig(
-      SkISize surface_size,
-      std::optional<FlutterVulkanInstanceProcAddressCallback>
-          instance_proc_address_callback = {});
-
-  // Used to explicitly set an `open_gl.fbo_callback`. Using this method will
-  // cause your test to fail since the ctor for this class sets
-  // `open_gl.fbo_callback_with_frame_info`. This method exists as a utility to
-  // explicitly test this behavior.
-  void SetOpenGLFBOCallBack();
-
-  // Used to explicitly set an `open_gl.present`. Using this method will cause
-  // your test to fail since the ctor for this class sets
-  // `open_gl.present_with_info`. This method exists as a utility to explicitly
-  // test this behavior.
-  void SetOpenGLPresentCallBack();
 
   void SetAssetsPath();
 
@@ -110,7 +84,7 @@ class EmbedderConfigBuilder {
 
   FlutterCompositor& GetCompositor();
 
-  FlutterRendererConfig& GetRendererConfig();
+  void SetSurface(SkISize surface_size) { context_.SetSurface(surface_size); }
 
   void SetRenderTargetType(
       EmbedderTestBackingStoreProducer::RenderTargetType type,
@@ -128,19 +102,6 @@ class EmbedderConfigBuilder {
  private:
   EmbedderTestContext& context_;
   FlutterProjectArgs project_args_ = {};
-  FlutterRendererConfig renderer_config_ = {};
-  FlutterSoftwareRendererConfig software_renderer_config_ = {};
-#ifdef SHELL_ENABLE_GL
-  FlutterOpenGLRendererConfig opengl_renderer_config_ = {};
-#endif
-#ifdef SHELL_ENABLE_VULKAN
-  void InitializeVulkanRendererConfig();
-  FlutterVulkanRendererConfig vulkan_renderer_config_ = {};
-#endif
-#ifdef SHELL_ENABLE_METAL
-  void InitializeMetalRendererConfig();
-  FlutterMetalRendererConfig metal_renderer_config_ = {};
-#endif
   std::string dart_entrypoint_;
   FlutterCustomTaskRunners custom_task_runners_ = {};
   FlutterCompositor compositor_ = {};
@@ -153,7 +114,6 @@ class EmbedderConfigBuilder {
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderConfigBuilder);
 };
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 #endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONFIG_BUILDER_H_

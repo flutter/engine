@@ -63,6 +63,7 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.editing.ScribePlugin;
 import io.flutter.plugin.editing.SpellCheckPlugin;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -133,6 +134,7 @@ public class FlutterView extends FrameLayout
   @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
   @Nullable private SpellCheckPlugin spellCheckPlugin;
+  @Nullable private ScribePlugin scribePlugin;
   @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private KeyboardManager keyboardManager;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
@@ -194,13 +196,7 @@ public class FlutterView extends FrameLayout
         }
       };
 
-  private final Consumer<WindowLayoutInfo> windowInfoListener =
-      new Consumer<WindowLayoutInfo>() {
-        @Override
-        public void accept(WindowLayoutInfo layoutInfo) {
-          setWindowInfoListenerDisplayFeatures(layoutInfo);
-        }
-      };
+  private Consumer<WindowLayoutInfo> windowInfoListener;
 
   /**
    * Constructs a {@code FlutterView} programmatically, without any XML attributes.
@@ -512,6 +508,10 @@ public class FlutterView extends FrameLayout
     this.windowInfoRepo = createWindowInfoRepo();
     Activity activity = ViewUtils.getActivity(getContext());
     if (windowInfoRepo != null && activity != null) {
+      // Creating windowInfoListener on-demand instead of at initialization is necessary in order to
+      // prevent it from capturing the wrong instance of `this` when spying for testing.
+      // See https://github.com/mockito/mockito/issues/3479
+      windowInfoListener = this::setWindowInfoListenerDisplayFeatures;
       windowInfoRepo.addWindowLayoutInfoListener(
           activity, ContextCompat.getMainExecutor(getContext()), windowInfoListener);
     }
@@ -524,9 +524,10 @@ public class FlutterView extends FrameLayout
    */
   @Override
   protected void onDetachedFromWindow() {
-    if (windowInfoRepo != null) {
+    if (windowInfoRepo != null && windowInfoListener != null) {
       windowInfoRepo.removeWindowLayoutInfoListener(windowInfoListener);
     }
+    windowInfoListener = null;
     this.windowInfoRepo = null;
     super.onDetachedFromWindow();
   }
@@ -537,12 +538,12 @@ public class FlutterView extends FrameLayout
    */
   @TargetApi(API_LEVELS.API_28)
   protected void setWindowInfoListenerDisplayFeatures(WindowLayoutInfo layoutInfo) {
-    List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
-    List<FlutterRenderer.DisplayFeature> result = new ArrayList<>();
+    List<DisplayFeature> newDisplayFeatures = layoutInfo.getDisplayFeatures();
+    List<FlutterRenderer.DisplayFeature> flutterDisplayFeatures = new ArrayList<>();
 
     // Data from WindowInfoTracker display features. Fold and hinge areas are
     // populated here.
-    for (DisplayFeature displayFeature : displayFeatures) {
+    for (DisplayFeature displayFeature : newDisplayFeatures) {
       Log.v(
           TAG,
           "WindowInfoTracker Display Feature reported with bounds = "
@@ -565,31 +566,17 @@ public class FlutterView extends FrameLayout
         } else {
           state = DisplayFeatureState.UNKNOWN;
         }
-        result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
+        flutterDisplayFeatures.add(
+            new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {
-        result.add(
+        flutterDisplayFeatures.add(
             new FlutterRenderer.DisplayFeature(
                 displayFeature.getBounds(),
                 DisplayFeatureType.UNKNOWN,
                 DisplayFeatureState.UNKNOWN));
       }
     }
-
-    // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
-    // populated here. DisplayCutout was introduced in API 28.
-    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
-      WindowInsets insets = getRootWindowInsets();
-      if (insets != null) {
-        DisplayCutout cutout = insets.getDisplayCutout();
-        if (cutout != null) {
-          for (Rect bounds : cutout.getBoundingRects()) {
-            Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
-            result.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT));
-          }
-        }
-      }
-    }
-    viewportMetrics.displayFeatures = result;
+    viewportMetrics.setDisplayFeatures(flutterDisplayFeatures);
     sendViewportMetricsToFlutter();
   }
 
@@ -781,6 +768,22 @@ public class FlutterView extends FrameLayout
       viewportMetrics.viewInsetBottom = guessBottomKeyboardInset(insets);
       viewportMetrics.viewInsetLeft = 0;
     }
+
+    // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
+    // populated here. DisplayCutout was introduced in API 28.
+    List<FlutterRenderer.DisplayFeature> displayCutouts = new ArrayList<>();
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
+      DisplayCutout cutout = insets.getDisplayCutout();
+      if (cutout != null) {
+        for (Rect bounds : cutout.getBoundingRects()) {
+          Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
+          displayCutouts.add(
+              new FlutterRenderer.DisplayFeature(
+                  bounds, DisplayFeatureType.CUTOUT, DisplayFeatureState.UNKNOWN));
+        }
+      }
+    }
+    viewportMetrics.setDisplayCutouts(displayCutouts);
 
     // The caption bar inset is a new addition, and the APIs called to query it utilize a list of
     // bounding Rects instead of an Insets object, which is a newer API method, as compared to the
@@ -1120,10 +1123,12 @@ public class FlutterView extends FrameLayout
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_24) {
       mouseCursorPlugin = new MouseCursorPlugin(this, this.flutterEngine.getMouseCursorChannel());
     }
+
     textInputPlugin =
         new TextInputPlugin(
             this,
             this.flutterEngine.getTextInputChannel(),
+            this.flutterEngine.getScribeChannel(),
             this.flutterEngine.getPlatformViewsController());
 
     try {
@@ -1135,6 +1140,10 @@ public class FlutterView extends FrameLayout
     } catch (Exception e) {
       Log.e(TAG, "TextServicesManager not supported by device, spell check disabled.");
     }
+
+    scribePlugin =
+        new ScribePlugin(
+            this, textInputPlugin.getInputMethodManager(), this.flutterEngine.getScribeChannel());
 
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
 

@@ -12,6 +12,7 @@
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/effects/dl_image_filters.h"
 #include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
@@ -108,7 +109,7 @@ class DisplayListTestBase : public BaseT {
 
   static void check_defaults(
       DisplayListBuilder& builder,
-      const SkRect& cull_rect = DisplayListBuilder::kMaxCullRect) {
+      const DlRect& cull_rect = DisplayListBuilder::kMaxCullRect) {
     DlPaint builder_paint = DisplayListBuilderTestingAttributes(builder);
     DlPaint defaults;
 
@@ -131,8 +132,8 @@ class DisplayListTestBase : public BaseT {
     EXPECT_EQ(builder.GetTransform(), SkMatrix());
     EXPECT_EQ(builder.GetTransformFullPerspective(), SkM44());
 
-    EXPECT_EQ(builder.GetLocalClipBounds(), cull_rect);
-    EXPECT_EQ(builder.GetDestinationClipBounds(), cull_rect);
+    EXPECT_EQ(builder.GetLocalClipCoverage(), cull_rect);
+    EXPECT_EQ(builder.GetDestinationClipCoverage(), cull_rect);
 
     EXPECT_EQ(builder.GetSaveCount(), 1);
   }
@@ -253,6 +254,25 @@ TEST_F(DisplayListTest, EmptyRebuild) {
   ASSERT_TRUE(dl2->Equals(dl3));
 }
 
+TEST_F(DisplayListTest, NopReusedBuildIsReallyEmpty) {
+  DisplayListBuilder builder;
+  builder.DrawRect(DlRect::MakeLTRB(0.0f, 0.0f, 10.0f, 10.0f), DlPaint());
+
+  {
+    auto dl1 = builder.Build();
+    EXPECT_EQ(dl1->op_count(), 1u);
+    EXPECT_GT(dl1->bytes(), sizeof(DisplayList));
+    EXPECT_EQ(dl1->GetBounds(), DlRect::MakeLTRB(0.0f, 0.0f, 10.0f, 10.0f));
+  }
+
+  {
+    auto dl2 = builder.Build();
+    EXPECT_EQ(dl2->op_count(), 0u);
+    EXPECT_EQ(dl2->bytes(), sizeof(DisplayList));
+    EXPECT_EQ(dl2->GetBounds(), DlRect());
+  }
+}
+
 TEST_F(DisplayListTest, GeneralReceiverInitialValues) {
   DisplayListGeneralReceiver receiver;
 
@@ -327,7 +347,7 @@ TEST_F(DisplayListTest, BuilderCanBeReused) {
 }
 
 TEST_F(DisplayListTest, SaveRestoreRestoresTransform) {
-  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DlRect cull_rect = DlRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
   DisplayListBuilder builder(cull_rect);
 
   builder.Save();
@@ -376,7 +396,7 @@ TEST_F(DisplayListTest, SaveRestoreRestoresTransform) {
 }
 
 TEST_F(DisplayListTest, BuildRestoresTransform) {
-  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DlRect cull_rect = DlRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
   DisplayListBuilder builder(cull_rect);
 
   builder.Translate(10.0f, 10.0f);
@@ -417,7 +437,7 @@ TEST_F(DisplayListTest, BuildRestoresTransform) {
 }
 
 TEST_F(DisplayListTest, SaveRestoreRestoresClip) {
-  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DlRect cull_rect = DlRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
   DisplayListBuilder builder(cull_rect);
 
   builder.Save();
@@ -437,7 +457,7 @@ TEST_F(DisplayListTest, SaveRestoreRestoresClip) {
 }
 
 TEST_F(DisplayListTest, BuildRestoresClip) {
-  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DlRect cull_rect = DlRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
   DisplayListBuilder builder(cull_rect);
 
   builder.ClipRect(SkRect{0.0f, 0.0f, 10.0f, 10.0f});
@@ -454,7 +474,7 @@ TEST_F(DisplayListTest, BuildRestoresClip) {
 }
 
 TEST_F(DisplayListTest, BuildRestoresAttributes) {
-  SkRect cull_rect = SkRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
+  DlRect cull_rect = DlRect::MakeLTRB(-10.0f, -10.0f, 500.0f, 500.0f);
   DisplayListBuilder builder(cull_rect);
   DlOpReceiver& receiver = ToReceiver(builder);
 
@@ -494,11 +514,11 @@ TEST_F(DisplayListTest, BuildRestoresAttributes) {
   builder.Build();
   check_defaults(builder, cull_rect);
 
-  receiver.setColorSource(&kTestSource1);
+  receiver.setColorSource(kTestSource1.get());
   builder.Build();
   check_defaults(builder, cull_rect);
 
-  receiver.setColorFilter(&kTestMatrixColorFilter1);
+  receiver.setColorFilter(kTestMatrixColorFilter1.get());
   builder.Build();
   check_defaults(builder, cull_rect);
 
@@ -576,7 +596,7 @@ TEST_F(DisplayListTest, UnclippedSaveLayerContentAccountsForFilter) {
   SkRect cull_rect = SkRect::MakeLTRB(0.0f, 0.0f, 300.0f, 300.0f);
   SkRect clip_rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   SkRect draw_rect = SkRect::MakeLTRB(50.0f, 140.0f, 101.0f, 160.0f);
-  auto filter = DlBlurImageFilter::Make(10.0f, 10.0f, DlTileMode::kDecal);
+  auto filter = DlImageFilter::MakeBlur(10.0f, 10.0f, DlTileMode::kDecal);
   DlPaint layer_paint = DlPaint().setImageFilter(filter);
 
   ASSERT_TRUE(clip_rect.intersects(draw_rect));
@@ -609,7 +629,7 @@ TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
   SkRect cull_rect = SkRect::MakeLTRB(0.0f, 0.0f, 300.0f, 300.0f);
   SkRect clip_rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   SkRect draw_rect = SkRect::MakeLTRB(50.0f, 140.0f, 99.0f, 160.0f);
-  auto filter = DlBlurImageFilter::Make(10.0f, 10.0f, DlTileMode::kDecal);
+  auto filter = DlImageFilter::MakeBlur(10.0f, 10.0f, DlTileMode::kDecal);
   DlPaint layer_paint = DlPaint().setImageFilter(filter);
 
   ASSERT_FALSE(clip_rect.intersects(draw_rect));
@@ -639,22 +659,22 @@ TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
 }
 
 TEST_F(DisplayListTest, OOBSaveLayerContentCulledWithBlurFilter) {
-  SkRect cull_rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
-  SkRect draw_rect = SkRect::MakeLTRB(25.0f, 25.0f, 99.0f, 75.0f);
-  auto filter = DlBlurImageFilter::Make(10.0f, 10.0f, DlTileMode::kDecal);
+  DlRect cull_rect = DlRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  DlRect draw_rect = DlRect::MakeLTRB(25.0f, 25.0f, 99.0f, 75.0f);
+  auto filter = DlImageFilter::MakeBlur(10.0f, 10.0f, DlTileMode::kDecal);
   DlPaint layer_paint = DlPaint().setImageFilter(filter);
 
   // We want a draw rect that is outside the layer bounds even though its
   // filtered output might be inside. The drawn rect should be culled by
   // the expectations of the layer bounds even though it is close enough
   // to be visible due to filtering.
-  ASSERT_FALSE(cull_rect.intersects(draw_rect));
-  SkRect mapped_rect;
+  ASSERT_FALSE(cull_rect.IntersectsWithRect(draw_rect));
+  DlRect mapped_rect;
   ASSERT_TRUE(filter->map_local_bounds(draw_rect, mapped_rect));
-  ASSERT_TRUE(mapped_rect.intersects(cull_rect));
+  ASSERT_TRUE(mapped_rect.IntersectsWithRect(cull_rect));
 
   DisplayListBuilder builder;
-  builder.SaveLayer(&cull_rect, &layer_paint);
+  builder.SaveLayer(cull_rect, &layer_paint);
   {  //
     builder.DrawRect(draw_rect, DlPaint());
   }
@@ -668,23 +688,23 @@ TEST_F(DisplayListTest, OOBSaveLayerContentCulledWithBlurFilter) {
 }
 
 TEST_F(DisplayListTest, OOBSaveLayerContentCulledWithMatrixFilter) {
-  SkRect cull_rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
-  SkRect draw_rect = SkRect::MakeLTRB(25.0f, 125.0f, 75.0f, 175.0f);
-  auto filter = DlMatrixImageFilter::Make(SkMatrix::Translate(100.0f, 0.0f),
-                                          DlImageSampling::kLinear);
+  DlRect cull_rect = DlRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  DlRect draw_rect = DlRect::MakeLTRB(25.0f, 125.0f, 75.0f, 175.0f);
+  auto filter = DlImageFilter::MakeMatrix(
+      DlMatrix::MakeTranslation({100.0f, 0.0f}), DlImageSampling::kLinear);
   DlPaint layer_paint = DlPaint().setImageFilter(filter);
 
   // We want a draw rect that is outside the layer bounds even though its
   // filtered output might be inside. The drawn rect should be culled by
   // the expectations of the layer bounds even though it is close enough
   // to be visible due to filtering.
-  ASSERT_FALSE(cull_rect.intersects(draw_rect));
-  SkRect mapped_rect;
+  ASSERT_FALSE(cull_rect.IntersectsWithRect(draw_rect));
+  DlRect mapped_rect;
   ASSERT_TRUE(filter->map_local_bounds(draw_rect, mapped_rect));
-  ASSERT_TRUE(mapped_rect.intersects(cull_rect));
+  ASSERT_TRUE(mapped_rect.IntersectsWithRect(cull_rect));
 
   DisplayListBuilder builder;
-  builder.SaveLayer(&cull_rect, &layer_paint);
+  builder.SaveLayer(cull_rect, &layer_paint);
   {  //
     builder.DrawRect(draw_rect, DlPaint());
   }
@@ -920,7 +940,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     0, 0, 0, 1, 0,
   };
   // clang-format on
-  DlMatrixColorFilter base_color_filter(color_matrix);
+  auto base_color_filter = DlColorFilter::MakeMatrix(color_matrix);
   // clang-format off
   const float alpha_matrix[] = {
     0, 0, 0, 0, 0,
@@ -929,7 +949,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     0, 0, 0, 0, 1,
   };
   // clang-format on
-  DlMatrixColorFilter alpha_color_filter(alpha_matrix);
+  auto alpha_color_filter = DlColorFilter::MakeMatrix(alpha_matrix);
   sk_sp<SkColorFilter> sk_alpha_color_filter =
       SkColorFilters::Matrix(alpha_matrix);
 
@@ -947,7 +967,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Now checking that a normal color filter still produces rect bounds
     DisplayListBuilder builder(build_bounds);
     DlPaint save_paint;
-    save_paint.setColorFilter(&base_color_filter);
+    save_paint.setColorFilter(base_color_filter);
     builder.SaveLayer(&save_bounds, &save_paint);
     builder.DrawRect(rect, DlPaint());
     builder.Restore();
@@ -979,7 +999,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // save layer that modifies an unbounded region
     DisplayListBuilder builder(build_bounds);
     DlPaint save_paint;
-    save_paint.setColorFilter(&alpha_color_filter);
+    save_paint.setColorFilter(alpha_color_filter);
     builder.SaveLayer(&save_bounds, &save_paint);
     builder.DrawRect(rect, DlPaint());
     builder.Restore();
@@ -992,7 +1012,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // to the behavior in the previous example
     DisplayListBuilder builder(build_bounds);
     DlPaint save_paint;
-    save_paint.setColorFilter(&alpha_color_filter);
+    save_paint.setColorFilter(alpha_color_filter);
     builder.SaveLayer(nullptr, &save_paint);
     builder.DrawRect(rect, DlPaint());
     builder.Restore();
@@ -1347,7 +1367,7 @@ TEST_F(DisplayListTest, SaveLayerFalseWithSrcBlendSupportsGroupOpacity) {
   DisplayListBuilder builder;
   // This empty draw rect will not actually be inserted into the stream,
   // but the Src blend mode will be synchronized as an attribute. The
-  // saveLayer following it should not use that attribute to base its
+  // SaveLayer following it should not use that attribute to base its
   // decisions about group opacity and the draw rect after that comes
   // with its own compatible blend mode.
   builder.DrawRect(SkRect{0, 0, 0, 0},
@@ -1396,7 +1416,7 @@ TEST_F(DisplayListTest, SaveLayerBoundsSnapshotsImageFilter) {
   DlPaint save_paint;
   builder.SaveLayer(nullptr, &save_paint);
   builder.DrawRect(SkRect{50, 50, 100, 100}, DlPaint());
-  // This image filter should be ignored since it was not set before saveLayer
+  // This image filter should be ignored since it was not set before SaveLayer
   // And the rect drawn with it will not contribute any more area to the bounds
   DlPaint draw_paint;
   draw_paint.setImageFilter(&kTestBlurImageFilter1);
@@ -1483,7 +1503,8 @@ class SaveLayerExpector : public virtual DlOpReceiver,
 
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     FML_UNREACHABLE();
   }
 
@@ -1491,7 +1512,8 @@ class SaveLayerExpector : public virtual DlOpReceiver,
                          const SaveLayerOptions& options,
                          uint32_t total_content_depth,
                          DlBlendMode max_content_blend_mode,
-                         const DlImageFilter* backdrop = nullptr) {
+                         const DlImageFilter* backdrop = nullptr,
+                         std::optional<int64_t> backdrop_id = std::nullopt) {
     ASSERT_LT(save_layer_count_, expected_.size()) << label();
     auto expect = expected_[save_layer_count_];
     if (expect.options.has_value()) {
@@ -1646,7 +1668,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
   DisplayListBuilder builder;
   DlPaint save_paint;
   save_paint.setColor(DlColor(SkColorSetARGB(127, 255, 255, 255)));
-  save_paint.setColorFilter(&kTestMatrixColorFilter1);
+  save_paint.setColorFilter(kTestMatrixColorFilter1);
   builder.SaveLayer(nullptr, &save_paint);
   builder.DrawRect(SkRect{10, 10, 20, 20}, DlPaint());
   builder.Restore();
@@ -1698,7 +1720,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
   save_paint.setColor(DlColor(SkColorSetARGB(127, 255, 255, 255)));
   builder.SaveLayer(nullptr, &save_paint);
   DlPaint draw_paint = save_paint;
-  draw_paint.setColorFilter(&kTestMatrixColorFilter1);
+  draw_paint.setColorFilter(kTestMatrixColorFilter1);
   builder.DrawRect(SkRect{10, 10, 20, 20}, draw_paint);
   builder.Restore();
 
@@ -2488,7 +2510,7 @@ TEST_F(DisplayListTest, RTreeOfSaveLayerFilterScene) {
   builder.DrawRect(SkRect{10, 10, 20, 20}, default_paint);
   builder.SaveLayer(nullptr, &filter_paint);
   // the following rectangle will be expanded to 50,50,60,60
-  // by the saveLayer filter during the restore operation
+  // by the SaveLayer filter during the restore operation
   builder.DrawRect(SkRect{53, 53, 57, 57}, default_paint);
   builder.Restore();
   auto display_list = builder.Build();
@@ -2649,7 +2671,7 @@ TEST_F(DisplayListTest, RemoveUnnecessarySaveRestorePairsInSetPaint) {
       0, 0, 0, 0, 1,
   };
   // clang-format on
-  DlMatrixColorFilter alpha_color_filter(alpha_matrix);
+  auto alpha_color_filter = DlColorFilter::MakeMatrix(alpha_matrix);
   // Making sure hiding a problematic ColorFilter as an ImageFilter
   // will generate the same behavior as setting it as a ColorFilter
 
@@ -2945,7 +2967,7 @@ TEST_F(DisplayListTest, ClipRRectTriggersDeferredSave) {
   {
     builder1.Save();
     {
-      builder1.ClipRRect(kTestRRect, ClipOp::kIntersect, true);
+      builder1.ClipRRect(kTestSkRRect, ClipOp::kIntersect, true);
 
       builder1.DrawRect(SkRect{0, 0, 100, 100}, DlPaint());
     }
@@ -2961,7 +2983,7 @@ TEST_F(DisplayListTest, ClipRRectTriggersDeferredSave) {
 
   DisplayListBuilder builder2;
   builder2.Save();
-  builder2.ClipRRect(kTestRRect, ClipOp::kIntersect, true);
+  builder2.ClipRRect(kTestSkRRect, ClipOp::kIntersect, true);
 
   builder2.DrawRect(SkRect{0, 0, 100, 100}, DlPaint());
   builder2.Restore();
@@ -3250,7 +3272,7 @@ TEST_F(DisplayListTest, RTreeOfClippedSaveLayerFilterScene) {
   builder.ClipRect(SkRect{50, 50, 60, 60}, ClipOp::kIntersect, false);
   builder.SaveLayer(nullptr, &filter_paint);
   // the following rectangle will be expanded to 23,23,87,87
-  // by the saveLayer filter during the restore operation
+  // by the SaveLayer filter during the restore operation
   // but it will then be clipped to 50,50,60,60
   builder.DrawRect(SkRect{53, 53, 57, 57}, default_paint);
   builder.Restore();
@@ -3666,7 +3688,8 @@ class SaveLayerBoundsExpector : public virtual DlOpReceiver,
 
   void saveLayer(const DlRect& bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     ASSERT_LT(save_layer_count_, expected_.size());
     auto expected = expected_[save_layer_count_];
     EXPECT_EQ(options.bounds_from_caller(),
@@ -3739,7 +3762,7 @@ TEST_F(DisplayListTest, SaveLayerBoundsComputationOfMaskBlurredRect) {
 TEST_F(DisplayListTest, SaveLayerBoundsComputationOfImageBlurredRect) {
   SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   DlPaint draw_paint;
-  auto image_filter = DlBlurImageFilter::Make(2.0f, 3.0f, DlTileMode::kDecal);
+  auto image_filter = DlImageFilter::MakeBlur(2.0f, 3.0f, DlTileMode::kDecal);
   draw_paint.setImageFilter(image_filter);
 
   DisplayListBuilder builder;
@@ -3839,7 +3862,7 @@ TEST_F(DisplayListTest, TransformResetSaveLayerBoundsComputationOfSimpleRect) {
   builder.SaveLayer(nullptr, nullptr);
   builder.TransformReset();
   builder.Scale(20.0f, 20.0f);
-  // Net local transform for saveLayer is Scale(2, 2)
+  // Net local transform for SaveLayer is Scale(2, 2)
   {  //
     builder.DrawRect(rect, DlPaint());
   }
@@ -3934,7 +3957,7 @@ TEST_F(DisplayListTest, FloodingSaveLayerBoundsComputationOfSimpleRect) {
   SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   DlPaint save_paint;
   auto color_filter =
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrc);
   ASSERT_TRUE(color_filter->modifies_transparent_black());
   save_paint.setColorFilter(color_filter);
   SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
@@ -3960,7 +3983,7 @@ TEST_F(DisplayListTest, NestedFloodingSaveLayerBoundsComputationOfSimpleRect) {
   SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   DlPaint save_paint;
   auto color_filter =
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrc);
   ASSERT_TRUE(color_filter->modifies_transparent_black());
   save_paint.setColorFilter(color_filter);
   SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
@@ -3993,9 +4016,9 @@ TEST_F(DisplayListTest, SaveLayerBoundsComputationOfFloodingImageFilter) {
   SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   DlPaint draw_paint;
   auto color_filter =
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrc);
   ASSERT_TRUE(color_filter->modifies_transparent_black());
-  auto image_filter = DlColorFilterImageFilter::Make(color_filter);
+  auto image_filter = DlImageFilter::MakeColorFilter(color_filter);
   draw_paint.setImageFilter(image_filter);
   SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
   ASSERT_NE(clip_rect, rect);
@@ -4020,7 +4043,7 @@ TEST_F(DisplayListTest, SaveLayerBoundsComputationOfFloodingColorFilter) {
   SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
   DlPaint draw_paint;
   auto color_filter =
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrc);
   ASSERT_TRUE(color_filter->modifies_transparent_black());
   draw_paint.setColorFilter(color_filter);
   SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
@@ -4131,7 +4154,8 @@ class DepthExpector : public virtual DlOpReceiver,
 
   void saveLayer(const DlRect& bounds,
                  SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     // This method should not be called since we override the variant with
     // the total_content_depth parameter.
     FAIL() << "saveLayer(no depth parameter) method should not be called";
@@ -4141,7 +4165,8 @@ class DepthExpector : public virtual DlOpReceiver,
                  const SaveLayerOptions& options,
                  uint32_t total_content_depth,
                  DlBlendMode max_content_mode,
-                 const DlImageFilter* backdrop) override {
+                 const DlImageFilter* backdrop,
+                 std::optional<int64_t> backdrop_id) override {
     ASSERT_LT(index_, depth_expectations_.size());
     EXPECT_EQ(depth_expectations_[index_], total_content_depth)
         << "at index " << index_;
@@ -4208,8 +4233,8 @@ TEST_F(DisplayListTest, FloodingFilteredLayerPushesRestoreOpIndex) {
     0.5f, 0.0f, 0.0f, 0.0f, 0.5f
   };
   // clang-format on
-  auto color_filter = DlMatrixColorFilter::Make(matrix);
-  save_paint.setImageFilter(DlColorFilterImageFilter::Make(color_filter));
+  auto color_filter = DlColorFilter::MakeMatrix(matrix);
+  save_paint.setImageFilter(DlImageFilter::MakeColorFilter(color_filter));
   builder.SaveLayer(nullptr, &save_paint);
   int save_layer_id = DisplayListBuilderTestingLastOpIndex(builder);
 
@@ -4233,8 +4258,9 @@ TEST_F(DisplayListTest, TransformingFilterSaveLayerSimpleContentBounds) {
   builder.ClipRect(SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f));
 
   DlPaint save_paint;
-  auto image_filter = DlMatrixImageFilter::Make(
-      SkMatrix::Translate(100.0f, 100.0f), DlImageSampling::kNearestNeighbor);
+  auto image_filter =
+      DlImageFilter::MakeMatrix(DlMatrix::MakeTranslation({100.0f, 100.0f}),
+                                DlImageSampling::kNearestNeighbor);
   save_paint.setImageFilter(image_filter);
   builder.SaveLayer(nullptr, &save_paint);
 
@@ -4251,8 +4277,9 @@ TEST_F(DisplayListTest, TransformingFilterSaveLayerFloodedContentBounds) {
   builder.ClipRect(SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f));
 
   DlPaint save_paint;
-  auto image_filter = DlMatrixImageFilter::Make(
-      SkMatrix::Translate(100.0f, 100.0f), DlImageSampling::kNearestNeighbor);
+  auto image_filter =
+      DlImageFilter::MakeMatrix(DlMatrix::MakeTranslation({100.0f, 100.0f}),
+                                DlImageSampling::kNearestNeighbor);
   save_paint.setImageFilter(image_filter);
   builder.SaveLayer(nullptr, &save_paint);
 
@@ -4424,7 +4451,7 @@ TEST_F(DisplayListTest, MaxBlendModeInsideComplexSaveLayers) {
   builder.Restore();
 
   // Double check that kModulate is the max blend mode for the first
-  // saveLayer operations
+  // SaveLayer operations
   auto expect = std::max(DlBlendMode::kModulate, DlBlendMode::kSrc);
   ASSERT_EQ(expect, DlBlendMode::kModulate);
 
@@ -4460,8 +4487,8 @@ TEST_F(DisplayListTest, BackdropDetectionSimpleSaveLayer) {
   auto dl = builder.Build();
 
   EXPECT_TRUE(dl->root_has_backdrop_filter());
-  // The saveLayer itself, though, does not have the contains backdrop
-  // flag set because its content does not contain a saveLayer with backdrop
+  // The SaveLayer itself, though, does not have the contains backdrop
+  // flag set because its content does not contain a SaveLayer with backdrop
   SAVE_LAYER_EXPECTOR(expector);
   expector.addExpectation(
       SaveLayerOptions::kNoAttributes.with_can_distribute_opacity());
@@ -4533,7 +4560,7 @@ TEST_F(DisplayListTest, DrawDisplayListForwardsBackdropFlag) {
 #define CLIP_EXPECTOR(name) ClipExpector name(__FILE__, __LINE__)
 
 struct ClipExpectation {
-  std::variant<DlRect, SkRRect, DlPath> shape;
+  std::variant<DlRect, DlRoundRect, DlPath> shape;
   bool is_oval;
   ClipOp clip_op;
   bool is_aa;
@@ -4543,7 +4570,7 @@ struct ClipExpectation {
       case 0:
         return is_oval ? "SkOval" : "SkRect";
       case 1:
-        return "SkRRect";
+        return "DlRoundRect";
       case 2:
         return "DlPath";
       default:
@@ -4562,7 +4589,7 @@ struct ClipExpectation {
       }
       break;
     case 1:
-      os << std::get<SkRRect>(expect.shape);
+      os << std::get<DlRoundRect>(expect.shape);
       break;
     case 2:
       os << std::get<DlPath>(expect.shape).GetSkPath();
@@ -4621,8 +4648,10 @@ class ClipExpector : public virtual DlOpReceiver,
   ClipExpector& addExpectation(const SkRRect& rrect,
                                ClipOp clip_op = ClipOp::kIntersect,
                                bool is_aa = false) {
+    auto dl_rrect = ToDlRoundRect(rrect);
+    EXPECT_EQ(ToSkRRect(dl_rrect), rrect);
     clip_expectations_.push_back({
-        .shape = rrect,
+        .shape = dl_rrect,
         .is_oval = false,
         .clip_op = clip_op,
         .is_aa = is_aa,
@@ -4658,9 +4687,9 @@ class ClipExpector : public virtual DlOpReceiver,
                 bool is_aa) override {
     check(bounds, clip_op, is_aa, true);
   }
-  void clipRRect(const SkRRect& rrect,
-                 DlCanvas::ClipOp clip_op,
-                 bool is_aa) override {
+  void clipRoundRect(const DlRoundRect& rrect,
+                     DlCanvas::ClipOp clip_op,
+                     bool is_aa) override {
     check(rrect, clip_op, is_aa);
   }
   void clipPath(const DlPath& path,
@@ -5051,7 +5080,7 @@ TEST_F(DisplayListTest, RecordLargeVertices) {
   auto vertices = DlVertices::Make(DlVertexMode::kTriangleStrip, vertex_count,
                                    points.data(), points.data(), colors.data());
   ASSERT_GT(vertices->size(), 1u << 24);
-  auto backdrop = DlBlurImageFilter::Make(5.0f, 5.0f, DlTileMode::kDecal);
+  auto backdrop = DlImageFilter::MakeBlur(5.0f, 5.0f, DlTileMode::kDecal);
 
   for (int i = 0; i < 1000; i++) {
     DisplayListBuilder builder;
@@ -5671,9 +5700,9 @@ TEST_F(DisplayListTest, BoundedRenderOpsDoNotReportUnbounded) {
 }
 
 TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
-  static const SkRect root_cull = SkRect::MakeLTRB(100, 100, 200, 200);
-  static const SkRect clip_rect = SkRect::MakeLTRB(120, 120, 180, 180);
-  static const SkRect draw_rect = SkRect::MakeLTRB(110, 110, 190, 190);
+  static const DlRect root_cull = DlRect::MakeLTRB(100, 100, 200, 200);
+  static const DlRect clip_rect = DlRect::MakeLTRB(120, 120, 180, 180);
+  static const DlRect draw_rect = DlRect::MakeLTRB(110, 110, 190, 190);
 
   using Renderer = const std::function<void(DlCanvas&)>;
   auto test_unbounded = [](const std::string& label,  //
@@ -5684,7 +5713,7 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
       renderer(builder);
       auto display_list = builder.Build();
 
-      EXPECT_EQ(display_list->bounds(), root_cull) << label;
+      EXPECT_EQ(display_list->GetBounds(), root_cull) << label;
       EXPECT_TRUE(display_list->root_is_unbounded()) << label;
     }
 
@@ -5694,7 +5723,7 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
       renderer(builder);
       auto display_list = builder.Build();
 
-      EXPECT_EQ(display_list->bounds(), clip_rect) << label;
+      EXPECT_EQ(display_list->GetBounds(), clip_rect) << label;
       EXPECT_FALSE(display_list->root_is_unbounded()) << label;
     }
 
@@ -5705,7 +5734,7 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
       builder.Restore();
       auto display_list = builder.Build();
 
-      EXPECT_EQ(display_list->bounds(), root_cull) << label;
+      EXPECT_EQ(display_list->GetBounds(), root_cull) << label;
       EXPECT_FALSE(display_list->root_is_unbounded()) << label;
 
       SAVE_LAYER_EXPECTOR(expector);
@@ -5728,7 +5757,7 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
       builder.Restore();
       auto display_list = builder.Build();
 
-      EXPECT_EQ(display_list->bounds(), clip_rect) << label;
+      EXPECT_EQ(display_list->GetBounds(), clip_rect) << label;
       EXPECT_FALSE(display_list->root_is_unbounded()) << label;
 
       SAVE_LAYER_EXPECTOR(expector);
@@ -5757,13 +5786,13 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
   });
 
   test_unbounded("DrawPathEvenOddInverted", [](DlCanvas& builder) {
-    SkPath path = SkPath::Rect(draw_rect);
+    SkPath path = SkPath::Rect(ToSkRect(draw_rect));
     path.setFillType(SkPathFillType::kInverseEvenOdd);
     builder.DrawPath(path, DlPaint());
   });
 
   test_unbounded("DrawPathWindingInverted", [](DlCanvas& builder) {
-    SkPath path = SkPath::Rect(draw_rect);
+    SkPath path = SkPath::Rect(ToSkRect(draw_rect));
     path.setFillType(SkPathFillType::kInverseWinding);
     builder.DrawPath(path, DlPaint());
   });
@@ -5773,7 +5802,7 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
     nested_builder.DrawPaint(DlPaint());
     auto nested_display_list = nested_builder.Build();
 
-    EXPECT_EQ(nested_display_list->bounds(), root_cull);
+    EXPECT_EQ(nested_display_list->GetBounds(), root_cull);
     ASSERT_TRUE(nested_display_list->root_is_unbounded());
 
     builder.DrawDisplayList(nested_display_list);
@@ -5788,11 +5817,11 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
       0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
     };
     // clang-format on
-    auto unbounded_cf = DlMatrixColorFilter::Make(matrix);
+    auto unbounded_cf = DlColorFilter::MakeMatrix(matrix);
     // ColorFilter must modify transparent black to be "unbounded"
     ASSERT_TRUE(unbounded_cf->modifies_transparent_black());
-    auto unbounded_if = DlColorFilterImageFilter::Make(unbounded_cf);
-    SkRect output_bounds;
+    auto unbounded_if = DlImageFilter::MakeColorFilter(unbounded_cf);
+    DlRect output_bounds;
     // ImageFilter returns null from bounds queries if it is "unbounded"
     ASSERT_EQ(unbounded_if->map_local_bounds(draw_rect, output_bounds),
               nullptr);
@@ -5803,7 +5832,7 @@ TEST_F(DisplayListTest, UnboundedRenderOpsAreReportedUnlessClipped) {
   test_unbounded(
       "SaveLayerWithBackdropFilter",
       [](DlCanvas& builder) {
-        auto filter = DlBlurImageFilter::Make(3.0f, 3.0f, DlTileMode::kMirror);
+        auto filter = DlImageFilter::MakeBlur(3.0f, 3.0f, DlTileMode::kMirror);
         builder.SaveLayer(nullptr, nullptr, filter.get());
         builder.Restore();
       },
@@ -5818,7 +5847,7 @@ TEST_F(DisplayListTest, BackdropFilterCulledAlongsideClipAndTransform) {
   SkRect draw_rect1 = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
   SkRect draw_rect2 = SkRect::MakeLTRB(45.0f, 20.0f, 55.0f, 55.0f);
   SkRect cull_rect = SkRect::MakeLTRB(1.0f, 1.0f, 99.0f, 30.0f);
-  auto bdf_filter = DlBlurImageFilter::Make(5.0f, 5.0f, DlTileMode::kClamp);
+  auto bdf_filter = DlImageFilter::MakeBlur(5.0f, 5.0f, DlTileMode::kClamp);
 
   ASSERT_TRUE(frame_bounds.contains(clip_rect));
   ASSERT_TRUE(frame_bounds.contains(draw_rect1));
@@ -5884,6 +5913,165 @@ TEST_F(DisplayListTest, BackdropFilterCulledAlongsideClipAndTransform) {
     auto expected_dl = expected.Build();
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culled_dl, expected_dl));
+  }
+}
+
+TEST_F(DisplayListTest, RecordManyLargeDisplayListOperations) {
+  DisplayListBuilder builder;
+
+  // 2050 points is sizeof(DlPoint) * 2050 = 16400 bytes, this is more
+  // than the page size of 16384 bytes.
+  std::vector<DlPoint> points(2050);
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+
+  EXPECT_TRUE(!!builder.Build());
+}
+
+TEST_F(DisplayListTest, RecordSingleLargeDisplayListOperation) {
+  DisplayListBuilder builder;
+
+  std::vector<DlPoint> points(40000);
+  builder.DrawPoints(PointMode::kPoints, points.size(), points.data(),
+                     DlPaint{});
+
+  EXPECT_TRUE(!!builder.Build());
+}
+
+TEST_F(DisplayListTest, DisplayListDetectsRuntimeEffect) {
+  const auto runtime_effect = DlRuntimeEffect::MakeSkia(
+      SkRuntimeEffect::MakeForShader(
+          SkString("vec4 main(vec2 p) { return vec4(0); }"))
+          .effect);
+  auto color_source = DlColorSource::MakeRuntimeEffect(
+      runtime_effect, {}, std::make_shared<std::vector<uint8_t>>());
+  auto image_filter = DlImageFilter::MakeRuntimeEffect(
+      runtime_effect, {}, std::make_shared<std::vector<uint8_t>>());
+
+  {
+    // Default - no runtime effects, supports group opacity
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+    EXPECT_TRUE(builder.Build()->can_apply_group_opacity());
+  }
+
+  {
+    // Draw with RTE color source does not support group opacity
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    paint.setColorSource(color_source);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+
+    EXPECT_FALSE(builder.Build()->can_apply_group_opacity());
+  }
+
+  {
+    // Draw with RTE image filter does not support group opacity
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    paint.setImageFilter(image_filter);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+
+    EXPECT_FALSE(builder.Build()->can_apply_group_opacity());
+  }
+
+  {
+    // Draw with RTE color source inside SaveLayer does not support group
+    // opacity on the SaveLayer, but does support it on the DisplayList
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    builder.SaveLayer(nullptr, nullptr);
+    paint.setColorSource(color_source);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+    builder.Restore();
+
+    auto display_list = builder.Build();
+    EXPECT_TRUE(display_list->can_apply_group_opacity());
+
+    SAVE_LAYER_EXPECTOR(expector);
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      return !options.can_distribute_opacity();
+    });
+    display_list->Dispatch(expector);
+  }
+
+  {
+    // Draw with RTE image filter inside SaveLayer does not support group
+    // opacity on the SaveLayer, but does support it on the DisplayList
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    builder.SaveLayer(nullptr, nullptr);
+    paint.setImageFilter(image_filter);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+    builder.Restore();
+
+    auto display_list = builder.Build();
+    EXPECT_TRUE(display_list->can_apply_group_opacity());
+
+    SAVE_LAYER_EXPECTOR(expector);
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      return !options.can_distribute_opacity();
+    });
+    display_list->Dispatch(expector);
+  }
+
+  {
+    // Draw with RTE color source inside nested saveLayers does not support
+    // group opacity on the inner SaveLayer, but does support it on the
+    // outer SaveLayer and the DisplayList
+    DisplayListBuilder builder;
+    DlPaint paint;
+
+    builder.SaveLayer(nullptr, nullptr);
+
+    builder.SaveLayer(nullptr, nullptr);
+    paint.setColorSource(color_source);
+    builder.DrawRect(DlRect::MakeLTRB(0, 0, 50, 50), paint);
+    paint.setColorSource(nullptr);
+    builder.Restore();
+
+    builder.SaveLayer(nullptr, nullptr);
+    paint.setImageFilter(image_filter);
+    // Make sure these DrawRects are non-overlapping otherwise the outer
+    // SaveLayer and DisplayList will be incompatible due to overlaps
+    builder.DrawRect(DlRect::MakeLTRB(60, 60, 100, 100), paint);
+    paint.setImageFilter(nullptr);
+    builder.Restore();
+
+    builder.Restore();
+    auto display_list = builder.Build();
+    EXPECT_TRUE(display_list->can_apply_group_opacity());
+
+    SAVE_LAYER_EXPECTOR(expector);
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      // outer SaveLayer supports group opacity
+      return options.can_distribute_opacity();
+    });
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      // first inner SaveLayer does not support group opacity
+      return !options.can_distribute_opacity();
+    });
+    expector.addExpectation([](const SaveLayerOptions& options) {
+      // second inner SaveLayer does not support group opacity
+      return !options.can_distribute_opacity();
+    });
+    display_list->Dispatch(expector);
   }
 }
 

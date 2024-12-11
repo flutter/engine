@@ -7,9 +7,10 @@
 namespace flutter {
 
 BackdropFilterLayer::BackdropFilterLayer(
-    std::shared_ptr<const DlImageFilter> filter,
-    DlBlendMode blend_mode)
-    : filter_(std::move(filter)), blend_mode_(blend_mode) {}
+    const std::shared_ptr<DlImageFilter>& filter,
+    DlBlendMode blend_mode,
+    std::optional<int64_t> backdrop_id)
+    : filter_(filter), blend_mode_(blend_mode), backdrop_id_(backdrop_id) {}
 
 void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -28,10 +29,11 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   if (filter_) {
     paint_bounds = context->MapRect(paint_bounds);
     auto filter_target_bounds = paint_bounds.roundOut();
-    SkIRect filter_input_bounds;  // in screen coordinates
-    filter_->get_input_device_bounds(
-        filter_target_bounds, context->GetTransform3x3(), filter_input_bounds);
-    context->AddReadbackRegion(filter_target_bounds, filter_input_bounds);
+    DlIRect filter_input_bounds;  // in screen coordinates
+    filter_->get_input_device_bounds(ToDlIRect(filter_target_bounds),
+                                     context->GetMatrix(), filter_input_bounds);
+    context->AddReadbackRegion(filter_target_bounds,
+                               ToSkIRect(filter_input_bounds));
   }
 
   DiffChildren(context, prev);
@@ -57,7 +59,8 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   auto mutator = context.state_stack.save();
-  mutator.applyBackdropFilter(paint_bounds(), filter_, blend_mode_);
+  mutator.applyBackdropFilter(paint_bounds(), filter_, blend_mode_,
+                              backdrop_id_);
 
   PaintChildren(context);
 }

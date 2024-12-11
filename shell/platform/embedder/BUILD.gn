@@ -144,6 +144,9 @@ template("embedder_source_set") {
     }
 
     if (embedder_enable_metal) {
+      cflags_objc = flutter_cflags_objc
+      cflags_objcc = flutter_cflags_objcc
+
       sources += [
         "embedder_external_texture_metal.h",
         "embedder_external_texture_metal.mm",
@@ -159,9 +162,6 @@ template("embedder_source_set") {
         deps += [ "//flutter/impeller/renderer/backend/metal" ]
       }
 
-      cflags_objc = flutter_cflags_objc
-      cflags_objcc = flutter_cflags_objcc
-
       deps += [ "//flutter/shell/platform/darwin/graphics" ]
     }
 
@@ -170,6 +170,13 @@ template("embedder_source_set") {
         "embedder_surface_vulkan.cc",
         "embedder_surface_vulkan.h",
       ]
+
+      if (impeller_supports_rendering) {
+        sources += [
+          "embedder_surface_vulkan_impeller.cc",
+          "embedder_surface_vulkan_impeller.h",
+        ]
+      }
 
       deps += [
         "//flutter/flutter_vma:flutter_skia_vma",
@@ -277,6 +284,8 @@ if (enable_unittests) {
       "tests/embedder_test.h",
       "tests/embedder_test_backingstore_producer.cc",
       "tests/embedder_test_backingstore_producer.h",
+      "tests/embedder_test_backingstore_producer_software.cc",
+      "tests/embedder_test_backingstore_producer_software.h",
       "tests/embedder_test_compositor.cc",
       "tests/embedder_test_compositor.h",
       "tests/embedder_test_compositor_software.cc",
@@ -306,10 +315,13 @@ if (enable_unittests) {
 
     if (test_enable_gl) {
       sources += [
+        "tests/embedder_test_backingstore_producer_gl.cc",
+        "tests/embedder_test_backingstore_producer_gl.h",
         "tests/embedder_test_compositor_gl.cc",
         "tests/embedder_test_compositor_gl.h",
         "tests/embedder_test_context_gl.cc",
         "tests/embedder_test_context_gl.h",
+        "tests/embedder_test_gl.cc",
       ]
 
       public_deps += [
@@ -320,10 +332,13 @@ if (enable_unittests) {
 
     if (test_enable_metal) {
       sources += [
-        "tests/embedder_test_compositor_metal.cc",
+        "tests/embedder_test_backingstore_producer_metal.h",
+        "tests/embedder_test_backingstore_producer_metal.mm",
         "tests/embedder_test_compositor_metal.h",
-        "tests/embedder_test_context_metal.cc",
+        "tests/embedder_test_compositor_metal.mm",
         "tests/embedder_test_context_metal.h",
+        "tests/embedder_test_context_metal.mm",
+        "tests/embedder_test_metal.mm",
       ]
 
       public_deps += [ "//flutter/testing:metal" ]
@@ -331,10 +346,13 @@ if (enable_unittests) {
 
     if (test_enable_vulkan) {
       sources += [
+        "tests/embedder_test_backingstore_producer_vulkan.cc",
+        "tests/embedder_test_backingstore_producer_vulkan.h",
         "tests/embedder_test_compositor_vulkan.cc",
         "tests/embedder_test_compositor_vulkan.h",
         "tests/embedder_test_context_vulkan.cc",
         "tests/embedder_test_context_vulkan.h",
+        "tests/embedder_test_vulkan.cc",
       ]
 
       public_deps += [
@@ -368,6 +386,9 @@ if (enable_unittests) {
     }
 
     if (test_enable_metal) {
+      cflags_objc = flutter_cflags_objc
+      cflags_objcc = flutter_cflags_objcc
+
       sources += [ "tests/embedder_metal_unittests.mm" ]
     }
 

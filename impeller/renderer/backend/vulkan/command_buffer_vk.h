@@ -8,6 +8,7 @@
 #include "fml/status_or.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/command_queue_vk.h"
+#include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_source_vk.h"
 #include "impeller/renderer/backend/vulkan/tracked_objects_vk.h"
@@ -32,7 +33,7 @@ class CommandBufferVK final
 
   /// @brief Ensure that [object] is kept alive until this command buffer
   ///        completes execution.
-  bool Track(std::shared_ptr<SharedObjectVK> object);
+  bool Track(const std::shared_ptr<SharedObjectVK>& object);
 
   /// @brief Ensure that [buffer] is kept alive until this command buffer
   ///        completes execution.
@@ -44,7 +45,7 @@ class CommandBufferVK final
 
   /// @brief Ensure that [texture] is kept alive until this command buffer
   ///        completes execution.
-  bool Track(std::shared_ptr<const TextureSourceVK> texture);
+  bool Track(const std::shared_ptr<const TextureSourceVK>& texture);
 
   /// @brief Retrieve the native command buffer from this object.
   vk::CommandBuffer GetCommandBuffer() const;
@@ -76,10 +77,7 @@ class CommandBufferVK final
       const ContextVK& context);
 
   // Visible for testing.
-  bool IsTracking(const std::shared_ptr<const DeviceBuffer>& texture) const;
-
-  // Visible for testing.
-  bool IsTracking(const std::shared_ptr<const Texture>& texture) const;
+  DescriptorPoolVK& GetDescriptorPool() const;
 
  private:
   friend class ContextVK;
@@ -87,21 +85,22 @@ class CommandBufferVK final
 
   std::weak_ptr<const DeviceHolderVK> device_holder_;
   std::shared_ptr<TrackedObjectsVK> tracked_objects_;
-  std::shared_ptr<FenceWaiterVK> fence_waiter_;
 
   CommandBufferVK(std::weak_ptr<const Context> context,
                   std::weak_ptr<const DeviceHolderVK> device_holder,
-                  std::shared_ptr<TrackedObjectsVK> tracked_objects,
-                  std::shared_ptr<FenceWaiterVK> fence_waiter);
+                  std::shared_ptr<TrackedObjectsVK> tracked_objects);
 
   // |CommandBuffer|
-  void SetLabel(const std::string& label) const override;
+  void SetLabel(std::string_view label) const override;
 
   // |CommandBuffer|
   bool IsValid() const override;
 
   // |CommandBuffer|
   bool OnSubmitCommands(CompletionCallback callback) override;
+
+  // |CommandBuffer|
+  void OnWaitUntilCompleted() override;
 
   // |CommandBuffer|
   void OnWaitUntilScheduled() override;

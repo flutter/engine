@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "fml/trace_event.h"
-#include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -250,14 +249,15 @@ ContentContext::ContentContext(
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
                                : std::move(render_target_allocator)),
-      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator(),
+                                      context_->GetIdleWaiter())) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
 
   {
     TextureDescriptor desc;
-    desc.storage_mode = StorageMode::kHostVisible;
+    desc.storage_mode = StorageMode::kDevicePrivate;
     desc.format = PixelFormat::kR8G8B8A8UNormInt;
     desc.size = ISize{1, 1};
     empty_texture_ = GetContext()->GetResourceAllocator()->CreateTexture(desc);
@@ -308,6 +308,12 @@ ContentContext::ContentContext(
       conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
       sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
     } else {
+      linear_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+      radial_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+      conical_gradient_uniform_fill_pipelines_.CreateDefault(*context_,
+                                                             options);
+      sweep_gradient_uniform_fill_pipelines_.CreateDefault(*context_, options);
+
       linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
       radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
       conical_gradient_fill_pipelines_.CreateDefault(*context_, options);
@@ -454,10 +460,14 @@ ContentContext::ContentContext(
                                                  options_trianglestrip);
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
 
-  // GLES only shader that is unsupported on macOS.
-#if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX)
+#if defined(IMPELLER_ENABLE_OPENGLES)
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
+#if !defined(FML_OS_MACOSX)
+    // GLES only shader that is unsupported on macOS.
     tiled_texture_external_pipelines_.CreateDefault(*context_, options);
+#endif  // !defined(FML_OS_MACOSX)
+    texture_downsample_gles_pipelines_.CreateDefault(*context_,
+                                                     options_trianglestrip);
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
 
@@ -493,12 +503,12 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = GetRenderTargetCache()->CreateOffscreenMSAA(
         *context, texture_size,
-        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.data()),
+        /*mip_count=*/mip_count, label,
         RenderTarget::kDefaultColorAttachmentConfigMSAA, depth_stencil_config);
   } else {
     subpass_target = GetRenderTargetCache()->CreateOffscreen(
         *context, texture_size,
-        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.data()),
+        /*mip_count=*/mip_count, label,
         RenderTarget::kDefaultColorAttachmentConfig, depth_stencil_config);
   }
   return MakeSubpass(label, subpass_target, command_buffer, subpass_callback);
@@ -520,7 +530,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   if (!sub_renderpass) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
-  sub_renderpass->SetLabel(SPrintF("%s RenderPass", label.data()));
+  sub_renderpass->SetLabel(label);
 
   if (!subpass_callback(*this, *sub_renderpass)) {
     return fml::Status(fml::StatusCode::kUnknown, "");
@@ -543,8 +553,8 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   return subpass_target;
 }
 
-std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
-  return tessellator_;
+Tessellator& ContentContext::GetTessellator() const {
+  return *tessellator_;
 }
 
 std::shared_ptr<Context> ContentContext::GetContext() const {
@@ -559,8 +569,7 @@ void ContentContext::SetWireframe(bool wireframe) {
   wireframe_ = wireframe;
 }
 
-std::shared_ptr<Pipeline<PipelineDescriptor>>
-ContentContext::GetCachedRuntimeEffectPipeline(
+PipelineRef ContentContext::GetCachedRuntimeEffectPipeline(
     const std::string& unique_entrypoint_name,
     const ContentContextOptions& options,
     const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
@@ -570,7 +579,7 @@ ContentContext::GetCachedRuntimeEffectPipeline(
   if (it == runtime_effect_pipelines_.end()) {
     it = runtime_effect_pipelines_.insert(it, {key, create_callback()});
   }
-  return it->second;
+  return raw_ptr(it->second);
 }
 
 void ContentContext::ClearCachedRuntimeEffectPipeline(

@@ -46,10 +46,10 @@ class RenderPassVK final : public RenderPass {
   size_t descriptor_write_offset_ = 0u;
   size_t instance_count_ = 1u;
   size_t base_vertex_ = 0u;
-  size_t vertex_count_ = 0u;
+  size_t element_count_ = 0u;
   bool has_index_buffer_ = false;
   bool has_label_ = false;
-  const Pipeline<PipelineDescriptor>* pipeline_;
+  PipelineRef pipeline_ = PipelineRef(nullptr);
   bool pipeline_uses_input_attachments_ = false;
   std::shared_ptr<SamplerVK> immutable_sampler_;
 
@@ -58,8 +58,7 @@ class RenderPassVK final : public RenderPass {
                std::shared_ptr<CommandBufferVK> command_buffer);
 
   // |RenderPass|
-  void SetPipeline(
-      const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) override;
+  void SetPipeline(PipelineRef pipeline) override;
 
   // |RenderPass|
   void SetCommandLabel(std::string_view label) override;
@@ -77,12 +76,14 @@ class RenderPassVK final : public RenderPass {
   void SetScissor(IRect scissor) override;
 
   // |RenderPass|
+  void SetElementCount(size_t count) override;
+
+  // |RenderPass|
   void SetInstanceCount(size_t count) override;
 
   // |RenderPass|
   bool SetVertexBuffer(BufferView vertex_buffers[],
-                       size_t vertex_buffer_count,
-                       size_t vertex_count) override;
+                       size_t vertex_buffer_count) override;
 
   // |RenderPass|
   bool SetIndexBuffer(BufferView index_buffer, IndexType index_type) override;
@@ -90,40 +91,44 @@ class RenderPassVK final : public RenderPass {
   // |RenderPass|
   fml::Status Draw() override;
 
-  // |RenderPass|
-  void ReserveCommands(size_t command_count) override {}
-
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
                     DescriptorType type,
                     const ShaderUniformSlot& slot,
-                    const ShaderMetadata& metadata,
-                    BufferView view) override;
-
-  // |RenderPass|
-  bool BindResource(ShaderStage stage,
-                    DescriptorType type,
-                    const ShaderUniformSlot& slot,
-                    const std::shared_ptr<const ShaderMetadata>& metadata,
+                    const ShaderMetadata* metadata,
                     BufferView view) override;
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
                     DescriptorType type,
                     const SampledImageSlot& slot,
-                    const ShaderMetadata& metadata,
+                    const ShaderMetadata* metadata,
                     std::shared_ptr<const Texture> texture,
                     const std::unique_ptr<const Sampler>& sampler) override;
 
-  bool BindResource(size_t binding,
-                    DescriptorType type,
-                    const BufferView& view);
+  // |RenderPass|
+  bool BindDynamicResource(ShaderStage stage,
+                           DescriptorType type,
+                           const ShaderUniformSlot& slot,
+                           std::unique_ptr<ShaderMetadata> metadata,
+                           BufferView view) override;
+
+  // |RenderPass|
+  bool BindDynamicResource(
+      ShaderStage stage,
+      DescriptorType type,
+      const SampledImageSlot& slot,
+      std::unique_ptr<ShaderMetadata> metadata,
+      std::shared_ptr<const Texture> texture,
+      const std::unique_ptr<const Sampler>& sampler) override;
+
+  bool BindResource(size_t binding, DescriptorType type, BufferView view);
 
   // |RenderPass|
   bool IsValid() const override;
 
   // |RenderPass|
-  void OnSetLabel(std::string label) override;
+  void OnSetLabel(std::string_view label) override;
 
   // |RenderPass|
   bool OnEncodeCommands(const Context& context) const override;

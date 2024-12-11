@@ -53,7 +53,7 @@ class DisplayListMatrixClipState {
   }
 
   bool using_4x4_matrix() const { return !matrix_.IsAffine(); }
-  bool is_matrix_invertable() const { return matrix_.GetDeterminant() != 0.0f; }
+  bool is_matrix_invertable() const { return matrix_.IsInvertible(); }
   bool has_perspective() const { return matrix_.HasPerspective(); }
 
   const DlMatrix& matrix() const { return matrix_; }
@@ -73,7 +73,10 @@ class DisplayListMatrixClipState {
   bool oval_covers_cull(const SkRect& content_bounds) const {
     return oval_covers_cull(ToDlRect(content_bounds));
   }
-  bool rrect_covers_cull(const SkRRect& content) const;
+  bool rrect_covers_cull(const DlRoundRect& content) const;
+  bool rrect_covers_cull(const SkRRect& content) const {
+    return rrect_covers_cull(ToDlRoundRect(content));
+  }
 
   bool content_culled(const DlRect& content_bounds) const;
   bool content_culled(const SkRect& content_bounds) const {
@@ -155,7 +158,10 @@ class DisplayListMatrixClipState {
   void clipOval(const SkRect& bounds, ClipOp op, bool is_aa) {
     clipRect(ToDlRect(bounds), op, is_aa);
   }
-  void clipRRect(const SkRRect& rrect, ClipOp op, bool is_aa);
+  void clipRRect(const DlRoundRect& rrect, ClipOp op, bool is_aa);
+  void clipRRect(const SkRRect& rrect, ClipOp op, bool is_aa) {
+    clipRRect(ToDlRoundRect(rrect), op, is_aa);
+  }
   void clipPath(const SkPath& path, ClipOp op, bool is_aa) {
     clipPath(DlPath(path), op, is_aa);
   }

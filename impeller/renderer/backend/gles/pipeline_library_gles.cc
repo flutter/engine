@@ -16,7 +16,7 @@
 
 namespace impeller {
 
-PipelineLibraryGLES::PipelineLibraryGLES(ReactorGLES::Ref reactor)
+PipelineLibraryGLES::PipelineLibraryGLES(std::shared_ptr<ReactorGLES> reactor)
     : reactor_(std::move(reactor)) {}
 
 static std::string GetShaderInfoLog(const ProcTableGLES& gl, GLuint shader) {
@@ -48,7 +48,7 @@ static std::string GetShaderSource(const ProcTableGLES& gl, GLuint shader) {
 
 static void LogShaderCompilationFailure(const ProcTableGLES& gl,
                                         GLuint shader,
-                                        const std::string& name,
+                                        std::string_view name,
                                         const fml::Mapping& source_mapping,
                                         ShaderStage stage) {
   std::stringstream stream;
@@ -99,10 +99,9 @@ static bool LinkProgram(
   }
 
   gl.SetDebugLabel(DebugResourceType::kShader, vert_shader,
-                   SPrintF("%s Vertex Shader", descriptor.GetLabel().c_str()));
-  gl.SetDebugLabel(
-      DebugResourceType::kShader, frag_shader,
-      SPrintF("%s Fragment Shader", descriptor.GetLabel().c_str()));
+                   SPrintF("%s Vertex Shader", descriptor.GetLabel().data()));
+  gl.SetDebugLabel(DebugResourceType::kShader, frag_shader,
+                   SPrintF("%s Fragment Shader", descriptor.GetLabel().data()));
 
   fml::ScopedCleanupClosure delete_vert_shader(
       [&gl, vert_shader]() { gl.DeleteShader(vert_shader); });
@@ -213,7 +212,8 @@ std::shared_ptr<PipelineGLES> PipelineLibraryGLES::CreatePipeline(
       desc,          //
       has_cached_program
           ? std::move(cached_program)
-          : std::make_shared<UniqueHandleGLES>(reactor, HandleType::kProgram)));
+          : std::make_shared<UniqueHandleGLES>(UniqueHandleGLES::MakeUntracked(
+                reactor, HandleType::kProgram))));
 
   auto program = reactor->GetGLHandle(pipeline->GetProgramHandle());
 
@@ -324,7 +324,7 @@ void PipelineLibraryGLES::RemovePipelinesWithEntryPoint(
 // |PipelineLibrary|
 PipelineLibraryGLES::~PipelineLibraryGLES() = default;
 
-const ReactorGLES::Ref& PipelineLibraryGLES::GetReactor() const {
+const std::shared_ptr<ReactorGLES>& PipelineLibraryGLES::GetReactor() const {
   return reactor_;
 }
 

@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/runtime_types.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
@@ -67,6 +68,12 @@ class SurfaceContextVK : public Context,
   std::shared_ptr<CommandQueue> GetCommandQueue() const override;
 
   // |Context|
+  std::shared_ptr<const IdleWaiter> GetIdleWaiter() const override;
+
+  // |Context|
+  RuntimeStageBackend GetRuntimeStageBackend() const override;
+
+  // |Context|
   void Shutdown() override;
 
   [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface,
@@ -75,6 +82,12 @@ class SurfaceContextVK : public Context,
   [[nodiscard]] bool SetSwapchain(std::shared_ptr<SwapchainVK> swapchain);
 
   std::unique_ptr<Surface> AcquireNextSurface();
+
+  /// @brief Performs frame incrementing processes like AcquireNextSurface but
+  ///        without the surface.
+  ///
+  /// Used by the embedder.h implementations.
+  void MarkFrameEnd();
 
   /// @brief Mark the current swapchain configuration as dirty, forcing it to be
   ///        recreated on the next frame.
@@ -89,6 +102,11 @@ class SurfaceContextVK : public Context,
   const vk::Device& GetDevice() const;
 
   const std::shared_ptr<ContextVK>& GetParent() const;
+
+  bool EnqueueCommandBuffer(
+      std::shared_ptr<CommandBuffer> command_buffer) override;
+
+  bool FlushCommandBuffers() override;
 
  private:
   std::shared_ptr<ContextVK> parent_;

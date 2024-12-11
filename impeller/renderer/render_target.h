@@ -82,7 +82,7 @@ class RenderTarget final {
       Allocator& allocator,
       ISize size,
       bool msaa,
-      const std::string& label = "Offscreen",
+      std::string_view label = "Offscreen",
       RenderTarget::AttachmentConfig stencil_attachment_config =
           RenderTarget::kDefaultStencilAttachmentConfig,
       const std::shared_ptr<Texture>& depth_stencil_texture = nullptr);
@@ -102,6 +102,13 @@ class RenderTarget final {
   RenderTarget& SetColorAttachment(const ColorAttachment& attachment,
                                    size_t index);
 
+  /// @brief Get the color attachment at [index].
+  ///
+  /// This function does not validate whether or not the attachment was
+  /// previously defined and will return a default constructed attachment
+  /// if none is set.
+  ColorAttachment GetColorAttachment(size_t index) const;
+
   RenderTarget& SetDepthAttachment(std::optional<DepthAttachment> attachment);
 
   RenderTarget& SetStencilAttachment(
@@ -109,32 +116,32 @@ class RenderTarget final {
 
   size_t GetMaxColorAttacmentBindIndex() const;
 
-  const std::map<size_t, ColorAttachment>& GetColorAttachments() const;
-
   const std::optional<DepthAttachment>& GetDepthAttachment() const;
 
   const std::optional<StencilAttachment>& GetStencilAttachment() const;
 
   size_t GetTotalAttachmentCount() const;
 
+  bool IterateAllColorAttachments(
+      const std::function<bool(size_t index,
+                               const ColorAttachment& attachment)>& iterator)
+      const;
+
   void IterateAllAttachments(
       const std::function<bool(const Attachment& attachment)>& iterator) const;
 
   std::string ToString() const;
 
-  RenderTargetConfig ToConfig() const {
-    auto& color_attachment = GetColorAttachments().find(0)->second;
-    return RenderTargetConfig{
-        .size = color_attachment.texture->GetSize(),
-        .mip_count = color_attachment.texture->GetMipCount(),
-        .has_msaa = color_attachment.resolve_texture != nullptr,
-        .has_depth_stencil = depth_.has_value() && stencil_.has_value()};
-  }
+  RenderTargetConfig ToConfig() const;
 
  private:
-  std::map<size_t, ColorAttachment> colors_;
+  std::optional<ColorAttachment> color0_;
   std::optional<DepthAttachment> depth_;
   std::optional<StencilAttachment> stencil_;
+  // Note: color0 is stored in the color0_ field above and not in this map,
+  // to avoid heap allocations for the commonly created render target formats
+  // in Flutter.
+  std::map<size_t, ColorAttachment> colors_;
 };
 
 /// @brief a wrapper around the impeller [Allocator] instance that can be used
@@ -149,7 +156,7 @@ class RenderTargetAllocator {
       const Context& context,
       ISize size,
       int mip_count,
-      const std::string& label = "Offscreen",
+      std::string_view label = "Offscreen",
       RenderTarget::AttachmentConfig color_attachment_config =
           RenderTarget::kDefaultColorAttachmentConfig,
       std::optional<RenderTarget::AttachmentConfig> stencil_attachment_config =
@@ -161,7 +168,7 @@ class RenderTargetAllocator {
       const Context& context,
       ISize size,
       int mip_count,
-      const std::string& label = "Offscreen MSAA",
+      std::string_view label = "Offscreen MSAA",
       RenderTarget::AttachmentConfigMSAA color_attachment_config =
           RenderTarget::kDefaultColorAttachmentConfigMSAA,
       std::optional<RenderTarget::AttachmentConfig> stencil_attachment_config =

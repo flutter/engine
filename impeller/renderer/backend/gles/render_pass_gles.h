@@ -19,22 +19,24 @@ class RenderPassGLES final
   // |RenderPass|
   ~RenderPassGLES() override;
 
+  static void ResetGLState(const ProcTableGLES& gl);
+
  private:
   friend class CommandBufferGLES;
 
-  ReactorGLES::Ref reactor_;
+  std::shared_ptr<ReactorGLES> reactor_;
   std::string label_;
   bool is_valid_ = false;
 
   RenderPassGLES(std::shared_ptr<const Context> context,
                  const RenderTarget& target,
-                 ReactorGLES::Ref reactor);
+                 std::shared_ptr<ReactorGLES> reactor);
 
   // |RenderPass|
   bool IsValid() const override;
 
   // |RenderPass|
-  void OnSetLabel(std::string label) override;
+  void OnSetLabel(std::string_view label) override;
 
   // |RenderPass|
   bool OnEncodeCommands(const Context& context) const override;

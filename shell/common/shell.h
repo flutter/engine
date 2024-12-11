@@ -359,6 +359,17 @@ class Shell final : public PlatformView::Delegate,
   bool EngineHasLivePorts() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to check if the Engine is running and has
+  ///             any microtasks that have been queued but have not yet run.
+  ///             The Flutter tester uses this as a signal that a test is still
+  ///             running.
+  ///
+  /// @return     Returns if the shell has an engine and the engine has pending
+  ///             microtasks.
+  ///
+  bool EngineHasPendingMicrotasks() const;
+
+  //----------------------------------------------------------------------------
   /// @brief     Accessor for the disable GPU SyncSwitch.
   // |Rasterizer::Delegate|
   std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
@@ -500,6 +511,9 @@ class Shell final : public PlatformView::Delegate,
 
   // Used to communicate the right frame bounds via service protocol.
   double device_pixel_ratio_ = 0.0;
+
+  // Cached refresh rate used by the performance overlay.
+  std::optional<fml::Milliseconds> cached_display_refresh_rate_;
 
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;

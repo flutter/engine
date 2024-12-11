@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
@@ -14,11 +15,19 @@ TextureVK::TextureVK(std::weak_ptr<Context> context,
                      std::shared_ptr<TextureSourceVK> source)
     : Texture(source->GetTextureDescriptor()),
       context_(std::move(context)),
-      source_(std::move(source)) {}
+      source_(std::move(source)) {
+#ifdef IMPELLER_DEBUG
+  has_validation_layers_ = HasValidationLayers();
+#endif  // IMPELLER_DEBUG
+}
 
 TextureVK::~TextureVK() = default;
 
 void TextureVK::SetLabel(std::string_view label) {
+#ifdef IMPELLER_DEBUG
+  if (!has_validation_layers_) {
+    return;
+  }
   auto context = context_.lock();
   if (!context) {
     // The context may have died.
@@ -26,6 +35,20 @@ void TextureVK::SetLabel(std::string_view label) {
   }
   ContextVK::Cast(*context).SetDebugName(GetImage(), label);
   ContextVK::Cast(*context).SetDebugName(GetImageView(), label);
+#endif  // IMPELLER_DEBUG
+}
+
+void TextureVK::SetLabel(std::string_view label, std::string_view trailing) {
+#ifdef IMPELLER_DEBUG
+  auto context = context_.lock();
+  if (!context) {
+    // The context may have died.
+    return;
+  }
+
+  ContextVK::Cast(*context).SetDebugName(GetImage(), label, trailing);
+  ContextVK::Cast(*context).SetDebugName(GetImageView(), label, trailing);
+#endif  // IMPELLER_DEBUG
 }
 
 bool TextureVK::OnSetContents(const uint8_t* contents,

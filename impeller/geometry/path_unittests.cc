@@ -9,6 +9,7 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
+#include "impeller/geometry/round_rect.h"
 
 namespace impeller {
 namespace testing {
@@ -49,6 +50,142 @@ TEST(PathTest, PathCreatePolyLineDoesNotDuplicatePoints) {
   ASSERT_EQ(polyline.GetPoint(4).x, 50);
 }
 
+TEST(PathTest, PathSingleContour) {
+  // Closed shapes.
+  {
+    Path path = PathBuilder{}.AddCircle({100, 100}, 50).TakePath();
+    EXPECT_TRUE(path.IsSingleContour());
+  }
+
+  {
+    Path path =
+        PathBuilder{}.AddOval(Rect::MakeXYWH(100, 100, 100, 100)).TakePath();
+
+    EXPECT_TRUE(path.IsSingleContour());
+  }
+
+  {
+    Path path =
+        PathBuilder{}.AddRect(Rect::MakeXYWH(100, 100, 100, 100)).TakePath();
+
+    EXPECT_TRUE(path.IsSingleContour());
+  }
+
+  {
+    Path path = PathBuilder{}
+                    .AddRoundRect(RoundRect::MakeRectRadius(
+                        Rect::MakeXYWH(100, 100, 100, 100), 10))
+                    .TakePath();
+
+    EXPECT_TRUE(path.IsSingleContour());
+  }
+
+  // Open shapes.
+  {
+    Point p(100, 100);
+    Path path = PathBuilder{}.AddLine(p, {200, 100}).TakePath();
+
+    EXPECT_TRUE(path.IsSingleContour());
+  }
+
+  {
+    Path path =
+        PathBuilder{}
+            .AddCubicCurve({100, 100}, {100, 50}, {100, 150}, {200, 100})
+            .TakePath();
+
+    EXPECT_TRUE(path.IsSingleContour());
+  }
+
+  {
+    Path path = PathBuilder{}
+                    .AddQuadraticCurve({100, 100}, {100, 50}, {200, 100})
+                    .TakePath();
+
+    EXPECT_TRUE(path.IsSingleContour());
+  }
+}
+
+TEST(PathTest, PathSingleContourDoubleShapes) {
+  // Closed shapes.
+  {
+    Path path = PathBuilder{}
+                    .AddCircle({100, 100}, 50)
+                    .AddCircle({100, 100}, 50)
+                    .TakePath();
+    EXPECT_FALSE(path.IsSingleContour());
+  }
+
+  {
+    Path path = PathBuilder{}
+                    .AddOval(Rect::MakeXYWH(100, 100, 100, 100))
+                    .AddOval(Rect::MakeXYWH(100, 100, 100, 100))
+                    .TakePath();
+
+    EXPECT_FALSE(path.IsSingleContour());
+  }
+
+  {
+    Path path = PathBuilder{}
+                    .AddRect(Rect::MakeXYWH(100, 100, 100, 100))
+                    .AddRect(Rect::MakeXYWH(100, 100, 100, 100))
+                    .TakePath();
+
+    EXPECT_FALSE(path.IsSingleContour());
+  }
+
+  {
+    Path path = PathBuilder{}
+                    .AddRoundRect(RoundRect::MakeRectRadius(
+                        Rect::MakeXYWH(100, 100, 100, 100), 10))
+                    .AddRoundRect(RoundRect::MakeRectRadius(
+                        Rect::MakeXYWH(100, 100, 100, 100), 10))
+                    .TakePath();
+
+    EXPECT_FALSE(path.IsSingleContour());
+  }
+
+  {
+    Path path = PathBuilder{}
+                    .AddRoundRect(RoundRect::MakeRectXY(
+                        Rect::MakeXYWH(100, 100, 100, 100), Size(10, 20)))
+                    .AddRoundRect(RoundRect::MakeRectXY(
+                        Rect::MakeXYWH(100, 100, 100, 100), Size(10, 20)))
+                    .TakePath();
+
+    EXPECT_FALSE(path.IsSingleContour());
+  }
+
+  // Open shapes.
+  {
+    Point p(100, 100);
+    Path path =
+        PathBuilder{}.AddLine(p, {200, 100}).AddLine(p, {200, 100}).TakePath();
+
+    EXPECT_FALSE(path.IsSingleContour());
+  }
+
+  {
+    Path path =
+        PathBuilder{}
+            .AddCubicCurve({100, 100}, {100, 50}, {100, 150}, {200, 100})
+            .AddCubicCurve({100, 100}, {100, 50}, {100, 150}, {200, 100})
+            .TakePath();
+
+    EXPECT_FALSE(path.IsSingleContour());
+  }
+
+  {
+    Path path = PathBuilder{}
+                    .AddQuadraticCurve({100, 100}, {100, 50}, {200, 100})
+                    .Close()
+                    .AddQuadraticCurve({100, 100}, {100, 50}, {200, 100})
+                    .TakePath();
+
+    EXPECT_FALSE(path.IsSingleContour());
+  }
+}
+
 TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
   // Closed shapes.
   {
@@ -79,7 +216,8 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
 
   {
     Path path = PathBuilder{}
-                    .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), 10)
+                    .AddRoundRect(RoundRect::MakeRectRadius(
+                        Rect::MakeXYWH(100, 100, 100, 100), 10))
                     .TakePath();
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
@@ -88,10 +226,10 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
   }
 
   {
-    Path path =
-        PathBuilder{}
-            .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), Size(10, 20))
-            .TakePath();
+    Path path = PathBuilder{}
+                    .AddRoundRect(RoundRect::MakeRectXY(
+                        Rect::MakeXYWH(100, 100, 100, 100), Size(10, 20)))
+                    .TakePath();
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
     EXPECT_POINT_NEAR(contour.destination, Point(110, 100));
@@ -357,7 +495,8 @@ TEST(PathTest, BoundingBoxCubic) {
 
 TEST(PathTest, BoundingBoxOfCompositePathIsCorrect) {
   PathBuilder builder;
-  builder.AddRoundedRect(Rect::MakeXYWH(10, 10, 300, 300), {50, 50, 50, 50});
+  builder.AddRoundRect(
+      RoundRect::MakeRectRadius(Rect::MakeXYWH(10, 10, 300, 300), 50));
   auto path = builder.TakePath();
   auto actual = path.GetBoundingBox();
   Rect expected = Rect::MakeXYWH(10, 10, 300, 300);
@@ -554,6 +693,128 @@ TEST(PathTest, CanBeCloned) {
     EXPECT_EQ(poly_a.contours[i].start_direction,
               poly_b.contours[i].start_direction);
   }
+}
+
+TEST(PathTest, FanTessellation) {
+  Path path = PathBuilder{}
+                  .AddRoundRect(RoundRect::MakeRectRadius(
+                      Rect::MakeLTRB(0, 0, 100, 100), 10))
+                  .TakePath();
+  auto [points, contours] = path.CountStorage(1.0);
+
+  std::vector<Point> point_storage(points);
+  std::vector<uint16_t> index_storage(points + (contours - 1));
+
+  FanVertexWriter writer(point_storage.data(), index_storage.data());
+  path.WritePolyline(1.0, writer);
+
+  EXPECT_LE(writer.GetIndexCount(), index_storage.size());
+  EXPECT_EQ(point_storage[0], Point(10, 0));
+}
+
+// Filled Paths without an explicit close should still be closed
+TEST(PathTest, FanTessellationUnclosedPath) {
+  // Create a rectangle that lacks an explicit close.
+  Path path = PathBuilder{}
+                  .LineTo({100, 0})
+                  .LineTo({100, 100})
+                  .LineTo({0, 100})
+                  .TakePath();
+
+  std::vector<Point> expected = {{0, 0},   {100, 0}, {100, 100},
+                                 {0, 100}, {0, 0},   {0, 0}};
+  std::vector<uint16_t> expected_indices = {0, 1, 2, 3, 0xFFFF, 0};
+
+  auto [points, contours] = path.CountStorage(1.0);
+
+  std::vector<Point> point_storage(points);
+  std::vector<uint16_t> index_storage(points + (contours - 1));
+
+  FanVertexWriter writer(point_storage.data(), index_storage.data());
+  path.WritePolyline(1.0, writer);
+
+  EXPECT_LE(index_storage, expected_indices);
+  EXPECT_EQ(point_storage, expected);
+}
+
+// Filled Paths without an explicit close should still be closed
+TEST(PathTest, StripTessellationUnclosedPath) {
+  // Create a rectangle that lacks an explicit close.
+  Path path = PathBuilder{}
+                  .LineTo({100, 0})
+                  .LineTo({100, 100})
+                  .LineTo({0, 100})
+                  .TakePath();
+
+  std::vector<Point> expected = {{0, 0},   {100, 0}, {100, 100},
+                                 {0, 100}, {0, 0},   {0, 0}};
+  std::vector<uint16_t> expected_indices = {0, 1, 3, 2, 0xFFFF, 0};
+
+  auto [points, contours] = path.CountStorage(1.0);
+
+  std::vector<Point> point_storage(points);
+  std::vector<uint16_t> index_storage(points + (contours - 1));
+
+  StripVertexWriter writer(point_storage.data(), index_storage.data());
+  path.WritePolyline(1.0, writer);
+
+  EXPECT_LE(index_storage, expected_indices);
+  EXPECT_EQ(point_storage, expected);
+}
+
+TEST(PathTest, FanTessellationMultiContour) {
+  PathBuilder builder{};
+  for (auto i = 0; i < 10; i++) {
+    builder.AddRoundRect(
+        RoundRect::MakeRectRadius(Rect::MakeLTRB(0 + i, 0 + i, 100, 100), 10));
+  }
+  auto path = builder.TakePath();
+  auto [points, contours] = path.CountStorage(1.0);
+
+  std::vector<Point> point_storage(points);
+  std::vector<uint16_t> index_storage(points + (contours - 1));
+
+  FanVertexWriter writer(point_storage.data(), index_storage.data());
+  path.WritePolyline(1.0, writer);
+
+  EXPECT_LE(writer.GetIndexCount(), index_storage.size());
+  EXPECT_EQ(point_storage[0], Point(10, 0));
+}
+
+TEST(PathTest, StripTessellation) {
+  Path path = PathBuilder{}
+                  .AddRoundRect(RoundRect::MakeRectRadius(
+                      Rect::MakeLTRB(0, 0, 100, 100), 10))
+                  .TakePath();
+  auto [points, contours] = path.CountStorage(1.0);
+
+  std::vector<Point> point_storage(points);
+  std::vector<uint16_t> index_storage(points + (contours - 1));
+
+  StripVertexWriter writer(point_storage.data(), index_storage.data());
+  path.WritePolyline(1.0, writer);
+
+  EXPECT_LE(writer.GetIndexCount(), index_storage.size());
+  EXPECT_EQ(point_storage[0], Point(10, 0));
+}
+
+TEST(PathTest, StripTessellationMultiContour) {
+  PathBuilder builder{};
+  for (auto i = 0; i < 10; i++) {
+    builder.AddRoundRect(
+        RoundRect::MakeRectRadius(Rect::MakeLTRB(0 + i, 0 + i, 100, 100), 10));
+  }
+  auto path = builder.TakePath();
+  auto [points, contours] = path.CountStorage(1.0);
+
+  std::vector<Point> point_storage(points);
+  std::vector<uint16_t> index_storage(points + (contours - 1));
+
+  StripVertexWriter writer(point_storage.data(), index_storage.data());
+  path.WritePolyline(1.0, writer);
+
+  EXPECT_LE(writer.GetIndexCount(), index_storage.size());
+  EXPECT_EQ(point_storage[0], Point(10, 0));
 }
 
 TEST(PathTest, PathBuilderDoesNotMutateCopiedPaths) {

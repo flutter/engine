@@ -34,38 +34,9 @@ G_DECLARE_INTERFACE(FlKeyboardViewDelegate,
 struct _FlKeyboardViewDelegateInterface {
   GTypeInterface g_iface;
 
-  void (*send_key_event)(FlKeyboardViewDelegate* delegate,
-                         const FlutterKeyEvent* event,
-                         FlutterKeyEventCallback callback,
-                         void* user_data);
-
   gboolean (*text_filter_key_press)(FlKeyboardViewDelegate* delegate,
                                     FlKeyEvent* event);
-
-  void (*redispatch_event)(FlKeyboardViewDelegate* delegate, FlKeyEvent* event);
-
-  guint (*lookup_key)(FlKeyboardViewDelegate* view_delegate,
-                      const GdkKeymapKey* key);
-
-  GHashTable* (*get_keyboard_state)(FlKeyboardViewDelegate* delegate);
 };
-
-/**
- * fl_keyboard_view_delegate_send_key_event:
- *
- * Handles `FlKeyboardHandler`'s request to send a `FlutterKeyEvent` through the
- * embedder API to the framework.
- *
- * The ownership of the `event` is kept by the keyboard handler, and the `event`
- * might be immediately destroyed after this function returns.
- *
- * The `callback` must eventually be called exactly once with the event result
- * and the `user_data`.
- */
-void fl_keyboard_view_delegate_send_key_event(FlKeyboardViewDelegate* delegate,
-                                              const FlutterKeyEvent* event,
-                                              FlutterKeyEventCallback callback,
-                                              void* user_data);
 
 /**
  * fl_keyboard_view_delegate_text_filter_key_press:
@@ -78,29 +49,6 @@ void fl_keyboard_view_delegate_send_key_event(FlKeyboardViewDelegate* delegate,
 gboolean fl_keyboard_view_delegate_text_filter_key_press(
     FlKeyboardViewDelegate* delegate,
     FlKeyEvent* event);
-
-/**
- * fl_keyboard_view_delegate_redispatch_event:
- *
- * Handles `FlKeyboardHandler`'s request to insert a GDK event to the system for
- * redispatching.
- */
-void fl_keyboard_view_delegate_redispatch_event(
-    FlKeyboardViewDelegate* delegate,
-    FlKeyEvent* event);
-
-guint fl_keyboard_view_delegate_lookup_key(FlKeyboardViewDelegate* delegate,
-                                           const GdkKeymapKey* key);
-
-/**
- * fl_keyboard_view_delegate_get_keyboard_state:
- *
- * Returns the keyboard pressed state. The hash table contains one entry per
- * pressed keys, mapping from the logical key to the physical key.*
- *
- */
-GHashTable* fl_keyboard_view_delegate_get_keyboard_state(
-    FlKeyboardViewDelegate* delegate);
 
 G_END_DECLS
 

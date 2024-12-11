@@ -8,6 +8,7 @@
 #include <glib-object.h>
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/linux/fl_mouse_cursor_handler.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_task_runner.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
@@ -21,9 +22,7 @@ G_BEGIN_DECLS
  */
 
 typedef enum {
-  // NOLINTBEGIN(readability-identifier-naming)
   FL_ENGINE_ERROR_FAILED,
-  // NOLINTEND(readability-identifier-naming)
 } FlEngineError;
 
 GQuark fl_engine_error_quark(void) G_GNUC_CONST;
@@ -254,6 +253,95 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         int64_t buttons);
 
 /**
+ * fl_engine_send_touch_up_event:
+ * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
+ * @timestamp: time when event occurred in microseconds.
+ * @x: x location of mouse cursor.
+ * @y: y location of mouse cursor.
+ * @device: device id.
+ *
+ * Sends a touch up event to the engine.
+ */
+void fl_engine_send_touch_up_event(FlEngine* engine,
+                                   FlutterViewId view_id,
+                                   size_t timestamp,
+                                   double x,
+                                   double y,
+                                   int32_t device);
+
+/**
+ * fl_engine_send_touch_down_event:
+ * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
+ * @timestamp: time when event occurred in microseconds.
+ * @x: x location of mouse cursor.
+ * @y: y location of mouse cursor.
+ * @device: device id.
+ *
+ * Sends a touch down event to the engine.
+ */
+void fl_engine_send_touch_down_event(FlEngine* engine,
+                                     FlutterViewId view_id,
+                                     size_t timestamp,
+                                     double x,
+                                     double y,
+                                     int32_t device);
+/**
+ * fl_engine_send_touch_move_event:
+ * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
+ * @timestamp: time when event occurred in microseconds.
+ * @x: x location of mouse cursor.
+ * @y: y location of mouse cursor.
+ * @device: device id.
+ *
+ * Sends a touch move event to the engine.
+ */
+void fl_engine_send_touch_move_event(FlEngine* engine,
+                                     FlutterViewId view_id,
+                                     size_t timestamp,
+                                     double x,
+                                     double y,
+                                     int32_t device);
+
+/**
+ * fl_engine_send_touch_add_event:
+ * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
+ * @timestamp: time when event occurred in microseconds.
+ * @x: x location of mouse cursor.
+ * @y: y location of mouse cursor.
+ * @device: device id.
+ *
+ * Sends a touch add event to the engine.
+ */
+void fl_engine_send_touch_add_event(FlEngine* engine,
+                                    FlutterViewId view_id,
+                                    size_t timestamp,
+                                    double x,
+                                    double y,
+                                    int32_t device);
+
+/**
+ * fl_engine_send_touch_remove_event:
+ * @engine: an #FlEngine.
+ * @view_id: the view that the event occured on.
+ * @timestamp: time when event occurred in microseconds.
+ * @x: x location of mouse cursor.
+ * @y: y location of mouse cursor.
+ * @device: device id.
+ *
+ * Sends a touch remove event to the engine.
+ */
+void fl_engine_send_touch_remove_event(FlEngine* engine,
+                                       FlutterViewId view_id,
+                                       size_t timestamp,
+                                       double x,
+                                       double y,
+                                       int32_t device);
+
+/**
  * fl_engine_send_pointer_pan_zoom_event:
  * @engine: an #FlEngine.
  * @view_id: the view that the event occured on.
@@ -417,14 +505,22 @@ gboolean fl_engine_unregister_external_texture(FlEngine* engine,
 void fl_engine_update_accessibility_features(FlEngine* engine, int32_t flags);
 
 /**
- * fl_engine_get_switches:
- * @project: an #FlEngine.
+ * fl_engine_request_app_exit:
+ * @engine: an #FlEngine.
  *
- * Determines the switches that should be passed to the Flutter engine.
- *
- * Returns: an array of switches to pass to the Flutter engine.
+ * Request the application exits.
  */
-GPtrArray* fl_engine_get_switches(FlEngine* engine);
+void fl_engine_request_app_exit(FlEngine* engine);
+
+/**
+ * fl_engine_get_mouse_cursor_handler:
+ * @engine: an #FlEngine.
+ *
+ * Gets the mouse cursor handler used by this engine.
+ *
+ * Returns: a #FlMouseCursorHandler.
+ */
+FlMouseCursorHandler* fl_engine_get_mouse_cursor_handler(FlEngine* engine);
 
 G_END_DECLS
 

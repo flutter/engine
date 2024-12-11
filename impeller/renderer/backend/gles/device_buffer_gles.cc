@@ -13,18 +13,16 @@
 namespace impeller {
 
 DeviceBufferGLES::DeviceBufferGLES(DeviceBufferDescriptor desc,
-                                   ReactorGLES::Ref reactor,
+                                   std::shared_ptr<ReactorGLES> reactor,
                                    std::shared_ptr<Allocation> backing_store)
     : DeviceBuffer(desc),
       reactor_(std::move(reactor)),
-      handle_(reactor_ ? reactor_->CreateHandle(HandleType::kBuffer)
-                       : HandleGLES::DeadHandle()),
       backing_store_(std::move(backing_store)) {}
 
 // |DeviceBuffer|
 DeviceBufferGLES::~DeviceBufferGLES() {
-  if (!handle_.IsDead()) {
-    reactor_->CollectHandle(handle_);
+  if (handle_.has_value() && !handle_->IsDead()) {
+    reactor_->CollectHandle(*handle_);
   }
 }
 
@@ -56,6 +54,14 @@ bool DeviceBufferGLES::OnCopyHostBuffer(const uint8_t* source,
   return true;
 }
 
+std::optional<GLuint> DeviceBufferGLES::GetHandle() const {
+  if (handle_.has_value()) {
+    return reactor_->GetGLHandle(*handle_);
+  } else {
+    return std::nullopt;
+  }
+}
+
 void DeviceBufferGLES::Flush(std::optional<Range> range) const {
   if (!range.has_value()) {
     dirty_range_ = Range{
@@ -75,6 +81,8 @@ static GLenum ToTarget(DeviceBufferGLES::BindingType type) {
       return GL_ARRAY_BUFFER;
     case DeviceBufferGLES::BindingType::kElementArrayBuffer:
       return GL_ELEMENT_ARRAY_BUFFER;
+    case DeviceBufferGLES::BindingType::kUniformBuffer:
+      return GL_UNIFORM_BUFFER;
   }
   FML_UNREACHABLE();
 }
@@ -84,7 +92,16 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
     return false;
   }
 
-  auto buffer = reactor_->GetGLHandle(handle_);
+  if (!handle_.has_value()) {
+    handle_ = reactor_->CreateUntrackedHandle(HandleType::kBuffer);
+#ifdef IMPELLER_DEBUG
+    if (handle_.has_value() && label_.has_value()) {
+      reactor_->SetDebugLabel(*handle_, *label_);
+    }
+#endif
+  }
+
+  auto buffer = reactor_->GetGLHandle(*handle_);
   if (!buffer.has_value()) {
     return false;
   }
@@ -110,13 +127,18 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
 }
 
 // |DeviceBuffer|
-bool DeviceBufferGLES::SetLabel(const std::string& label) {
-  reactor_->SetDebugLabel(handle_, label);
+bool DeviceBufferGLES::SetLabel(std::string_view label) {
+#ifdef IMPELLER_DEBUG
+  label_ = label;
+  if (handle_.has_value()) {
+    reactor_->SetDebugLabel(*handle_, label);
+  }
+#endif  // IMPELLER_DEBUG
   return true;
 }
 
 // |DeviceBuffer|
-bool DeviceBufferGLES::SetLabel(const std::string& label, Range range) {
+bool DeviceBufferGLES::SetLabel(std::string_view label, Range range) {
   // Cannot support debug label on the range. Set the label for the entire
   // range.
   return SetLabel(label);

@@ -2,9 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstdint>
+
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 
 #include "flutter/display_list/dl_blend_mode.h"
+#include "flutter/display_list/effects/image_filters/dl_blur_image_filter.h"
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "flutter/display_list/skia/dl_sk_types.h"
 #include "flutter/fml/trace_event.h"
@@ -46,7 +49,8 @@ void DlSkCanvasDispatcher::restore() {
 }
 void DlSkCanvasDispatcher::saveLayer(const DlRect& bounds,
                                      const SaveLayerOptions options,
-                                     const DlImageFilter* backdrop) {
+                                     const DlImageFilter* backdrop,
+                                     std::optional<int64_t> backdrop_id) {
   if (!options.content_is_clipped() && options.can_distribute_opacity() &&
       backdrop == nullptr) {
     // We know that:
@@ -131,10 +135,10 @@ void DlSkCanvasDispatcher::clipOval(const DlRect& bounds,
                                     bool is_aa) {
   canvas_->clipRRect(SkRRect::MakeOval(ToSkRect(bounds)), ToSk(clip_op), is_aa);
 }
-void DlSkCanvasDispatcher::clipRRect(const SkRRect& rrect,
-                                     ClipOp clip_op,
-                                     bool is_aa) {
-  canvas_->clipRRect(rrect, ToSk(clip_op), is_aa);
+void DlSkCanvasDispatcher::clipRoundRect(const DlRoundRect& rrect,
+                                         ClipOp clip_op,
+                                         bool is_aa) {
+  canvas_->clipRRect(ToSkRRect(rrect), ToSk(clip_op), is_aa);
 }
 void DlSkCanvasDispatcher::clipPath(const DlPath& path,
                                     ClipOp clip_op,
@@ -181,12 +185,12 @@ void DlSkCanvasDispatcher::drawOval(const DlRect& bounds) {
 void DlSkCanvasDispatcher::drawCircle(const DlPoint& center, DlScalar radius) {
   canvas_->drawCircle(ToSkPoint(center), radius, paint());
 }
-void DlSkCanvasDispatcher::drawRRect(const SkRRect& rrect) {
-  canvas_->drawRRect(rrect, paint());
+void DlSkCanvasDispatcher::drawRoundRect(const DlRoundRect& rrect) {
+  canvas_->drawRRect(ToSkRRect(rrect), paint());
 }
-void DlSkCanvasDispatcher::drawDRRect(const SkRRect& outer,
-                                      const SkRRect& inner) {
-  canvas_->drawDRRect(outer, inner, paint());
+void DlSkCanvasDispatcher::drawDiffRoundRect(const DlRoundRect& outer,
+                                             const DlRoundRect& inner) {
+  canvas_->drawDRRect(ToSkRRect(outer), ToSkRRect(inner), paint());
 }
 void DlSkCanvasDispatcher::drawPath(const DlPath& path) {
   path.WillRenderSkPath();

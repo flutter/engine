@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <ostream>
 #include <string>
@@ -14,6 +15,11 @@
 #include "impeller/geometry/scalar.h"
 
 namespace impeller {
+
+#define ONLY_ON_FLOAT_M(Modifiers, Return) \
+  template <typename U = T>                \
+  Modifiers std::enable_if_t<std::is_floating_point_v<U>, Return>
+#define ONLY_ON_FLOAT(Return) DL_ONLY_ON_FLOAT_M(, Return)
 
 template <class T>
 struct TSize {
@@ -25,6 +31,9 @@ struct TSize {
   constexpr TSize() {}
 
   constexpr TSize(Type width, Type height) : width(width), height(height) {}
+
+  constexpr explicit TSize(Type dimension)
+      : width(dimension), height(dimension) {}
 
   template <class U>
   explicit constexpr TSize(const TSize<U>& other)
@@ -42,6 +51,13 @@ struct TSize {
 
   constexpr TSize operator*(Scalar scale) const {
     return {width * scale, height * scale};
+  }
+
+  template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+  inline TSize operator*=(U scale) {
+    width *= static_cast<Type>(scale);
+    height *= static_cast<Type>(scale);
+    return *this;
   }
 
   constexpr TSize operator/(Scalar scale) const {
@@ -103,6 +119,9 @@ struct TSize {
 
   /// Returns true if either of the width or height are 0, negative, or NaN.
   constexpr bool IsEmpty() const { return !(width > 0 && height > 0); }
+
+  ONLY_ON_FLOAT_M(constexpr, bool)
+  IsFinite() const { return std::isfinite(width) && std::isfinite(height); }
 
   constexpr bool IsSquare() const { return width == height; }
 

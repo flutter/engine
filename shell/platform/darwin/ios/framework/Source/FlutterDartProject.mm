@@ -177,21 +177,6 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   settings.enable_wide_gamut = enableWideGamut;
 #endif
 
-#if FML_OS_IOS_SIMULATOR
-  if (!command_line.HasOption("enable-impeller")) {
-    // Next, look in the app bundle.
-    NSNumber* enableImpeller = [bundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
-    if (enableImpeller == nil) {
-      // If it isn't in the app bundle, look in the main bundle.
-      enableImpeller = [mainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
-    }
-    // Change the default only if the option is present.
-    if (enableImpeller != nil) {
-      settings.enable_impeller = enableImpeller.boolValue;
-    }
-  }
-#endif  // FML_OS_IOS_SIMULATOR
-
   settings.warn_on_impeller_opt_out = true;
 
   NSNumber* enableTraceSystrace = [mainBundle objectForInfoDictionaryKey:@"FLTTraceSystrace"];
@@ -216,6 +201,12 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   // It will change the default leak_vm value in settings only if the key exists.
   if (leakDartVM != nil) {
     settings.leak_vm = leakDartVM.boolValue;
+  }
+
+  NSNumber* enableMergedPlatformUIThread =
+      [mainBundle objectForInfoDictionaryKey:@"FLTEnableMergedPlatformUIThread"];
+  if (enableMergedPlatformUIThread != nil) {
+    settings.merged_platform_ui_thread = enableMergedPlatformUIThread.boolValue;
   }
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG

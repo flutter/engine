@@ -104,15 +104,15 @@ static MTLRenderPassDescriptor* ToMTLRenderPassDescriptor(
     const RenderTarget& desc) {
   auto result = [MTLRenderPassDescriptor renderPassDescriptor];
 
-  const auto& colors = desc.GetColorAttachments();
+  bool configured_attachment = desc.IterateAllColorAttachments(
+      [&result](size_t index, const ColorAttachment& attachment) -> bool {
+        return ConfigureColorAttachment(attachment,
+                                        result.colorAttachments[index]);
+      });
 
-  for (const auto& color : colors) {
-    if (!ConfigureColorAttachment(color.second,
-                                  result.colorAttachments[color.first])) {
-      VALIDATION_LOG << "Could not configure color attachment at index "
-                     << color.first;
-      return nil;
-    }
+  if (!configured_attachment) {
+    VALIDATION_LOG << "Could not configure color attachments";
+    return nil;
   }
 
   const auto& depth = desc.GetDepthAttachment();
@@ -170,7 +170,7 @@ bool RenderPassMTL::IsValid() const {
   return is_valid_;
 }
 
-void RenderPassMTL::OnSetLabel(std::string label) {
+void RenderPassMTL::OnSetLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
   if (label.empty()) {
     return;
@@ -189,11 +189,11 @@ static bool Bind(PassBindingsCacheMTL& pass,
                  ShaderStage stage,
                  size_t bind_index,
                  const BufferView& view) {
-  if (!view.buffer) {
+  if (!view.GetBuffer()) {
     return false;
   }
 
-  auto device_buffer = view.buffer;
+  const DeviceBuffer* device_buffer = view.GetBuffer();
   if (!device_buffer) {
     return false;
   }
@@ -204,7 +204,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
     return false;
   }
 
-  return pass.SetBuffer(stage, bind_index, view.range.offset, buffer);
+  return pass.SetBuffer(stage, bind_index, view.GetRange().offset, buffer);
 }
 
 static bool Bind(PassBindingsCacheMTL& pass,
@@ -233,8 +233,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
 }
 
 // |RenderPass|
-void RenderPassMTL::SetPipeline(
-    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
+void RenderPassMTL::SetPipeline(PipelineRef pipeline) {
   const PipelineDescriptor& pipeline_desc = pipeline->GetDescriptor();
   primitive_type_ = pipeline_desc.GetPrimitiveType();
   pass_bindings_.SetRenderPipelineState(
@@ -284,14 +283,18 @@ void RenderPassMTL::SetScissor(IRect scissor) {
 }
 
 // |RenderPass|
+void RenderPassMTL::SetElementCount(size_t count) {
+  vertex_count_ = count;
+}
+
+// |RenderPass|
 void RenderPassMTL::SetInstanceCount(size_t count) {
   instance_count_ = count;
 }
 
 // |RenderPass|
 bool RenderPassMTL::SetVertexBuffer(BufferView vertex_buffers[],
-                                    size_t vertex_buffer_count,
-                                    size_t vertex_count) {
+                                    size_t vertex_buffer_count) {
   if (!ValidateVertexBuffers(vertex_buffers, vertex_buffer_count)) {
     return false;
   }
@@ -303,8 +306,6 @@ bool RenderPassMTL::SetVertexBuffer(BufferView vertex_buffers[],
       return false;
     }
   }
-
-  vertex_count_ = vertex_count;
 
   return true;
 }
@@ -344,13 +345,13 @@ fml::Status RenderPassMTL::Draw() {
     }
   } else {
     id<MTLBuffer> mtl_index_buffer =
-        DeviceBufferMTL::Cast(*index_buffer_.buffer).GetMTLBuffer();
+        DeviceBufferMTL::Cast(*index_buffer_.GetBuffer()).GetMTLBuffer();
     if (instance_count_ != 1u) {
       [encoder_ drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type_)
                            indexCount:vertex_count_
                             indexType:index_type_
                           indexBuffer:mtl_index_buffer
-                    indexBufferOffset:index_buffer_.range.offset
+                    indexBufferOffset:index_buffer_.GetRange().offset
                         instanceCount:instance_count_
                            baseVertex:base_vertex_
                          baseInstance:0u];
@@ -359,7 +360,7 @@ fml::Status RenderPassMTL::Draw() {
                            indexCount:vertex_count_
                             indexType:index_type_
                           indexBuffer:mtl_index_buffer
-                    indexBufferOffset:index_buffer_.range.offset];
+                    indexBufferOffset:index_buffer_.GetRange().offset];
     }
   }
 
@@ -383,17 +384,17 @@ fml::Status RenderPassMTL::Draw() {
 bool RenderPassMTL::BindResource(ShaderStage stage,
                                  DescriptorType type,
                                  const ShaderUniformSlot& slot,
-                                 const ShaderMetadata& metadata,
+                                 const ShaderMetadata* metadata,
                                  BufferView view) {
   return Bind(pass_bindings_, stage, slot.ext_res_0, view);
 }
 
 // |RenderPass|
-bool RenderPassMTL::BindResource(
+bool RenderPassMTL::BindDynamicResource(
     ShaderStage stage,
     DescriptorType type,
     const ShaderUniformSlot& slot,
-    const std::shared_ptr<const ShaderMetadata>& metadata,
+    std::unique_ptr<ShaderMetadata> metadata,
     BufferView view) {
   return Bind(pass_bindings_, stage, slot.ext_res_0, view);
 }
@@ -403,9 +404,25 @@ bool RenderPassMTL::BindResource(
     ShaderStage stage,
     DescriptorType type,
     const SampledImageSlot& slot,
-    const ShaderMetadata& metadata,
+    const ShaderMetadata* metadata,
     std::shared_ptr<const Texture> texture,
     const std::unique_ptr<const Sampler>& sampler) {
+  if (!texture) {
+    return false;
+  }
+  return Bind(pass_bindings_, stage, slot.texture_index, sampler, *texture);
+}
+
+bool RenderPassMTL::BindDynamicResource(
+    ShaderStage stage,
+    DescriptorType type,
+    const SampledImageSlot& slot,
+    std::unique_ptr<ShaderMetadata> metadata,
+    std::shared_ptr<const Texture> texture,
+    const std::unique_ptr<const Sampler>& sampler) {
+  if (!texture) {
+    return false;
+  }
   return Bind(pass_bindings_, stage, slot.texture_index, sampler, *texture);
 }
 

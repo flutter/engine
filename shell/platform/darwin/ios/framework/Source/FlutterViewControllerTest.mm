@@ -38,21 +38,26 @@ using namespace flutter::testing;
 /// Sometimes we have to use a custom mock to avoid retain cycles in OCMock.
 /// Used for testing low memory notification.
 @interface FlutterEnginePartialMock : FlutterEngine
+
 @property(nonatomic, strong) FlutterBasicMessageChannel* lifecycleChannel;
 @property(nonatomic, strong) FlutterBasicMessageChannel* keyEventChannel;
 @property(nonatomic, weak) FlutterViewController* viewController;
 @property(nonatomic, strong) FlutterTextInputPlugin* textInputPlugin;
 @property(nonatomic, assign) BOOL didCallNotifyLowMemory;
+
 - (FlutterTextInputPlugin*)textInputPlugin;
+
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
             callback:(nullable FlutterKeyEventCallback)callback
             userData:(nullable void*)userData;
 @end
 
 @implementation FlutterEnginePartialMock
-@synthesize viewController;
+
+// Synthesize properties declared readonly in FlutterEngine.
 @synthesize lifecycleChannel;
 @synthesize keyEventChannel;
+@synthesize viewController;
 @synthesize textInputPlugin;
 
 - (void)notifyLowMemory {
@@ -1146,6 +1151,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                   nibName:nil
                                                                                    bundle:nil];
     weakViewController = viewController;
+    [viewController loadView];
     [viewController viewDidLoad];
     weakView = viewController.view;
     XCTAssertTrue([viewController.view isKindOfClass:[FlutterView class]]);
@@ -2092,7 +2098,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
 - (void)testSetupKeyboardAnimationVsyncClientWillCreateNewVsyncClientForFlutterViewController {
   id bundleMock = OCMPartialMock([NSBundle mainBundle]);
-  OCMStub([bundleMock objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"])
+  OCMStub([bundleMock objectForInfoDictionaryKey:kCADisableMinimumFrameDurationOnPhoneKey])
       .andReturn(@YES);
   id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
   double maxFrameRate = 120;

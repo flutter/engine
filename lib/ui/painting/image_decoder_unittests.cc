@@ -24,6 +24,7 @@
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
 #include "fml/logging.h"
+#include "impeller/core/runtime_types.h"
 #include "impeller/renderer/command_queue.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkData.h"
@@ -92,7 +93,15 @@ class TestImpellerContext : public impeller::Context {
     tasks_.clear();
   }
 
+  void DisposeThreadLocalCachedResources() override { did_dispose_ = true; }
+
   void Shutdown() override {}
+
+  RuntimeStageBackend GetRuntimeStageBackend() const override {
+    return RuntimeStageBackend::kVulkan;
+  }
+
+  bool DidDisposeResources() const { return did_dispose_; }
 
   mutable size_t command_buffer_count_ = 0;
 
@@ -103,6 +112,7 @@ class TestImpellerContext : public impeller::Context {
   };
   std::vector<PendingTask> tasks_;
   std::shared_ptr<const Capabilities> capabilities_;
+  bool did_dispose_ = false;
 };
 
 }  // namespace impeller
@@ -367,12 +377,14 @@ TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
 
   EXPECT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
   EXPECT_FALSE(invoked);
+  EXPECT_EQ(no_gpu_access_context->DidDisposeResources(), false);
 
   auto result = ImageDecoderImpeller::UploadTextureToStorage(
       no_gpu_access_context, bitmap);
 
   ASSERT_EQ(no_gpu_access_context->command_buffer_count_, 0ul);
   ASSERT_EQ(result.second, "");
+  EXPECT_EQ(no_gpu_access_context->DidDisposeResources(), true);
 
   no_gpu_access_context->FlushTasks(/*fail=*/true);
 }
@@ -434,12 +446,16 @@ TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
       std::move(data), image->imageInfo(), 10 * 4);
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   std::optional<DecompressResult> decompressed =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true, allocator);
+          /*supports_wide_gamut=*/true, capabilities, allocator);
   ASSERT_TRUE(decompressed.has_value());
   ASSERT_EQ(decompressed->image_info.colorType(), kRGBA_8888_SkColorType);
   ASSERT_EQ(decompressed->image_info.colorSpace(), nullptr);
@@ -461,12 +477,16 @@ TEST_F(ImageDecoderFixtureTest, ImpellerPixelConversion32F) {
       std::move(data), image->imageInfo(), 10 * 16);
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   std::optional<DecompressResult> decompressed =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true, allocator);
+          /*supports_wide_gamut=*/true, capabilities, allocator);
 
   ASSERT_TRUE(decompressed.has_value());
   ASSERT_EQ(decompressed->image_info.colorType(), kRGBA_F16_SkColorType);
@@ -489,12 +509,16 @@ TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
                                                          std::move(generator));
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   std::optional<DecompressResult> wide_result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true, allocator);
+          /*supports_wide_gamut=*/true, capabilities, allocator);
 
   ASSERT_TRUE(wide_result.has_value());
   ASSERT_EQ(wide_result->image_info.colorType(), kBGR_101010x_XR_SkColorType);
@@ -519,7 +543,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
   std::optional<DecompressResult> narrow_result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/false, allocator);
+          /*supports_wide_gamut=*/false, capabilities, allocator);
 
   ASSERT_TRUE(narrow_result.has_value());
   ASSERT_EQ(narrow_result->image_info.colorType(), kRGBA_8888_SkColorType);
@@ -541,12 +565,16 @@ TEST_F(ImageDecoderFixtureTest, ImpellerNonWideGamut) {
                                                          std::move(generator));
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   std::optional<DecompressResult> result =
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(600, 200), {600, 200},
-          /*supports_wide_gamut=*/true, allocator);
+          /*supports_wide_gamut=*/true, capabilities, allocator);
 
   ASSERT_TRUE(result.has_value());
   ASSERT_EQ(result->image_info.colorType(), kRGBA_8888_SkColorType);
@@ -795,13 +823,21 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   EXPECT_EQ(compressed_image->alphaType(), kOpaque_SkAlphaType);
 
 #if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Capabilities> capabilities =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(true)
+          .Build();
+  std::shared_ptr<impeller::Capabilities> capabilities_no_blit =
+      impeller::CapabilitiesBuilder()
+          .SetSupportsTextureToTextureBlits(false)
+          .Build();
   // Bitmap sizes reflect the original image size as resizing is done on the
   // GPU if the src size is smaller than the max texture size.
   std::shared_ptr<impeller::Allocator> allocator =
       std::make_shared<impeller::TestImpellerAllocator>();
   auto result_1 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {1000, 1000},
-      /*supports_wide_gamut=*/false, allocator);
+      /*supports_wide_gamut=*/false, capabilities, allocator);
   EXPECT_EQ(result_1.sk_bitmap->width(), 75);
   EXPECT_EQ(result_1.sk_bitmap->height(), 25);
 
@@ -809,7 +845,7 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   // max texture size even if destination size isn't max texture size.
   auto result_2 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(6, 2), {10, 10},
-      /*supports_wide_gamut=*/false, allocator);
+      /*supports_wide_gamut=*/false, capabilities, allocator);
   EXPECT_EQ(result_2.sk_bitmap->width(), 6);
   EXPECT_EQ(result_2.sk_bitmap->height(), 2);
 
@@ -817,9 +853,16 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   // is scaled down.
   auto result_3 = ImageDecoderImpeller::DecompressTexture(
       descriptor.get(), SkISize::Make(60, 20), {10, 10},
-      /*supports_wide_gamut=*/false, allocator);
+      /*supports_wide_gamut=*/false, capabilities, allocator);
   EXPECT_EQ(result_3.sk_bitmap->width(), 10);
   EXPECT_EQ(result_3.sk_bitmap->height(), 10);
+
+  // CPU resize is forced.
+  auto result_4 = ImageDecoderImpeller::DecompressTexture(
+      descriptor.get(), SkISize::Make(6, 2), {1000, 1000},
+      /*supports_wide_gamut=*/false, capabilities_no_blit, allocator);
+  EXPECT_EQ(result_4.sk_bitmap->width(), 6);
+  EXPECT_EQ(result_4.sk_bitmap->height(), 2);
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 

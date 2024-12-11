@@ -9,8 +9,7 @@
 namespace impeller::interop {
 
 DisplayListBuilder::DisplayListBuilder(const ImpellerRect* rect)
-    : builder_(ToSkiaType(rect).value_or(
-          flutter::DisplayListBuilder::kMaxCullRect)) {}
+    : builder_(rect) {}
 
 DisplayListBuilder::~DisplayListBuilder() = default;
 
@@ -55,6 +54,11 @@ void DisplayListBuilder::SetTransform(const Matrix& matrix) {
   builder_.SetTransform(&sk_matrix);
 }
 
+void DisplayListBuilder::Transform(const Matrix& matrix) {
+  const auto sk_matrix = SkM44::ColMajor(matrix.m);
+  builder_.Transform(&sk_matrix);
+}
+
 void DisplayListBuilder::ResetTransform() {
   builder_.TransformReset();
 }
@@ -77,10 +81,9 @@ void DisplayListBuilder::ClipOval(const Rect& rect,
   builder_.ClipOval(ToSkiaType(rect), op);
 }
 
-void DisplayListBuilder::ClipRoundedRect(
-    const Rect& rect,
-    const impeller::PathBuilder::RoundingRadii& radii,
-    flutter::DlCanvas::ClipOp op) {
+void DisplayListBuilder::ClipRoundedRect(const Rect& rect,
+                                         const RoundingRadii& radii,
+                                         flutter::DlCanvas::ClipOp op) {
   builder_.ClipRRect(ToSkiaType(rect, radii), op);
 }
 
@@ -97,18 +100,17 @@ void DisplayListBuilder::DrawOval(const Rect& oval_bounds, const Paint& paint) {
   builder_.DrawOval(ToSkiaType(oval_bounds), paint.GetPaint());
 }
 
-void DisplayListBuilder::DrawRoundedRect(
-    const Rect& rect,
-    const impeller::PathBuilder::RoundingRadii& radii,
-    const Paint& paint) {
+void DisplayListBuilder::DrawRoundedRect(const Rect& rect,
+                                         const RoundingRadii& radii,
+                                         const Paint& paint) {
   builder_.DrawRRect(ToSkiaType(rect, radii), paint.GetPaint());
 }
 
 void DisplayListBuilder::DrawRoundedRectDifference(
     const Rect& outer_rect,
-    const impeller::PathBuilder::RoundingRadii& outer_radii,
+    const RoundingRadii& outer_radii,
     const Rect& inner_rect,
-    const impeller::PathBuilder::RoundingRadii& inner_radii,
+    const RoundingRadii& inner_radii,
     const Paint& paint) {
   builder_.DrawDRRect(ToSkiaType(outer_rect, outer_radii),  //
                       ToSkiaType(inner_rect, inner_radii),  //

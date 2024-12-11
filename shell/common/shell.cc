@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "fml/task_runner.h"
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "flutter/shell/common/shell.h"
 
@@ -28,7 +29,6 @@
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
-#include "impeller/runtime_stage/runtime_stage.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
@@ -199,14 +199,7 @@ static impeller::RuntimeStageBackend DetermineRuntimeStageBackend(
   if (!impeller_context) {
     return impeller::RuntimeStageBackend::kSkSL;
   }
-  switch (impeller_context->GetBackendType()) {
-    case impeller::Context::BackendType::kMetal:
-      return impeller::RuntimeStageBackend::kMetal;
-    case impeller::Context::BackendType::kOpenGLES:
-      return impeller::RuntimeStageBackend::kOpenGLES;
-    case impeller::Context::BackendType::kVulkan:
-      return impeller::RuntimeStageBackend::kVulkan;
-  }
+  return impeller_context->GetRuntimeStageBackend();
 }
 
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
@@ -710,6 +703,17 @@ bool Shell::EngineHasLivePorts() const {
   return weak_engine_->UIIsolateHasLivePorts();
 }
 
+bool Shell::EngineHasPendingMicrotasks() const {
+  FML_DCHECK(is_set_up_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!weak_engine_) {
+    return false;
+  }
+
+  return weak_engine_->UIIsolateHasPendingMicrotasks();
+}
+
 bool Shell::IsSetup() const {
   return is_set_up_;
 }
@@ -1025,7 +1029,7 @@ void Shell::OnPlatformViewSetViewportMetrics(int64_t view_id,
         }
       });
 
-  fml::TaskRunner::RunNowOrPostTask(
+  fml::TaskRunner::RunNowAndFlushMessages(
       task_runners_.GetUITaskRunner(),
       [engine = engine_->GetWeakPtr(), view_id, metrics]() {
         if (engine) {
@@ -1064,38 +1068,16 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
   }
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
-  // If the root isolate is not yet running this may be the navigation
-  // channel initial route and must be dispatched immediately so that
-  // it can be set before isolate creation.
-  static constexpr char kNavigationChannel[] = "flutter/navigation";
-  if (!engine_->GetRuntimeController()->IsRootIsolateRunning() &&
-      message->channel() == kNavigationChannel) {
-    // The static leak checker gets confused by the use of fml::MakeCopyable.
-    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
-    fml::TaskRunner::RunNowOrPostTask(
-        task_runners_.GetUITaskRunner(),
-        fml::MakeCopyable([engine = engine_->GetWeakPtr(),
-                           message = std::move(message)]() mutable {
-          if (engine) {
-            engine->DispatchPlatformMessage(std::move(message));
-          }
-        }));
-  } else {
-    // In all other cases, the message must be dispatched via a new task so
-    // that the completion of the platform channel response future is guaranteed
-    // to wake up the Dart event loop, even in cases where the platform and UI
-    // threads are the same.
-
-    // The static leak checker gets confused by the use of fml::MakeCopyable.
-    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
-    task_runners_.GetUITaskRunner()->PostTask(
-        fml::MakeCopyable([engine = engine_->GetWeakPtr(),
-                           message = std::move(message)]() mutable {
-          if (engine) {
-            engine->DispatchPlatformMessage(std::move(message));
-          }
-        }));
-  }
+  // The static leak checker gets confused by the use of fml::MakeCopyable.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
+  fml::TaskRunner::RunNowAndFlushMessages(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable([engine = engine_->GetWeakPtr(),
+                         message = std::move(message)]() mutable {
+        if (engine) {
+          engine->DispatchPlatformMessage(std::move(message));
+        }
+      }));
 }
 
 // |PlatformView::Delegate|
@@ -1107,7 +1089,7 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  fml::TaskRunner::RunNowOrPostTask(
+  fml::TaskRunner::RunNowAndFlushMessages(
       task_runners_.GetUITaskRunner(),
       fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
                          flow_id = next_pointer_flow_id_]() mutable {
@@ -1125,7 +1107,7 @@ void Shell::OnPlatformViewDispatchSemanticsAction(int32_t node_id,
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  fml::TaskRunner::RunNowOrPostTask(
+  fml::TaskRunner::RunNowAndFlushMessages(
       task_runners_.GetUITaskRunner(),
       fml::MakeCopyable([engine = engine_->GetWeakPtr(), node_id, action,
                          args = std::move(args)]() mutable {
@@ -1140,12 +1122,13 @@ void Shell::OnPlatformViewSetSemanticsEnabled(bool enabled) {
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
-                                    [engine = engine_->GetWeakPtr(), enabled] {
-                                      if (engine) {
-                                        engine->SetSemanticsEnabled(enabled);
-                                      }
-                                    });
+  fml::TaskRunner::RunNowAndFlushMessages(
+      task_runners_.GetUITaskRunner(),
+      [engine = engine_->GetWeakPtr(), enabled] {
+        if (engine) {
+          engine->SetSemanticsEnabled(enabled);
+        }
+      });
 }
 
 // |PlatformView::Delegate|
@@ -1153,12 +1136,12 @@ void Shell::OnPlatformViewSetAccessibilityFeatures(int32_t flags) {
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
-                                    [engine = engine_->GetWeakPtr(), flags] {
-                                      if (engine) {
-                                        engine->SetAccessibilityFeatures(flags);
-                                      }
-                                    });
+  fml::TaskRunner::RunNowAndFlushMessages(
+      task_runners_.GetUITaskRunner(), [engine = engine_->GetWeakPtr(), flags] {
+        if (engine) {
+          engine->SetAccessibilityFeatures(flags);
+        }
+      });
 }
 
 // |PlatformView::Delegate|
@@ -1650,12 +1633,17 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
 }
 
 fml::Milliseconds Shell::GetFrameBudget() {
+  if (cached_display_refresh_rate_.has_value()) {
+    return cached_display_refresh_rate_.value();
+  }
   double display_refresh_rate = display_manager_->GetMainDisplayRefreshRate();
   if (display_refresh_rate > 0) {
-    return fml::RefreshRateToFrameBudget(display_refresh_rate);
+    cached_display_refresh_rate_ =
+        fml::RefreshRateToFrameBudget(display_refresh_rate);
   } else {
-    return fml::kDefaultFrameBudget;
+    cached_display_refresh_rate_ = fml::kDefaultFrameBudget;
   }
+  return cached_display_refresh_rate_.value_or(fml::kDefaultFrameBudget);
 }
 
 fml::TimePoint Shell::GetLatestFrameTargetTime() const {

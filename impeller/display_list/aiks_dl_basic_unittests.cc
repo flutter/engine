@@ -58,7 +58,7 @@ TEST_P(AiksTest, CanRenderInvertedImageWithColorFilter) {
   DlPaint paint;
   paint.setColor(DlColor::kRed());
   paint.setColorFilter(
-      DlBlendColorFilter::Make(DlColor::kYellow(), DlBlendMode::kSrcOver));
+      DlColorFilter::MakeBlend(DlColor::kYellow(), DlBlendMode::kSrcOver));
   paint.setInvertColors(true);
   auto image = DlImageImpeller::Make(CreateTextureForFixture("kalimba.jpg"));
 
@@ -72,7 +72,7 @@ TEST_P(AiksTest, CanRenderColorFilterWithInvertColors) {
   DlPaint paint;
   paint.setColor(DlColor::kRed());
   paint.setColorFilter(
-      DlBlendColorFilter::Make(DlColor::kYellow(), DlBlendMode::kSrcOver));
+      DlColorFilter::MakeBlend(DlColor::kYellow(), DlBlendMode::kSrcOver));
   paint.setInvertColors(true);
 
   builder.DrawRect(SkRect::MakeLTRB(0, 0, 100, 100), paint);
@@ -84,7 +84,7 @@ TEST_P(AiksTest, CanRenderColorFilterWithInvertColorsDrawPaint) {
   DlPaint paint;
   paint.setColor(DlColor::kRed());
   paint.setColorFilter(
-      DlBlendColorFilter::Make(DlColor::kYellow(), DlBlendMode::kSrcOver));
+      DlColorFilter::MakeBlend(DlColor::kYellow(), DlBlendMode::kSrcOver));
   paint.setInvertColors(true);
 
   builder.DrawPaint(paint);
@@ -94,7 +94,7 @@ TEST_P(AiksTest, CanRenderColorFilterWithInvertColorsDrawPaint) {
 namespace {
 bool GenerateMipmap(const std::shared_ptr<Context>& context,
                     std::shared_ptr<Texture> texture,
-                    std::string label) {
+                    std::string_view label) {
   auto buffer = context->CreateCommandBuffer();
   if (!buffer) {
     return false;
@@ -103,7 +103,7 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
   if (!pass) {
     return false;
   }
-  pass->GenerateMipmap(std::move(texture), std::move(label));
+  pass->GenerateMipmap(std::move(texture), label);
 
   pass->EncodeCommands(context->GetResourceAllocator());
   return context->GetCommandQueue()->Submit({buffer}).ok();
@@ -118,15 +118,14 @@ void CanRenderTiledTexture(AiksTest* aiks_test,
                                                     /*enable_mipmapping=*/true);
   GenerateMipmap(context, texture, "table_mountain_nx");
   auto image = DlImageImpeller::Make(texture);
-  SkMatrix sk_local_matrix = ToSkMatrix(local_matrix);
-  DlImageColorSource color_source(image, tile_mode, tile_mode,
-                                  DlImageSampling::kNearestNeighbor,
-                                  &sk_local_matrix);
+  auto color_source = DlColorSource::MakeImage(
+      image, tile_mode, tile_mode, DlImageSampling::kNearestNeighbor,
+      &local_matrix);
 
   DisplayListBuilder builder;
   DlPaint paint;
   paint.setColor(DlColor::kWhite());
-  paint.setColorSource(&color_source);
+  paint.setColorSource(color_source);
 
   builder.Scale(aiks_test->GetContentScale().x, aiks_test->GetContentScale().y);
   builder.Translate(100.0f, 100.0f);
@@ -233,6 +232,26 @@ TEST_P(AiksTest, CanRenderImageRect) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest, DrawImageRectSrcOutsideBounds) {
+  DisplayListBuilder builder;
+  auto image = DlImageImpeller::Make(CreateTextureForFixture("kalimba.jpg"));
+
+  // Use a source rect that is partially outside the bounds of the image.
+  auto source_rect = SkRect::MakeXYWH(
+      image->dimensions().fWidth * 0.25f, image->dimensions().fHeight * 0.4f,
+      image->dimensions().fWidth, image->dimensions().fHeight);
+
+  auto dest_rect = SkRect::MakeXYWH(100, 100, 600, 600);
+
+  DlPaint paint;
+  paint.setColor(DlColor::kMidGrey());
+  builder.DrawRect(dest_rect, paint);
+
+  builder.DrawImageRect(image, source_rect, dest_rect,
+                        DlImageSampling::kNearestNeighbor);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(AiksTest, CanRenderSimpleClips) {
   DisplayListBuilder builder;
   builder.Scale(GetContentScale().x, GetContentScale().y);
@@ -309,10 +328,9 @@ TEST_P(AiksTest, CanRenderSimpleClips) {
       {500, 600}, 75, 7, gradient_colors, stops, DlTileMode::kMirror));
   draw(paint, 0, 300);
 
-  DlImageColorSource image_source(image, DlTileMode::kRepeat,
-                                  DlTileMode::kRepeat,
-                                  DlImageSampling::kNearestNeighbor);
-  paint.setColorSource(&image_source);
+  paint.setColorSource(
+      DlColorSource::MakeImage(image, DlTileMode::kRepeat, DlTileMode::kRepeat,
+                               DlImageSampling::kNearestNeighbor));
   draw(paint, 300, 0);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -464,11 +482,10 @@ TEST_P(AiksTest, FilledCirclesRenderCorrectly) {
       {500, 600}, 75, 7, gradient_colors, stops, DlTileMode::kMirror));
   builder.DrawCircle(SkPoint{500, 600}, 100, paint);
 
-  SkMatrix local_matrix = SkMatrix::Translate(700, 200);
-  DlImageColorSource image_source(
+  DlMatrix local_matrix = DlMatrix::MakeTranslation({700, 200});
+  paint.setColorSource(DlColorSource::MakeImage(
       image, DlTileMode::kRepeat, DlTileMode::kRepeat,
-      DlImageSampling::kNearestNeighbor, &local_matrix);
-  paint.setColorSource(&image_source);
+      DlImageSampling::kNearestNeighbor, &local_matrix));
   builder.DrawCircle(SkPoint{800, 300}, 100, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -531,11 +548,10 @@ TEST_P(AiksTest, StrokedCirclesRenderCorrectly) {
       {500, 600}, 75, 7, gradient_colors, stops, DlTileMode::kMirror));
   draw(builder, {500, 600}, 5, 10, 10);
 
-  SkMatrix local_matrix = SkMatrix::Translate(700, 200);
-  DlImageColorSource image_source(
+  DlMatrix local_matrix = DlMatrix::MakeTranslation({700, 200});
+  paint.setColorSource(DlColorSource::MakeImage(
       image, DlTileMode::kRepeat, DlTileMode::kRepeat,
-      DlImageSampling::kNearestNeighbor, &local_matrix);
-  paint.setColorSource(&image_source);
+      DlImageSampling::kNearestNeighbor, &local_matrix));
   draw(builder, {800, 300}, 5, 10, 10);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -604,11 +620,10 @@ TEST_P(AiksTest, FilledEllipsesRenderCorrectly) {
   builder.DrawOval(SkRect::MakeXYWH(200, 625, 200, 50), paint);
   builder.DrawOval(SkRect::MakeXYWH(275, 550, 50, 200), paint);
 
-  SkMatrix local_matrix = SkMatrix::Translate(610, 15);
-  DlImageColorSource image_source(
+  DlMatrix local_matrix = DlMatrix::MakeTranslation({610, 15});
+  paint.setColorSource(DlColorSource::MakeImage(
       image, DlTileMode::kRepeat, DlTileMode::kRepeat,
-      DlImageSampling::kNearestNeighbor, &local_matrix);
-  paint.setColorSource(&image_source);
+      DlImageSampling::kNearestNeighbor, &local_matrix));
   builder.DrawOval(SkRect::MakeXYWH(610, 90, 200, 50), paint);
   builder.DrawOval(SkRect::MakeXYWH(685, 15, 50, 200), paint);
 
@@ -691,11 +706,10 @@ TEST_P(AiksTest, FilledRoundRectsRenderCorrectly) {
       SkRRect::MakeRectXY(SkRect::MakeLTRB(160, 550, 240, 750), 40, 40), paint);
 
   paint.setColor(DlColor::kWhite().modulateOpacity(0.1));
-  SkMatrix local_matrix = SkMatrix::Translate(520, 20);
-  DlImageColorSource image_source(
+  DlMatrix local_matrix = DlMatrix::MakeTranslation({520, 20});
+  paint.setColorSource(DlColorSource::MakeImage(
       image, DlTileMode::kRepeat, DlTileMode::kRepeat,
-      DlImageSampling::kNearestNeighbor, &local_matrix);
-  paint.setColorSource(&image_source);
+      DlImageSampling::kNearestNeighbor, &local_matrix));
   for (int i = 1; i <= 10; i++) {
     int j = 11 - i;
     builder.DrawRRect(
@@ -706,11 +720,10 @@ TEST_P(AiksTest, FilledRoundRectsRenderCorrectly) {
   }
 
   paint.setColor(DlColor::kWhite().modulateOpacity(0.5));
-  local_matrix = SkMatrix::Translate(800, 300);
-  DlImageColorSource image_source2(
+  local_matrix = DlMatrix::MakeTranslation({800, 300});
+  paint.setColorSource(DlColorSource::MakeImage(
       image, DlTileMode::kRepeat, DlTileMode::kRepeat,
-      DlImageSampling::kNearestNeighbor, &local_matrix);
-  paint.setColorSource(&image_source2);
+      DlImageSampling::kNearestNeighbor, &local_matrix));
   builder.DrawRRect(
       SkRRect::MakeRectXY(SkRect::MakeLTRB(800, 410, 1000, 490), 40, 40),
       paint);
@@ -815,8 +828,8 @@ TEST_P(AiksTest, CanRenderClippedBackdropFilter) {
   builder.ClipRRect(clip_rrect, DlCanvas::ClipOp::kIntersect);
 
   DlPaint save_paint;
-  auto backdrop_filter = std::make_shared<DlColorFilterImageFilter>(
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kExclusion));
+  auto backdrop_filter = DlImageFilter::MakeColorFilter(
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kExclusion));
   builder.SaveLayer(&clip_rect, &save_paint, backdrop_filter.get());
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -896,9 +909,9 @@ TEST_P(AiksTest, ImageColorSourceEffectTransform) {
 
   // Translation
   {
-    SkMatrix matrix = SkMatrix::Translate(50, 50);
+    DlMatrix matrix = DlMatrix::MakeTranslation({50, 50});
     DlPaint paint;
-    paint.setColorSource(std::make_shared<DlImageColorSource>(
+    paint.setColorSource(DlColorSource::MakeImage(
         texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
         DlImageSampling::kNearestNeighbor, &matrix));
 
@@ -911,12 +924,11 @@ TEST_P(AiksTest, ImageColorSourceEffectTransform) {
     builder.Rotate(45);
     DlPaint paint;
 
-    Matrix impeller_matrix(1, -1, 0, 0,  //
-                           1, 1, 0, 0,   //
-                           0, 0, 1, 0,   //
-                           0, 0, 0, 1);
-    SkMatrix matrix = SkM44::ColMajor(impeller_matrix.m).asM33();
-    paint.setColorSource(std::make_shared<DlImageColorSource>(
+    Matrix matrix(1, -1, 0, 0,  //
+                  1, 1, 0, 0,   //
+                  0, 0, 1, 0,   //
+                  0, 0, 0, 1);
+    paint.setColorSource(DlColorSource::MakeImage(
         texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
         DlImageSampling::kNearestNeighbor, &matrix));
     builder.DrawRect(SkRect::MakeLTRB(100, 0, 200, 100), paint);
@@ -929,8 +941,8 @@ TEST_P(AiksTest, ImageColorSourceEffectTransform) {
     builder.Scale(100, 100);
     DlPaint paint;
 
-    SkMatrix matrix = SkMatrix::Scale(0.005, 0.005);
-    paint.setColorSource(std::make_shared<DlImageColorSource>(
+    DlMatrix matrix = DlMatrix::MakeScale({0.005, 0.005, 1});
+    paint.setColorSource(DlColorSource::MakeImage(
         texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
         DlImageSampling::kNearestNeighbor, &matrix));
 
@@ -976,9 +988,9 @@ TEST_P(AiksTest, MatrixImageFilterDoesntCullWhenTranslatedFromOffscreen) {
   // Draw a circle in a SaveLayer at -300, but move it back on-screen with a
   // +300 translation applied by a SaveLayer image filter.
   DlPaint paint;
-  SkMatrix translate = SkMatrix::Translate(300, 0);
+  DlMatrix translate = DlMatrix::MakeTranslation({300, 0});
   paint.setImageFilter(
-      DlMatrixImageFilter::Make(translate, DlImageSampling::kLinear));
+      DlImageFilter::MakeMatrix(translate, DlImageSampling::kLinear));
   builder.SaveLayer(nullptr, &paint);
 
   DlPaint circle_paint;
@@ -999,8 +1011,8 @@ TEST_P(AiksTest,
   // +300 translation applied by a SaveLayer image filter.
 
   DlPaint paint;
-  paint.setImageFilter(DlMatrixImageFilter::Make(
-      SkMatrix::Translate(300, 0) * SkMatrix::Scale(2, 2),
+  paint.setImageFilter(DlImageFilter::MakeMatrix(
+      DlMatrix::MakeTranslation({300, 0}) * DlMatrix::MakeScale({2, 2, 1}),
       DlImageSampling::kNearestNeighbor));
   builder.SaveLayer(nullptr, &paint);
 
@@ -1023,7 +1035,7 @@ TEST_P(AiksTest, ClearColorOptimizationWhenSubpassIsBiggerThanParentPass) {
   paint.setColor(DlColor::kRed());
   builder.DrawRect(SkRect::MakeLTRB(200, 200, 300, 300), paint);
 
-  paint.setImageFilter(DlMatrixImageFilter::Make(SkMatrix::Scale(2, 2),
+  paint.setImageFilter(DlImageFilter::MakeMatrix(DlMatrix::MakeScale({2, 2, 1}),
                                                  DlImageSampling::kLinear));
   builder.SaveLayer(nullptr, &paint);
   // Draw a rectangle that would fully cover the parent pass size, but not
@@ -1271,9 +1283,9 @@ TEST_P(AiksTest, FilledRoundRectPathsRenderCorrectly) {
   draw_rrect_as_path(SkRect::MakeLTRB(100, 610, 300, 690), 40, 40, paint);
   draw_rrect_as_path(SkRect::MakeLTRB(160, 550, 240, 750), 40, 40, paint);
 
-  auto matrix = SkMatrix::Translate(520, 20);
+  auto matrix = DlMatrix::MakeTranslation({520, 20});
   paint.setColor(DlColor::kWhite().modulateOpacity(0.1));
-  paint.setColorSource(std::make_shared<DlImageColorSource>(
+  paint.setColorSource(DlColorSource::MakeImage(
       texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
       DlImageSampling::kMipmapLinear, &matrix));
   for (int i = 1; i <= 10; i++) {
@@ -1282,9 +1294,9 @@ TEST_P(AiksTest, FilledRoundRectPathsRenderCorrectly) {
                                         720 + i * 20, 220 + j * 20),
                        i * 10, j * 10, paint);
   }
-  matrix = SkMatrix::Translate(800, 300);
+  matrix = DlMatrix::MakeTranslation({800, 300});
   paint.setColor(DlColor::kWhite().modulateOpacity(0.5));
-  paint.setColorSource(std::make_shared<DlImageColorSource>(
+  paint.setColorSource(DlColorSource::MakeImage(
       texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
       DlImageSampling::kMipmapLinear, &matrix));
 
@@ -1500,8 +1512,8 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
 
     paint.setColor(DlColor::kGreen());
     paint.setBlendMode(DlBlendMode::kSrcOver);
-    paint.setImageFilter(DlColorFilterImageFilter::Make(
-        DlBlendColorFilter::Make(DlColor::kWhite(), DlBlendMode::kDst)));
+    paint.setImageFilter(DlImageFilter::MakeColorFilter(
+        DlColorFilter::MakeBlend(DlColor::kWhite(), DlBlendMode::kDst)));
     builder.DrawCircle(SkPoint::Make(200, 200), 200, paint);
     builder.Restore();
   }
@@ -1518,8 +1530,8 @@ TEST_P(AiksTest, MassiveScalingMatrixImageFilter) {
   }
   DisplayListBuilder builder(SkRect::MakeSize(SkSize::Make(1000, 1000)));
 
-  auto filter = DlMatrixImageFilter::Make(SkMatrix::Scale(0.001, 0.001),
-                                          DlImageSampling::kLinear);
+  auto filter = DlImageFilter::MakeMatrix(
+      DlMatrix::MakeScale({0.001, 0.001, 1}), DlImageSampling::kLinear);
 
   DlPaint paint;
   paint.setImageFilter(filter);
@@ -1532,6 +1544,51 @@ TEST_P(AiksTest, MassiveScalingMatrixImageFilter) {
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, NoDimplesInRRectPath) {
+  Scalar width = 200.f;
+  Scalar height = 60.f;
+  Scalar corner = 1.f;
+  auto callback = [&]() -> sk_sp<DisplayList> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("width", &width, 0, 200);
+      ImGui::SliderFloat("height", &height, 0, 200);
+      ImGui::SliderFloat("corner", &corner, 0, 1);
+      ImGui::End();
+    }
+
+    DisplayListBuilder builder;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+
+    DlPaint background_paint;
+    background_paint.setColor(DlColor(1, 0.1, 0.1, 0.1, DlColorSpace::kSRGB));
+    builder.DrawPaint(background_paint);
+
+    std::vector<DlColor> colors = {DlColor::kRed(), DlColor::kBlue()};
+    std::vector<Scalar> stops = {0.0, 1.0};
+
+    DlPaint paint;
+    auto gradient = DlColorSource::MakeLinear(
+        {0, 0}, {200, 200}, 2, colors.data(), stops.data(), DlTileMode::kClamp);
+    paint.setColorSource(gradient);
+    paint.setColor(DlColor::kWhite());
+    paint.setDrawStyle(DlDrawStyle::kStroke);
+    paint.setStrokeWidth(20);
+
+    builder.Save();
+    builder.Translate(100, 100);
+
+    Scalar corner_x = ((1 - corner) * 50) + 50;
+    Scalar corner_y = corner * 50 + 50;
+    SkRRect rrect = SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, width, height),
+                                        corner_x, corner_y);
+    builder.DrawRRect(rrect, paint);
+    builder.Restore();
+    return builder.Build();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing

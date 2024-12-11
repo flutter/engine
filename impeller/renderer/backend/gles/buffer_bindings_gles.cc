@@ -8,11 +8,14 @@
 #include <vector>
 
 #include "impeller/base/validation.h"
+#include "impeller/core/buffer_view.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/sampler_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
+#include "impeller/renderer/command.h"
 
 namespace impeller {
 
@@ -100,6 +103,40 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
   if (!gl.IsProgram(program)) {
     return false;
   }
+  program_handle_ = program;
+  if (gl.GetDescription()->GetGlVersion().IsAtLeast(Version{3, 0, 0})) {
+    return ReadUniformsBindingsV3(gl, program);
+  }
+  return ReadUniformsBindingsV2(gl, program);
+}
+
+bool BufferBindingsGLES::ReadUniformsBindingsV3(const ProcTableGLES& gl,
+                                                GLuint program) {
+  program_handle_ = program;
+  GLint uniform_blocks = 0;
+  gl.GetProgramiv(program, GL_ACTIVE_UNIFORM_BLOCKS, &uniform_blocks);
+  for (GLint i = 0; i < uniform_blocks; i++) {
+    GLint name_length = 0;
+    gl.GetActiveUniformBlockiv(program, i, GL_UNIFORM_BLOCK_NAME_LENGTH,
+                               &name_length);
+
+    std::vector<GLchar> name;
+    name.resize(name_length);
+    GLint length = 0;
+    gl.GetActiveUniformBlockName(program, i, name_length, &length, name.data());
+
+    GLuint block_index = gl.GetUniformBlockIndex(program, name.data());
+    gl.UniformBlockBinding(program_handle_, block_index, i);
+
+    ubo_locations_[std::string{name.data(), static_cast<size_t>(length)}] =
+        std::make_pair(block_index, i);
+  }
+  use_ubo_ = true;
+  return ReadUniformsBindingsV2(gl, program);
+}
+
+bool BufferBindingsGLES::ReadUniformsBindingsV2(const ProcTableGLES& gl,
+                                                GLuint program) {
   GLint max_name_size = 0;
   gl.GetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_name_size);
 
@@ -138,6 +175,9 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
 
     auto location = gl.GetUniformLocation(program, name.data());
     if (location == -1) {
+      if (use_ubo_) {
+        continue;
+      }
       VALIDATION_LOG << "Could not query the location of an active uniform.";
       return false;
     }
@@ -153,9 +193,15 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
 
 bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
                                               size_t binding,
-                                              size_t vertex_offset) const {
+                                              size_t vertex_offset) {
   if (binding >= vertex_attrib_arrays_.size()) {
     return false;
+  }
+
+  if (!gl.GetCapabilities()->IsES()) {
+    FML_DCHECK(vertex_array_object_ == 0);
+    gl.GenVertexArrays(1, &vertex_array_object_);
+    gl.BindVertexArray(vertex_array_object_);
   }
 
   for (const auto& array : vertex_attrib_arrays_[binding]) {
@@ -173,28 +219,23 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
   return true;
 }
 
-bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
-                                         Allocator& transients_allocator,
-                                         const Bindings& vertex_bindings,
-                                         const Bindings& fragment_bindings) {
-  for (const auto& buffer : vertex_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
+bool BufferBindingsGLES::BindUniformData(
+    const ProcTableGLES& gl,
+    const std::vector<TextureAndSampler>& bound_textures,
+    const std::vector<BufferResource>& bound_buffers,
+    Range texture_range,
+    Range buffer_range) {
+  for (auto i = 0u; i < buffer_range.length; i++) {
+    if (!BindUniformBuffer(gl, bound_buffers[buffer_range.offset + i])) {
       return false;
     }
   }
-  for (const auto& buffer : fragment_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
-      return false;
-    }
-  }
-
   std::optional<size_t> next_unit_index =
-      BindTextures(gl, vertex_bindings, ShaderStage::kVertex);
+      BindTextures(gl, bound_textures, texture_range, ShaderStage::kVertex);
   if (!next_unit_index.has_value()) {
     return false;
   }
-
-  if (!BindTextures(gl, fragment_bindings, ShaderStage::kFragment,
+  if (!BindTextures(gl, bound_textures, texture_range, ShaderStage::kFragment,
                     *next_unit_index)
            .has_value()) {
     return false;
@@ -203,11 +244,15 @@ bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
   return true;
 }
 
-bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) const {
+bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) {
   for (const auto& array : vertex_attrib_arrays_) {
     for (const auto& attribute : array) {
       gl.DisableVertexAttribArray(attribute.index);
     }
+  }
+  if (!gl.GetCapabilities()->IsES()) {
+    gl.DeleteVertexArrays(1, &vertex_array_object_);
+    vertex_array_object_ = 0;
   }
 
   return true;
@@ -232,15 +277,16 @@ GLint BufferBindingsGLES::ComputeTextureLocation(
 
 const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
     const ShaderMetadata* metadata) {
-  auto location = binding_map_.find(metadata->name);
+  BindingMap::iterator location = binding_map_.find(metadata->name);
   if (location != binding_map_.end()) {
     return location->second;
   }
 
   // For each metadata member, look up the binding location and record
   // it in the binding map.
-  auto& locations = binding_map_[metadata->name] = {};
-  for (const auto& member : metadata->members) {
+  std::vector<GLint>& locations = binding_map_[metadata->name] = {};
+  locations.reserve(metadata->members.size());
+  for (const ShaderStructMemberMetadata& member : metadata->members) {
     if (member.type == ShaderType::kVoid) {
       // Void types are used for padding. We are obviously not going to find
       // mappings for these. Keep going.
@@ -249,9 +295,10 @@ const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
     }
 
     size_t element_count = member.array_elements.value_or(1);
-    const auto member_key =
+    const std::string member_key =
         CreateUniformMemberKey(metadata->name, member.name, element_count > 1);
-    const auto computed_location = uniform_locations_.find(member_key);
+    const absl::flat_hash_map<std::string, GLint>::iterator computed_location =
+        uniform_locations_.find(member_key);
     if (computed_location == uniform_locations_.end()) {
       // Uniform was not active.
       locations.push_back(-1);
@@ -263,17 +310,54 @@ const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
 }
 
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
-                                           Allocator& transients_allocator,
                                            const BufferResource& buffer) {
-  const auto* metadata = buffer.GetMetadata();
-  auto device_buffer = buffer.resource.buffer;
+  const ShaderMetadata* metadata = buffer.GetMetadata();
+  const DeviceBuffer* device_buffer = buffer.resource.GetBuffer();
   if (!device_buffer) {
     VALIDATION_LOG << "Device buffer not found.";
     return false;
   }
-  const auto& device_buffer_gles = DeviceBufferGLES::Cast(*device_buffer);
+  const DeviceBufferGLES& device_buffer_gles =
+      DeviceBufferGLES::Cast(*device_buffer);
+
+  if (use_ubo_) {
+    return BindUniformBufferV3(gl, buffer.resource, metadata,
+                               device_buffer_gles);
+  }
+  return BindUniformBufferV2(gl, buffer.resource, metadata, device_buffer_gles);
+}
+
+bool BufferBindingsGLES::BindUniformBufferV3(
+    const ProcTableGLES& gl,
+    const BufferView& buffer,
+    const ShaderMetadata* metadata,
+    const DeviceBufferGLES& device_buffer_gles) {
+  absl::flat_hash_map<std::string, std::pair<GLint, GLuint>>::iterator it =
+      ubo_locations_.find(metadata->name);
+  if (it == ubo_locations_.end()) {
+    return BindUniformBufferV2(gl, buffer, metadata, device_buffer_gles);
+  }
+  const auto& [block_index, binding_point] = it->second;
+  if (!device_buffer_gles.BindAndUploadDataIfNecessary(
+          DeviceBufferGLES::BindingType::kUniformBuffer)) {
+    return false;
+  }
+  auto handle = device_buffer_gles.GetHandle();
+  if (!handle.has_value()) {
+    return false;
+  }
+  gl.BindBufferRange(GL_UNIFORM_BUFFER, binding_point, handle.value(),
+                     buffer.GetRange().offset, buffer.GetRange().length);
+  return true;
+}
+
+bool BufferBindingsGLES::BindUniformBufferV2(
+    const ProcTableGLES& gl,
+    const BufferView& buffer,
+    const ShaderMetadata* metadata,
+    const DeviceBufferGLES& device_buffer_gles) {
   const uint8_t* buffer_ptr =
-      device_buffer_gles.GetBufferData() + buffer.resource.range.offset;
+      device_buffer_gles.GetBufferData() + buffer.GetRange().offset;
 
   if (metadata->members.empty()) {
     VALIDATION_LOG << "Uniform buffer had no members. This is currently "
@@ -282,10 +366,10 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     return false;
   }
 
-  const auto& locations = ComputeUniformLocations(metadata);
-  for (auto i = 0u; i < metadata->members.size(); i++) {
-    const auto& member = metadata->members[i];
-    auto location = locations[i];
+  const std::vector<GLint>& locations = ComputeUniformLocations(metadata);
+  for (size_t i = 0u; i < metadata->members.size(); i++) {
+    const ShaderStructMemberMetadata& member = metadata->members[i];
+    GLint location = locations[i];
     // Void type or inactive uniform.
     if (location == -1 || member.type == ShaderType::kVoid) {
       continue;
@@ -299,77 +383,59 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     // When binding uniform arrays, the elements must be contiguous. Copy
     // the uniforms to a temp buffer to eliminate any padding needed by the
     // other backends if the array elements have padding.
-    std::vector<uint8_t> array_element_buffer_;
+    std::vector<uint8_t> array_element_buffer;
     if (element_count > 1 && element_stride != member.size) {
-      array_element_buffer_.resize(member.size * element_count);
+      array_element_buffer.resize(member.size * element_count);
       for (size_t element_i = 0; element_i < element_count; element_i++) {
-        std::memcpy(array_element_buffer_.data() + element_i * member.size,
+        std::memcpy(array_element_buffer.data() + element_i * member.size,
                     reinterpret_cast<const char*>(buffer_data) +
                         element_i * element_stride,
                     member.size);
       }
       buffer_data =
-          reinterpret_cast<const GLfloat*>(array_element_buffer_.data());
+          reinterpret_cast<const GLfloat*>(array_element_buffer.data());
     }
 
-    switch (member.type) {
-      case ShaderType::kFloat:
-        switch (member.size) {
-          case sizeof(Matrix):
-            gl.UniformMatrix4fv(location,       // location
-                                element_count,  // count
-                                GL_FALSE,       // normalize
-                                buffer_data     // data
-            );
-            continue;
-          case sizeof(Vector4):
-            gl.Uniform4fv(location,       // location
-                          element_count,  // count
-                          buffer_data     // data
-            );
-            continue;
-          case sizeof(Vector3):
-            gl.Uniform3fv(location,       // location
-                          element_count,  // count
-                          buffer_data     // data
-            );
-            continue;
-          case sizeof(Vector2):
-            gl.Uniform2fv(location,       // location
-                          element_count,  // count
-                          buffer_data     // data
-            );
-            continue;
-          case sizeof(Scalar):
-            gl.Uniform1fv(location,       // location
-                          element_count,  // count
-                          buffer_data     // data
-            );
-            continue;
-        }
-        VALIDATION_LOG << "Size " << member.size
-                       << " could not be mapped ShaderType::kFloat for key: "
-                       << member.name;
-      case ShaderType::kBoolean:
-      case ShaderType::kSignedByte:
-      case ShaderType::kUnsignedByte:
-      case ShaderType::kSignedShort:
-      case ShaderType::kUnsignedShort:
-      case ShaderType::kSignedInt:
-      case ShaderType::kUnsignedInt:
-      case ShaderType::kSignedInt64:
-      case ShaderType::kUnsignedInt64:
-      case ShaderType::kAtomicCounter:
-      case ShaderType::kUnknown:
-      case ShaderType::kVoid:
-      case ShaderType::kHalfFloat:
-      case ShaderType::kDouble:
-      case ShaderType::kStruct:
-      case ShaderType::kImage:
-      case ShaderType::kSampledImage:
-      case ShaderType::kSampler:
-        VALIDATION_LOG << "Could not bind uniform buffer data for key: "
-                       << member.name << " : " << static_cast<int>(member.type);
+    if (member.type != ShaderType::kFloat) {
+      VALIDATION_LOG << "Could not bind uniform buffer data for key: "
+                     << member.name << " : " << static_cast<int>(member.type);
+      return false;
+    }
+
+    switch (member.size) {
+      case sizeof(Matrix):
+        gl.UniformMatrix4fv(location,       // location
+                            element_count,  // count
+                            GL_FALSE,       // normalize
+                            buffer_data     // data
+        );
+        continue;
+      case sizeof(Vector4):
+        gl.Uniform4fv(location,       // location
+                      element_count,  // count
+                      buffer_data     // data
+        );
+        continue;
+      case sizeof(Vector3):
+        gl.Uniform3fv(location,       // location
+                      element_count,  // count
+                      buffer_data     // data
+        );
+        continue;
+      case sizeof(Vector2):
+        gl.Uniform2fv(location,       // location
+                      element_count,  // count
+                      buffer_data     // data
+        );
+        continue;
+      case sizeof(Scalar):
+        gl.Uniform1fv(location,       // location
+                      element_count,  // count
+                      buffer_data     // data
+        );
+        continue;
+      default:
+        VALIDATION_LOG << "Invalid member size binding: " << member.size;
         return false;
     }
   }
@@ -378,11 +444,16 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
 
 std::optional<size_t> BufferBindingsGLES::BindTextures(
     const ProcTableGLES& gl,
-    const Bindings& bindings,
+    const std::vector<TextureAndSampler>& bound_textures,
+    Range texture_range,
     ShaderStage stage,
     size_t unit_start_index) {
   size_t active_index = unit_start_index;
-  for (const auto& data : bindings.sampled_images) {
+  for (auto i = 0u; i < texture_range.length; i++) {
+    const TextureAndSampler& data = bound_textures[texture_range.offset + i];
+    if (data.stage != stage) {
+      continue;
+    }
     const auto& texture_gles = TextureGLES::Cast(*data.texture.resource);
     if (data.texture.GetMetadata() == nullptr) {
       VALIDATION_LOG << "No metadata found for texture binding.";
@@ -415,7 +486,7 @@ std::optional<size_t> BufferBindingsGLES::BindTextures(
     /// If there is a sampler for the texture at the same index, configure the
     /// bound texture using that sampler.
     ///
-    const auto& sampler_gles = SamplerGLES::Cast(*data.sampler);
+    const auto& sampler_gles = SamplerGLES::Cast(**data.sampler);
     if (!sampler_gles.ConfigureBoundTexture(texture_gles, gl)) {
       return std::nullopt;
     }
