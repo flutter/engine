@@ -396,7 +396,7 @@ class FlutterView {
   ///
   /// Only framework knows when semantics tree should be generated. It uses this
   /// method to notify the engine such event.
-  /// 
+  ///
   /// In the case where platforms want to enable semantics, e.g. when detected running
   /// assitive technologies, it notifies framework through the
   /// [PlatformDispatcher.onSemanticsEnabledChanged].
@@ -405,7 +405,7 @@ class FlutterView {
   /// semantics update sent via [updateSemantics]. When this is set to false, platforms
   /// may dispose any resources associated with processing semantics as no further
   /// semantics updates will be sent via [updateSemantics].
-  /// 
+  ///
   /// One must call this method with true before sending update through [updateSemantics].
   void setSemanticsTreeEnabled(bool enabled) => _setSemanticsTreeEnabled(enabled);
 
