@@ -53,7 +53,7 @@ static vk::ClearDepthStencilValue VKClearValueFromDepthStencil(uint32_t stencil,
 
 static size_t GetVKClearValues(
     const RenderTarget& target,
-    std::array<vk::ClearValue, kMaxAttachments> values) {
+    std::array<vk::ClearValue, kMaxAttachments>& values) {
   size_t offset = 0u;
   target.IterateAllColorAttachments(
       [&values, &offset](size_t index,
