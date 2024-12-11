@@ -340,8 +340,31 @@ bool DriverInfoVK::IsKnownBadDriver() const {
     //
     // https://github.com/flutter/flutter/issues/155185
     // Unknown crashes but device is not easily acquirable.
-    if (adreno <= AdrenoGPU::kAdreno630) {
-      return true;
+    switch (adreno) {
+      case AdrenoGPU::kAdreno630:
+      case AdrenoGPU::kAdreno620:
+      case AdrenoGPU::kAdreno619:
+      case AdrenoGPU::kAdreno619L:
+      case AdrenoGPU::kAdreno618:
+      case AdrenoGPU::kAdreno616:
+      case AdrenoGPU::kAdreno615:
+      case AdrenoGPU::kAdreno613:
+      case AdrenoGPU::kAdreno612:
+      case AdrenoGPU::kAdreno610:
+      case AdrenoGPU::kAdreno608:
+      case AdrenoGPU::kAdreno605:
+      case AdrenoGPU::kAdreno540:
+      case AdrenoGPU::kAdreno530:
+      case AdrenoGPU::kAdreno512:
+      case AdrenoGPU::kAdreno510:
+      case AdrenoGPU::kAdreno509:
+      case AdrenoGPU::kAdreno508:
+      case AdrenoGPU::kAdreno506:
+      case AdrenoGPU::kAdreno505:
+      case AdrenoGPU::kAdreno504:
+        return true;
+      default:
+        return false;
     }
   }
   // Disable Maleoon series GPUs, see:
