@@ -86,6 +86,7 @@ void testMain() {
     final ByteData data = _makeByteData('bar');
     final
     ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    buffers.debugPrintOverflowWarning = false;
     void callback(ByteData? responseData) {}
     _resize(buffers, channel, 0);
     buffers.push(channel, data, callback);
@@ -115,6 +116,7 @@ void testMain() {
     final ByteData three = _makeByteData('three');
     final ByteData four = _makeByteData('four');
     final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    buffers.debugPrintOverflowWarning = false;
     void callback(ByteData? responseData) {}
     _resize(buffers, channel, 3);
     buffers.push(channel, one, callback);
@@ -185,6 +187,7 @@ void testMain() {
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
     final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    buffers.debugPrintOverflowWarning = false;
     bool didCallCallback = false;
     void oneCallback(ByteData? responseData) {
       expect(responseData, isNull);
@@ -214,6 +217,7 @@ void testMain() {
   test('ChannelBuffers.setListener', () async {
     final List<String> log = <String>[];
     final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    buffers.debugPrintOverflowWarning = false;
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
     final ByteData three = _makeByteData('three');

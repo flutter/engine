@@ -37,18 +37,20 @@ class CopyArtifactsStep implements PipelineStep {
     await copyTestFonts();
     await copySkiaTestImages();
     await copyFlutterJsFiles();
+    final copied = <String>[];
     if (artifactDeps.canvasKit) {
-      print('Copying CanvasKit...');
+      copied.add('CanvasKit');
       await copyCanvasKitFiles('canvaskit', 'canvaskit');
     }
     if (artifactDeps.canvasKitChromium) {
-      print('Copying CanvasKit (Chromium)...');
+      copied.add('CanvasKit (Chromium)');
       await copyCanvasKitFiles('canvaskit_chromium', 'canvaskit/chromium');
     }
     if (artifactDeps.skwasm) {
-      print('Copying Skwasm...');
+      copied.add('Skwasm');
       await copySkwasm();
     }
+    print('Copied artifacts: ${copied.join(', ')}');
   }
 
   Future<void> copyTestFonts() async {

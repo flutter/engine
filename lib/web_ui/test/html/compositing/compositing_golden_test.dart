@@ -214,9 +214,9 @@ void _testCullRectComputation() {
 
     final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(0, 0, 500, 100));
-  }, skip: '''
-  TODO(https://github.com/flutter/flutter/issues/40395)
-  Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500''');
+    // TODO(https://github.com/flutter/flutter/issues/40395)
+    // Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500
+  }, skip: true);
 
   // Draw a picture that overflows the screen. Verify that cull rect is the
   // intersection of screen bounds and paint bounds.
@@ -297,9 +297,9 @@ void _testCullRectComputation() {
     expect(
         picture.debugExactGlobalCullRect, const ui.Rect.fromLTRB(0, 70, 20, 100));
     expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(0, -20, 20, 10));
-  }, skip: '''
-  TODO(https://github.com/flutter/flutter/issues/40395)
-  Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500''');
+    // TODO(https://github.com/flutter/flutter/issues/40395)
+    // Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500
+  }, skip: true);
 
   // Draw a picture inside a layer clip but fill all available space inside it.
   // Verify that the cull rect is equal to the layer clip.
