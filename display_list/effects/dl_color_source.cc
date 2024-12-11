@@ -184,6 +184,28 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
   return ret;
 }
 
+std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
+    DlPoint center,
+    DlScalar start,
+    DlScalar end,
+    uint32_t stop_count,
+    const DlScalar* colors_argb,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix) {
+  size_t needed = sizeof(DlSweepGradientColorSource) +
+                  (stop_count * (sizeof(DlColor) + sizeof(float)));
+
+  void* storage = ::operator new(needed);
+
+  std::shared_ptr<DlSweepGradientColorSource> ret;
+  ret.reset(new (storage) DlSweepGradientColorSource(center, start, end,
+                                                     stop_count, colors_argb,
+                                                     stops, tile_mode, matrix),
+            DlGradientDeleter);
+  return ret;
+}
+
 std::shared_ptr<DlColorSource> DlColorSource::MakeRuntimeEffect(
     sk_sp<DlRuntimeEffect> runtime_effect,
     std::vector<std::shared_ptr<DlColorSource>> samplers,

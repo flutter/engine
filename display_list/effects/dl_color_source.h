@@ -127,6 +127,16 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
       DlTileMode tile_mode,
       const DlMatrix* matrix = nullptr);
 
+  static std::shared_ptr<DlColorSource> MakeSweep(
+      DlPoint center,
+      DlScalar start,
+      DlScalar end,
+      uint32_t stop_count,
+      const DlScalar* colors_argb,
+      const float* stops,
+      DlTileMode tile_mode,
+      const DlMatrix* matrix = nullptr);
+
   static std::shared_ptr<DlColorSource> MakeRuntimeEffect(
       sk_sp<DlRuntimeEffect> runtime_effect,
       std::vector<std::shared_ptr<DlColorSource>> samplers,

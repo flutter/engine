@@ -22,6 +22,22 @@ DlSweepGradientColorSource::DlSweepGradientColorSource(DlPoint center,
 }
 
 DlSweepGradientColorSource::DlSweepGradientColorSource(
+    DlPoint center,
+    DlScalar start,
+    DlScalar end,
+    uint32_t stop_count,
+    const DlScalar* colors_argb,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix)
+    : DlGradientColorSourceBase(stop_count, tile_mode, matrix),
+      center_(center),
+      start_(start),
+      end_(end) {
+  store_color_stops(this + 1, colors_argb, stops);
+}
+
+DlSweepGradientColorSource::DlSweepGradientColorSource(
     const DlSweepGradientColorSource* source)
     : DlGradientColorSourceBase(source->stop_count(),
                                 source->tile_mode(),

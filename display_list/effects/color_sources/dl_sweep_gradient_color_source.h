@@ -43,6 +43,15 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
                              DlTileMode tile_mode,
                              const DlMatrix* matrix = nullptr);
 
+  DlSweepGradientColorSource(DlPoint center,
+                             DlScalar start,
+                             DlScalar end,
+                             uint32_t stop_count,
+                             const DlScalar* colors_argb,
+                             const float* stops,
+                             DlTileMode tile_mode,
+                             const DlMatrix* matrix = nullptr);
+
   explicit DlSweepGradientColorSource(const DlSweepGradientColorSource* source);
 
   DlPoint center_;
