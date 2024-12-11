@@ -103,6 +103,20 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
       DlTileMode tile_mode,
       const DlMatrix* matrix = nullptr);
 
+  /// @brief Make a conical gradient.
+  /// @param colors_argb colors_argb Array of DlScalars that represents colors
+  /// in the ARGB format.
+  static std::shared_ptr<DlColorSource> MakeConical(
+      DlPoint start_center,
+      DlScalar start_radius,
+      DlPoint end_center,
+      DlScalar end_radius,
+      uint32_t stop_count,
+      const DlScalar* colors_argb,
+      const float* stops,
+      DlTileMode tile_mode,
+      const DlMatrix* matrix = nullptr);
+
   static std::shared_ptr<DlColorSource> MakeSweep(
       DlPoint center,
       DlScalar start,

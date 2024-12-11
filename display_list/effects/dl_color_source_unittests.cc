@@ -477,6 +477,34 @@ TEST(DisplayListColorSource, ConicalGradientConstructor) {
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
 }
 
+TEST(DisplayListColorSource, ConicalGradientARGBConstructor) {
+  std::array<DlScalar, kTestStopCount * 4> colors;
+  for (int i = 0; i < kTestStopCount; ++i) {
+    colors[i * 4 + 0] = kTestColors[i].getAlphaF();  //
+    colors[i * 4 + 1] = kTestColors[i].getRedF();    //
+    colors[i * 4 + 2] = kTestColors[i].getGreenF();  //
+    colors[i * 4 + 3] = kTestColors[i].getBlueF();
+  }
+  std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
+      kTestPoints[0], 10.f, kTestPoints[1], 20.f, kTestStopCount, colors.data(),
+      kTestStops, DlTileMode::kClamp, &kTestMatrix1);
+  ASSERT_TRUE(source);
+  ASSERT_TRUE(source->asConicalGradient());
+  EXPECT_EQ(source->asConicalGradient()->start_center(), kTestPoints[0]);
+  EXPECT_EQ(source->asConicalGradient()->start_radius(), 10.f);
+  EXPECT_EQ(source->asConicalGradient()->end_center(), kTestPoints[1]);
+  EXPECT_EQ(source->asConicalGradient()->end_radius(), 20.f);
+  EXPECT_EQ(source->asConicalGradient()->stop_count(), kTestStopCount);
+  for (int i = 0; i < kTestStopCount; i++) {
+    EXPECT_EQ(source->asConicalGradient()->colors()[i],
+              kTestColors[i].withColorSpace(DlColorSpace::kExtendedSRGB));
+    EXPECT_EQ(source->asConicalGradient()->stops()[i], kTestStops[i]);
+  }
+  EXPECT_EQ(source->asConicalGradient()->tile_mode(), DlTileMode::kClamp);
+  EXPECT_EQ(source->asConicalGradient()->matrix(), kTestMatrix1);
+  EXPECT_EQ(source->is_opaque(), true);
+}
+
 TEST(DisplayListColorSource, ConicalGradientShared) {
   std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
       kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,

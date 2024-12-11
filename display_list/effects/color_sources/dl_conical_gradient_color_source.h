@@ -45,6 +45,16 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
                                DlTileMode tile_mode,
                                const DlMatrix* matrix = nullptr);
 
+  DlConicalGradientColorSource(DlPoint start_center,
+                               DlScalar start_radius,
+                               DlPoint end_center,
+                               DlScalar end_radius,
+                               uint32_t stop_count,
+                               const DlScalar* colors_argb,
+                               const float* stops,
+                               DlTileMode tile_mode,
+                               const DlMatrix* matrix = nullptr);
+
   explicit DlConicalGradientColorSource(
       const DlConicalGradientColorSource* source);
 

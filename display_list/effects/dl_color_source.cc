@@ -139,6 +139,29 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
   return ret;
 }
 
+std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
+    DlPoint start_center,
+    DlScalar start_radius,
+    DlPoint end_center,
+    DlScalar end_radius,
+    uint32_t stop_count,
+    const DlScalar* colors_argb,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix) {
+  size_t needed = sizeof(DlConicalGradientColorSource) +
+                  (stop_count * (sizeof(DlColor) + sizeof(float)));
+
+  void* storage = ::operator new(needed);
+
+  std::shared_ptr<DlConicalGradientColorSource> ret;
+  ret.reset(new (storage) DlConicalGradientColorSource(
+                start_center, start_radius, end_center, end_radius, stop_count,
+                colors_argb, stops, tile_mode, matrix),
+            DlGradientDeleter);
+  return ret;
+}
+
 std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
     DlPoint center,
     DlScalar start,
