@@ -9,8 +9,10 @@ import 'package:test/test.dart';
 typedef StringFunction = String Function();
 typedef IntFunction = int Function();
 
+@pragma('vm:entry-point', 'get')
 String top() => 'top';
 
+@pragma('vm:entry-point')
 class Foo {
   const Foo();
   static int getInt() => 1;
