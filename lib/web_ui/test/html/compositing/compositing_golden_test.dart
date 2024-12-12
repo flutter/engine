@@ -214,8 +214,8 @@ void _testCullRectComputation() {
 
     final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(0, 0, 500, 100));
-    // TODO(https://github.com/flutter/flutter/issues/40395)
     // Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500
+    // https://github.com/flutter/flutter/issues/40395
   }, skip: true);
 
   // Draw a picture that overflows the screen. Verify that cull rect is the
@@ -297,8 +297,8 @@ void _testCullRectComputation() {
     expect(
         picture.debugExactGlobalCullRect, const ui.Rect.fromLTRB(0, 70, 20, 100));
     expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(0, -20, 20, 10));
-    // TODO(https://github.com/flutter/flutter/issues/40395)
     // Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500
+    // https://github.com/flutter/flutter/issues/40395
   }, skip: true);
 
   // Draw a picture inside a layer clip but fill all available space inside it.
