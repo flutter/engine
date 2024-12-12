@@ -2932,9 +2932,8 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
                                /*raster=*/GetDefaultTaskRunner(),
                                /*ui=*/GetDefaultTaskRunner(),
                                /*io=*/GetDefaultTaskRunner());
-  FlutterPlatformViewsController* flutterPlatformViewsController =
-      [[FlutterPlatformViewsController alloc] init];
-  flutterPlatformViewsController.taskRunner = GetDefaultTaskRunner();
+  auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
+  flutterPlatformViewsController->SetTaskRunner(GetDefaultTaskRunner());
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -2947,17 +2946,15 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
 
   FlutterPlatformViewsTestMockWrapperWebViewFactory* factory =
       [[FlutterPlatformViewsTestMockWrapperWebViewFactory alloc] init];
-  [flutterPlatformViewsController
-                   registerViewFactory:factory
-                                withId:@"MockWrapperWebView"
-      gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockWrapperWebView", FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
   FlutterResult result = ^(id result) {
   };
-  [flutterPlatformViewsController
-      onMethodCall:[FlutterMethodCall
-                       methodCallWithMethodName:@"create"
-                                      arguments:@{@"id" : @2, @"viewType" : @"MockWrapperWebView"}]
-            result:result];
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @2, @"viewType" : @"MockWrapperWebView"}],
+      result);
 
   XCTAssertNotNil(gMockPlatformView);
 
