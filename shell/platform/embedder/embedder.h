@@ -2011,6 +2011,14 @@ typedef struct {
   /// The callback should return true if the operation was successful.
   FlutterLayersPresentCallback present_layers_callback;
   /// Avoid caching backing stores provided by this compositor.
+  ///
+  /// The engine has an internal backing store cache. Instead of 
+  /// creating & destroying backing stores for every frame, created
+  /// backing stores are automatically reused for subsequent frames.
+  ///
+  /// If you wish to change this behavior and destroy backing stores after
+  /// they've been used once, and create new backing stores for every frame,
+  /// you can set this bool to true.
   bool avoid_backing_store_cache;
   /// Callback invoked by the engine to composite the contents of each layer
   /// onto the specified view.
