@@ -553,6 +553,18 @@ static BOOL _preparedOnce = NO;
   self.delayingRecognizer.state = UIGestureRecognizerStateFailed;
 }
 
+- (BOOL)containsWebView:(UIView*)view {
+  if ([view isKindOfClass:[WKWebView class]]) {
+    return YES;
+  }
+  for (UIView* subview in view.subviews) {
+    if ([self containsWebView:subview]) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
 - (void)blockGesture {
   switch (_blockingPolicy) {
     case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
@@ -568,7 +580,7 @@ static BOOL _preparedOnce = NO;
       // FlutterPlatformViewGestureRecognizersBlockingPolicyEager, but we should try it if a similar
       // issue arises for the other policy.
       if (@available(iOS 18.2, *)) {
-        if ([self.embeddedView isKindOfClass:[WKWebView class]]) {
+        if ([self containsWebView:self.embeddedView]) {
           [self removeGestureRecognizer:self.delayingRecognizer];
           [self addGestureRecognizer:self.delayingRecognizer];
         }
