@@ -8,6 +8,7 @@
 #include "flutter/impeller/geometry/matrix.h"
 #include "flutter/impeller/geometry/rect.h"
 #include "flutter/impeller/geometry/round_rect.h"
+#include "flutter/impeller/geometry/round_superellipse.h"
 #include "flutter/impeller/geometry/scalar.h"
 
 #include "flutter/third_party/skia/include/core/SkM44.h"
@@ -30,6 +31,7 @@ using DlISize = impeller::ISize32;
 using DlRect = impeller::Rect;
 using DlIRect = impeller::IRect32;
 using DlRoundRect = impeller::RoundRect;
+using DlRoundSuperellipse = impeller::RoundSuperellipse;
 using DlMatrix = impeller::Matrix;
 using DlQuad = impeller::Quad;
 

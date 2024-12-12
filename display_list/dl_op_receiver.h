@@ -318,6 +318,7 @@ class DlOpReceiver {
   virtual void drawRoundRect(const DlRoundRect& rrect) = 0;
   virtual void drawDiffRoundRect(const DlRoundRect& outer,
                                  const DlRoundRect& inner) = 0;
+  virtual void drawRoundSuperellipse(const DlRoundSuperellipse& rse) = 0;
   virtual void drawPath(const DlPath& path) = 0;
   virtual void drawArc(const DlRect& oval_bounds,
                        DlScalar start_degrees,
