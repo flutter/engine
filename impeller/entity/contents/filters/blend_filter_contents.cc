@@ -117,7 +117,7 @@ static std::optional<Entity> AdvancedBlend(
   }
 
   auto dst_snapshot =
-      inputs[0]->GetSnapshot("AdvancedBlend(Src)", renderer, entity);
+      inputs[0]->GetSnapshot("AdvancedBlend(Dst)", renderer, entity);
   if (!dst_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -131,7 +131,7 @@ static std::optional<Entity> AdvancedBlend(
   std::array<Point, 4> src_uvs;
   if (!foreground_color.has_value()) {
     src_snapshot =
-        inputs[1]->GetSnapshot("AdvancedBlend(Dst)", renderer, entity);
+        inputs[1]->GetSnapshot("AdvancedBlend(Src)", renderer, entity);
     if (!src_snapshot.has_value()) {
       if (!dst_snapshot.has_value()) {
         return std::nullopt;
