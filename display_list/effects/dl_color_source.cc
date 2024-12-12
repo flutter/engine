@@ -30,6 +30,14 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeImage(
       image, horizontal_tile_mode, vertical_tile_mode, sampling, matrix);
 }
 
+namespace {
+template <typename GradientColorSource>
+size_t CalculateGradientSize(uint32_t stop_count) {
+  return sizeof(GradientColorSource) +
+         (stop_count * (sizeof(DlColor) + sizeof(float)));
+}
+}  // namespace
+
 std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
     const DlPoint start_point,
     const DlPoint end_point,
@@ -38,15 +46,34 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlLinearGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed =
+      CalculateGradientSize<DlLinearGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlLinearGradientColorSource> ret;
   ret.reset(new (storage)
                 DlLinearGradientColorSource(start_point, end_point, stop_count,
                                             colors, stops, tile_mode, matrix),
+            DlGradientDeleter);
+  return ret;
+}
+
+std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
+    const DlPoint start_point,
+    const DlPoint end_point,
+    uint32_t stop_count,
+    const DlScalar* colors_argb,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix) {
+  size_t needed =
+      CalculateGradientSize<DlLinearGradientColorSource>(stop_count);
+  void* storage = ::operator new(needed);
+
+  std::shared_ptr<DlLinearGradientColorSource> ret;
+  ret.reset(new (storage) DlLinearGradientColorSource(start_point, end_point,
+                                                      stop_count, colors_argb,
+                                                      stops, tile_mode, matrix),
             DlGradientDeleter);
   return ret;
 }
@@ -59,15 +86,34 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlRadialGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed =
+      CalculateGradientSize<DlRadialGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlRadialGradientColorSource> ret;
   ret.reset(new (storage) DlRadialGradientColorSource(
                 center, radius, stop_count, colors, stops, tile_mode, matrix),
             DlGradientDeleter);
+  return ret;
+}
+
+std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
+    DlPoint center,
+    DlScalar radius,
+    uint32_t stop_count,
+    const DlScalar* colors_argb,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix) {
+  size_t needed =
+      CalculateGradientSize<DlRadialGradientColorSource>(stop_count);
+  void* storage = ::operator new(needed);
+
+  std::shared_ptr<DlRadialGradientColorSource> ret;
+  ret.reset(
+      new (storage) DlRadialGradientColorSource(
+          center, radius, stop_count, colors_argb, stops, tile_mode, matrix),
+      DlGradientDeleter);
   return ret;
 }
 
@@ -81,15 +127,37 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlConicalGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed =
+      CalculateGradientSize<DlConicalGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlConicalGradientColorSource> ret;
   ret.reset(new (storage) DlConicalGradientColorSource(
                 start_center, start_radius, end_center, end_radius, stop_count,
                 colors, stops, tile_mode, matrix),
+            DlGradientDeleter);
+  return ret;
+}
+
+std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
+    DlPoint start_center,
+    DlScalar start_radius,
+    DlPoint end_center,
+    DlScalar end_radius,
+    uint32_t stop_count,
+    const DlScalar* colors_argb,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix) {
+  size_t needed =
+      CalculateGradientSize<DlConicalGradientColorSource>(stop_count);
+
+  void* storage = ::operator new(needed);
+
+  std::shared_ptr<DlConicalGradientColorSource> ret;
+  ret.reset(new (storage) DlConicalGradientColorSource(
+                start_center, start_radius, end_center, end_radius, stop_count,
+                colors_argb, stops, tile_mode, matrix),
             DlGradientDeleter);
   return ret;
 }
@@ -103,15 +171,33 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
     const float* stops,
     DlTileMode tile_mode,
     const DlMatrix* matrix) {
-  size_t needed = sizeof(DlSweepGradientColorSource) +
-                  (stop_count * (sizeof(DlColor) + sizeof(float)));
-
+  size_t needed = CalculateGradientSize<DlSweepGradientColorSource>(stop_count);
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlSweepGradientColorSource> ret;
   ret.reset(new (storage)
                 DlSweepGradientColorSource(center, start, end, stop_count,
                                            colors, stops, tile_mode, matrix),
+            DlGradientDeleter);
+  return ret;
+}
+
+std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
+    DlPoint center,
+    DlScalar start,
+    DlScalar end,
+    uint32_t stop_count,
+    const DlScalar* colors_argb,
+    const float* stops,
+    DlTileMode tile_mode,
+    const DlMatrix* matrix) {
+  size_t needed = CalculateGradientSize<DlSweepGradientColorSource>(stop_count);
+  void* storage = ::operator new(needed);
+
+  std::shared_ptr<DlSweepGradientColorSource> ret;
+  ret.reset(new (storage) DlSweepGradientColorSource(center, start, end,
+                                                     stop_count, colors_argb,
+                                                     stops, tile_mode, matrix),
             DlGradientDeleter);
   return ret;
 }
@@ -157,23 +243,72 @@ bool DlGradientColorSourceBase::base_equals_(
                  stop_count_ * sizeof(stops()[0])) == 0);
 }
 
-void DlGradientColorSourceBase::store_color_stops(void* pod,
-                                                  const DlColor* color_data,
-                                                  const float* stop_data) {
+namespace {
+template <typename DlColorIt>
+void do_store_color_stops(void* pod,
+                          DlColorIt color_data_argb_begin,
+                          DlColorIt color_data_argb_end,
+                          const float* stop_data) {
   DlColor* color_storage = reinterpret_cast<DlColor*>(pod);
-  memcpy(color_storage, color_data, stop_count_ * sizeof(*color_data));
-  float* stop_storage = reinterpret_cast<float*>(color_storage + stop_count_);
+  uint32_t stop_count = 0;
+  while (color_data_argb_begin < color_data_argb_end) {
+    *color_storage++ = *color_data_argb_begin++;
+    stop_count += 1;
+  }
+  float* stop_storage = reinterpret_cast<float*>(color_storage);
   if (stop_data) {
-    memcpy(stop_storage, stop_data, stop_count_ * sizeof(*stop_data));
+    memcpy(stop_storage, stop_data, stop_count * sizeof(*stop_data));
   } else {
-    float div = stop_count_ - 1;
+    float div = stop_count - 1;
     if (div <= 0) {
       div = 1;
     }
-    for (uint32_t i = 0; i < stop_count_; i++) {
+    for (uint32_t i = 0; i < stop_count; i++) {
       stop_storage[i] = i / div;
     }
   }
+}
+
+class DlScalerToDlColorIterator {
+ public:
+  explicit DlScalerToDlColorIterator(const DlScalar* ptr) : ptr_(ptr) {}
+  DlScalerToDlColorIterator(DlScalerToDlColorIterator&&) = default;
+  DlScalerToDlColorIterator(const DlScalerToDlColorIterator&) = delete;
+  DlScalerToDlColorIterator& operator=(const DlScalerToDlColorIterator&) =
+      delete;
+
+  DlColor operator*() {
+    return DlColor(ptr_[0], ptr_[1], ptr_[2], ptr_[3],
+                   DlColorSpace::kExtendedSRGB);
+  }
+  DlScalerToDlColorIterator operator++(int) {
+    auto result = DlScalerToDlColorIterator(ptr_);
+    ptr_ += 4;
+    return result;
+  }
+  bool operator<(const DlScalerToDlColorIterator& that) const {
+    return ptr_ < that.ptr_;
+  }
+
+ private:
+  const DlScalar* ptr_;
+};
+
+}  // namespace
+
+void DlGradientColorSourceBase::store_color_stops(void* pod,
+                                                  const DlColor* color_data,
+                                                  const float* stop_data) {
+  do_store_color_stops(pod, color_data, color_data + stop_count_, stop_data);
+}
+
+void DlGradientColorSourceBase::store_color_stops(
+    void* pod,
+    const DlScalar* color_data_argb,
+    const float* stop_data) {
+  do_store_color_stops(
+      pod, DlScalerToDlColorIterator(color_data_argb),
+      DlScalerToDlColorIterator(color_data_argb + stop_count_ * 4), stop_data);
 }
 
 }  // namespace flutter

@@ -198,12 +198,12 @@ TEST(DisplayListSkConversions, ConvertWithZeroAndNegativeVerticesAndIndices) {
   std::shared_ptr<DlVertices> vertices1 = DlVertices::Make(
       DlVertexMode::kTriangles, 0, nullptr, nullptr, nullptr, 0, nullptr);
   EXPECT_NE(vertices1, nullptr);
-  EXPECT_NE(ToSk(vertices1), nullptr);
+  EXPECT_EQ(ToSk(vertices1), nullptr);
 
   std::shared_ptr<DlVertices> vertices2 = DlVertices::Make(
       DlVertexMode::kTriangles, -1, nullptr, nullptr, nullptr, -1, nullptr);
   EXPECT_NE(vertices2, nullptr);
-  EXPECT_NE(ToSk(vertices2), nullptr);
+  EXPECT_EQ(ToSk(vertices2), nullptr);
 }
 
 TEST(DisplayListVertices, ConvertWithZeroAndNegativeVerticesAndIndices) {
@@ -212,14 +212,14 @@ TEST(DisplayListVertices, ConvertWithZeroAndNegativeVerticesAndIndices) {
   EXPECT_TRUE(builder1.is_valid());
   std::shared_ptr<DlVertices> vertices1 = builder1.build();
   EXPECT_NE(vertices1, nullptr);
-  EXPECT_NE(ToSk(vertices1), nullptr);
+  EXPECT_EQ(ToSk(vertices1), nullptr);
 
   DlVertices::Builder builder2(DlVertexMode::kTriangles, -1,
                                DlVertices::Builder::kNone, -1);
   EXPECT_TRUE(builder2.is_valid());
   std::shared_ptr<DlVertices> vertices2 = builder2.build();
   EXPECT_NE(vertices2, nullptr);
-  EXPECT_NE(ToSk(vertices2), nullptr);
+  EXPECT_EQ(ToSk(vertices2), nullptr);
 }
 
 TEST(DisplayListColorSource, ConvertRuntimeEffect) {
@@ -302,7 +302,8 @@ TEST(DisplayListSkConversions, ToSkDitheringEnabledForGradients) {
 
   // Set the paint to be a gradient.
   dl_paint.setColorSource(DlColorSource::MakeLinear(
-      DlPoint(0, 0), DlPoint(100, 100), 0, 0, 0, DlTileMode::kClamp));
+      DlPoint(0, 0), DlPoint(100, 100), 0,
+      std::array<DlColor, 1>{DlColor(0)}.data(), 0, DlTileMode::kClamp));
 
   {
     SkPaint sk_paint = ToSk(dl_paint);

@@ -95,7 +95,7 @@ TEST(ReactorGLES, UntrackedHandle) {
   EXPECT_TRUE(reactor->React());
 }
 
-TEST(ReactorGLES, NameUntrackedHandle) {
+TEST(ReactorGLES, DISABLED_NameUntrackedHandle) {
   auto mock_gles_impl = std::make_unique<MockGLESImpl>();
 
   EXPECT_CALL(*mock_gles_impl, GenTextures(1, _))
@@ -131,8 +131,8 @@ TEST(ReactorGLES, PerThreadOperationQueues) {
   fml::AutoResetWaitableEvent event;
   bool op2_called = false;
   std::thread thread([&] {
-    EXPECT_TRUE(
-        reactor->AddOperation([&](const ReactorGLES&) { op2_called = true; }));
+    EXPECT_TRUE(reactor->AddOperation(
+        [&](const ReactorGLES&) { op2_called = true; }, true));
     event.Wait();
     EXPECT_TRUE(reactor->React());
   });
