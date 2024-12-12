@@ -23,6 +23,15 @@ const Map<String, String> targetAliases = <String, String>{
   'archive': 'flutter/web_sdk:flutter_web_sdk_archive',
 };
 
+// Check new style
+enum Foo { 
+  a, 
+  b, 
+  c, 
+}
+// This line is 99 long
+List<int> a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+
 class BuildCommand extends Command<bool> with ArgUtils<bool> {
   BuildCommand() {
     argParser.addFlag(
