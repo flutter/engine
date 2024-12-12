@@ -921,6 +921,26 @@ class DartFormatChecker extends FormatChecker {
     } else {
       message('All dart files formatted correctly.');
     }
+
+    Directory dir = Directory(path.join(_processRunner.defaultWorkingDirectory.path, 'lib', 'web_ui', 'dev'));
+    while (true) {
+      final File file = File(path.join(dir.path, '.dart_tool', 'package_config.json'));
+      if (file.existsSync()) {
+        stdout.writeln();
+        stdout.writeln('HHHHHHHHHHHHHHHHH: ${file.path}');
+        stdout.write(file.readAsStringSync());
+        stdout.writeln();
+      }
+      if (dir.parent.path == dir.path) {
+        break;
+      }
+      dir = dir.parent;
+    }
+    stdout.writeln('dart --version: ${Process.runSync(_dartBin, ['--version']).stdout}');
+    stdout.writeln('dart format --version: ${Process.runSync(_dartBin, ['format', '--version']).stdout}');
+
+
+
     return incorrect.length;
   }
 }
