@@ -15,7 +15,9 @@ String top() => 'top';
 @pragma('vm:entry-point')
 class Foo {
   const Foo();
+  @pragma('vm:entry-point')
   static int getInt() => 1;
+  @pragma('vm:entry-point')
   double getDouble() => 1.0;
 }
 
