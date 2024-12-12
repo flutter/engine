@@ -628,7 +628,10 @@ final class BuildRunner extends Runner {
         final io.Process process = await processRunner.processManager.start(
           command,
           workingDirectory: engineSrcDir.path,
-          environment: rbeConfig.environment,
+          environment: {
+            ...rbeConfig.environment,
+            'CLICOLOR_FORCE': '1',
+          }
         );
         final List<int> stderrOutput = <int>[];
         final List<int> stdoutOutput = <int>[];
