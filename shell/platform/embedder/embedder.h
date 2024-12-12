@@ -353,16 +353,18 @@ typedef enum {
   ///   g = (p >> 5) & 0x3F;
   ///   b = p & 0x1F;
   ///
-  /// This is equivalent to wayland format RGB565 (WL_DRM_FORMAT_RGB565).
+  /// On most (== little-endian) systems, this is equivalent to wayland format
+  /// RGB565 (WL_DRM_FORMAT_RGB565, WL_SHM_FORMAT_RGB565).
   kFlutterSoftwarePixelFormatRGB565,
 
   /// Pixel with 4 bits each for alpha, red, green, blue; in 16-bit word.
   ///   r = (p >> 8) & 0xF;
   ///   g = (p >> 4) & 0xF;
   ///   b = p & 0xF;
-  ///
-  /// This is equivalent to wayland format RGBA4444 (WL_DRM_FORMAT_RGBA4444).
   ///   a = (p >> 12) & 0xF;
+  ///
+  /// On most (== little-endian) systems, this is equivalent to wayland format
+  /// RGBA4444 (WL_DRM_FORMAT_RGBA4444, WL_SHM_FORMAT_RGBA4444).
   kFlutterSoftwarePixelFormatRGBA4444,
 
   /// Pixel with 8 bits each for red, green, blue, alpha.
@@ -371,7 +373,8 @@ typedef enum {
   ///   b = p[2];
   ///   a = p[3];
   ///
-  /// This is equivalent to wayland format ABGR8888 (WL_DRM_FORMAT_ABGR8888).
+  /// This is equivalent to wayland format ABGR8888 (WL_DRM_FORMAT_ABGR8888,
+  /// WL_SHM_FORMAT_ABGR8888).
   kFlutterSoftwarePixelFormatRGBA8888,
 
   /// Pixel with 8 bits each for red, green and blue and 8 unused bits.
@@ -379,7 +382,8 @@ typedef enum {
   ///   g = p[1];
   ///   b = p[2];
   ///
-  /// This is equivalent to wayland format XBGR8888 (WL_DRM_FORMAT_XBGR8888)
+  /// This is equivalent to wayland format XBGR8888 (WL_DRM_FORMAT_XBGR8888,
+  /// WL_SHM_FORMAT_XBGR8888).
   kFlutterSoftwarePixelFormatRGBX8888,
 
   /// Pixel with 8 bits each for blue, green, red and alpha.
@@ -388,7 +392,8 @@ typedef enum {
   ///   b = p[0];
   ///   a = p[3];
   ///
-  /// This is equivalent to wayland format ARGB8888 (WL_DRM_FORMAT_ARGB8888).
+  /// This is equivalent to wayland format ARGB8888 (WL_DRM_FORMAT_ARGB8888,
+  /// WL_SHM_FORMAT_ARGB8888).
   kFlutterSoftwarePixelFormatBGRA8888,
 
   /// Either kFlutterSoftwarePixelFormatBGRA8888 or
@@ -2023,7 +2028,7 @@ typedef struct {
   FlutterLayersPresentCallback present_layers_callback;
   /// Avoid caching backing stores provided by this compositor.
   ///
-  /// The engine has an internal backing store cache. Instead of 
+  /// The engine has an internal backing store cache. Instead of
   /// creating & destroying backing stores for every frame, created
   /// backing stores are automatically reused for subsequent frames.
   ///
