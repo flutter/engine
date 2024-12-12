@@ -324,9 +324,9 @@ static void fl_renderer_init(FlRenderer* self) {
       fl_renderer_get_instance_private(self));
   priv->views = g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr,
                                       free_weak_ref);
-  priv->framebuffers_by_view_id =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr,
-                            (GDestroyNotify)g_ptr_array_unref);
+  priv->framebuffers_by_view_id = g_hash_table_new_full(
+      g_direct_hash, g_direct_equal, nullptr,
+      reinterpret_cast<GDestroyNotify>(g_ptr_array_unref));
 }
 
 void fl_renderer_set_engine(FlRenderer* self, FlEngine* engine) {
