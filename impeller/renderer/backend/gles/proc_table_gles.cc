@@ -370,10 +370,7 @@ bool ProcTableGLES::SupportsDebugLabels() const {
 bool ProcTableGLES::SetDebugLabel(DebugResourceType type,
                                   GLint name,
                                   std::string_view label) const {
-  if (debug_label_max_length_ <= 0) {
-    return true;
-  }
-  if (!ObjectLabelKHR.IsAvailable()) {
+  if (!SupportsDebugLabels()) {
     return true;
   }
   if (!ResourceIsLive(*this, type, name)) {
