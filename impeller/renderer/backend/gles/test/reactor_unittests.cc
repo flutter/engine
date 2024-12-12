@@ -109,7 +109,7 @@ TEST(ReactorGLES, NameUntrackedHandle) {
   ProcTableGLES::Resolver resolver = kMockResolverGLES;
   auto proc_table = std::make_unique<ProcTableGLES>(resolver);
 
-  if (!proc_table->ObjectLabelKHR.IsAvailable()) {
+  if (!proc_table->SupportsDebugLabels()) {
     GTEST_SKIP() << "This device doesn't support labelling.";
   }
 

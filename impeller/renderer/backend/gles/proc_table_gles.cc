@@ -357,6 +357,16 @@ static bool ResourceIsLive(const ProcTableGLES& gl,
   FML_UNREACHABLE();
 }
 
+bool ProcTableGLES::SupportsDebugLabels() const {
+  if (debug_label_max_length_ <= 0) {
+    return false;
+  }
+  if (!ObjectLabelKHR.IsAvailable()) {
+    return false;
+  }
+  return true;
+}
+
 bool ProcTableGLES::SetDebugLabel(DebugResourceType type,
                                   GLint name,
                                   std::string_view label) const {
