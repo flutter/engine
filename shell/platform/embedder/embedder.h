@@ -1751,7 +1751,8 @@ typedef struct {
   /// store.
   VoidCallback destruction_callback;
   /// The pixel format that the engine should use to render into the allocation.
-  /// In most cases, kR
+  ///
+  /// On Linux, kFlutterSoftwarePixelFormatBGRA8888 is most commonly used.
   FlutterSoftwarePixelFormat pixel_format;
 } FlutterSoftwareBackingStore2;
 
