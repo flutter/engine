@@ -287,12 +287,12 @@ bool IsClassRegistered(LPCWSTR class_name) {
          0;
 }
 
-/// Window attribute that enables dark mode window decorations.
-///
-/// Redefined in case the developer's machine has a Windows SDK older than
-/// version 10.0.22000.0.
-/// See:
-/// https://docs.microsoft.com/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
+// Window attribute that enables dark mode window decorations.
+//
+// Redefined in case the developer's machine has a Windows SDK older than
+// version 10.0.22000.0.
+// See:
+// https://docs.microsoft.com/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
@@ -356,8 +356,7 @@ FlutterHostWindow::FlutterHostWindow(FlutterHostWindowController* controller,
       window_style |= WS_OVERLAPPED | WS_CAPTION;
       extended_window_style |= WS_EX_DLGMODALFRAME;
       if (!owner) {
-        // If the dialog has no owner, add a minimize box and a system menu
-        // with a close button.
+        // If the dialog has no owner, add a minimize box and a system menu.
         window_style |= WS_MINIMIZEBOX | WS_SYSMENU;
       } else {
         // If the owner window has WS_EX_TOOLWINDOW style, apply the same

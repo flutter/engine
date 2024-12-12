@@ -15,10 +15,10 @@ namespace flutter {
 
 class FlutterWindowsEngine;
 
-// A controller class for managing |FlutterHostWindow|s.
-// |FlutterWindowsEngine| uniquely owns an instance of this class and uses it in
-// |WindowingHandler| to handle the methods and messages that enable
-// multi-window support on Flutter.
+// A controller class for managing |FlutterHostWindow| instances.
+// A unique instance of this class is owned by |FlutterWindowsEngine| and used
+// in |WindowingHandler| to handle methods and messages enabling multi-window
+// support.
 class FlutterHostWindowController {
  public:
   explicit FlutterHostWindowController(FlutterWindowsEngine* engine);
@@ -63,7 +63,7 @@ class FlutterHostWindowController {
   // with ID |view_id|.
   FlutterHostWindow* GetHostWindow(FlutterViewId view_id) const;
 
-  // Message handler to be called by |FlutterHostWindow| to process window
+  // Message handler called by |FlutterHostWindow::WndProc| to process window
   // messages before delegating them to the host window. This allows the
   // controller to process messages that affect the state of other host windows.
   LRESULT HandleMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
@@ -81,12 +81,13 @@ class FlutterHostWindowController {
 
   // Gets the size of the window hosting the view with ID |view_id|. This is the
   // size the host window frame, in logical coordinates, and does not include
-  // the dimensions of the dropshadow area.
+  // the dimensions of the drop-shadow area.
   WindowSize GetWindowSize(FlutterViewId view_id) const;
 
-  // Hides all satellite windows in the application, except those that are
-  // descendants of |opt_out_hwnd| or have a dialog owns a window. If
-  // |opt_out_hwnd| is nullptr (default), no windows are excluded.
+  // Hides all satellite windows managed by this controller, except those that
+  // are descendants of |opt_out_hwnd| or own a dialog. If |opt_out_hwnd| is
+  // nullptr (default), only satellites that own a dialog are excluded from
+  // being hidden.
   void HideWindowsSatellites(HWND opt_out_hwnd = nullptr);
 
   // Sends the "onWindowChanged" message to the Flutter engine.
@@ -105,17 +106,18 @@ class FlutterHostWindowController {
   // The Flutter engine that owns this controller.
   FlutterWindowsEngine* const engine_;
 
-  // The windowing channel through which the controller sends window messages.
+  // The windowing channel through which the controller sends messages.
   std::shared_ptr<MethodChannel<EncodableValue>> channel_;
 
   // The host windows managed by this controller.
   std::map<FlutterViewId, std::unique_ptr<FlutterHostWindow>> windows_;
 
-  // Controls whether satellites are hidden when their top-level window
-  // and all its owned windows become inactive. If nullptr, satellite hiding
-  // is enabled. If not nullptr, it contains the handle of the window that
-  // disabled the hiding, and it will be reset when the window if fully
-  // destroyed.
+  // Controls whether satellites can be hidden when there is no active window
+  // in the window subtree starting from the satellite's top-level window. If
+  // set to nullptr, satellite hiding is enabled. If set to a non-null value,
+  // satellite hiding remains disabled until the window represented by this
+  // handle is destroyed. After the window is destroyed, this is reset to
+  // nullptr.
   HWND disable_satellite_hiding_ = nullptr;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterHostWindowController);

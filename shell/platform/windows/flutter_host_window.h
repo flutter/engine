@@ -84,10 +84,11 @@ class FlutterHostWindow {
   // Enables/disables this window and all its descendants.
   void EnableWindowAndDescendants(bool enable);
 
-  // Finds the first enabled window in the descendant hierarchy.
+  // Finds the first enabled descendant window. If the current window itself is
+  // enabled, returns the current window.
   FlutterHostWindow* FindFirstEnabledDescendant() const;
 
-  // Processes and route salient window messages for mouse handling,
+  // Processes and routes salient window messages for mouse handling,
   // size change and DPI. Delegates handling of these to member overloads that
   // inheriting classes can handle.
   LRESULT HandleMessage(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
@@ -108,7 +109,7 @@ class FlutterHostWindow {
   // Controller for the view hosted by this window.
   std::unique_ptr<FlutterWindowsViewController> view_controller_;
 
-  // The window's archetype (e.g., regular, dialog, popup).
+  // The window archetype.
   WindowArchetype archetype_ = WindowArchetype::regular;
 
   // Windows that have this window as their owner window.
