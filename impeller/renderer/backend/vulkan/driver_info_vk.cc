@@ -341,6 +341,7 @@ bool DriverInfoVK::IsKnownBadDriver() const {
     // https://github.com/flutter/flutter/issues/155185
     // Unknown crashes but device is not easily acquirable.
     switch (adreno) {
+      case AdrenoGPU::kAdreno640:
       case AdrenoGPU::kAdreno630:
       case AdrenoGPU::kAdreno620:
       case AdrenoGPU::kAdreno619:
