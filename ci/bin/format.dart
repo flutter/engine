@@ -840,6 +840,16 @@ class DartFormatChecker extends FormatChecker {
   }
 
   Future<int> _runDartFormat({required bool fixing}) async {
+    for (final Directory dir in _processRunner.defaultWorkingDirectory.listSync().whereType<Directory>()) {
+      if (path.basename(dir.path) == '.dart_tool') {
+        continue;
+      }
+      for (final Directory subdir in dir.listSync().whereType<Directory>().where((Directory dir) => path.basename(dir.path) == '.dart_tool')) {
+        print('Deleting ${subdir.path}');
+        subdir.deleteSync(recursive: true);
+      }
+    }
+
     final List<String> filesToCheck = await getFileList(<String>['*.dart']);
 
     final List<String> cmd = <String>[
