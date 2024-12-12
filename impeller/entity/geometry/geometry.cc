@@ -110,6 +110,11 @@ std::unique_ptr<Geometry> Geometry::MakeRoundRect(const Rect& rect,
   return std::make_unique<RoundRectGeometry>(rect, radii);
 }
 
+std::unique_ptr<Geometry> Geometry::MakeRoundSuperellipse(const Rect& rect,
+                                                  Scalar corner_radius) {
+  return std::make_unique<RoundSuperellipse>(rect, corner_radius);
+}
+
 bool Geometry::CoversArea(const Matrix& transform, const Rect& rect) const {
   return false;
 }
