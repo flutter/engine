@@ -84,6 +84,8 @@ const std::shared_ptr<const Context>& RenderPass::GetContext() const {
 }
 
 void RenderPass::SetPipeline(PipelineRef pipeline) {
+  // On debug this makes a difference, but not on release builds.
+  // NOLINTNEXTLINE(performance-move-const-arg)
   pending_.pipeline = std::move(pipeline);
 }
 
