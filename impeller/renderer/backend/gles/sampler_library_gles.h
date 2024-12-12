@@ -26,7 +26,7 @@ class SamplerLibraryGLES final : public SamplerLibrary {
   SamplerLibraryGLES();
 
   // |SamplerLibrary|
-raw_ptr<const Sampler> GetSampler(
+  raw_ptr<const Sampler> GetSampler(
       const SamplerDescriptor& descriptor) override;
 
   bool supports_decal_sampler_address_mode_ = false;

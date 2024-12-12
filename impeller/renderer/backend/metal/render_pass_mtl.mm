@@ -400,13 +400,12 @@ bool RenderPassMTL::BindDynamicResource(
 }
 
 // |RenderPass|
-bool RenderPassMTL::BindResource(
-    ShaderStage stage,
-    DescriptorType type,
-    const SampledImageSlot& slot,
-    const ShaderMetadata* metadata,
-    std::shared_ptr<const Texture> texture,
-    raw_ptr<const Sampler> sampler) {
+bool RenderPassMTL::BindResource(ShaderStage stage,
+                                 DescriptorType type,
+                                 const SampledImageSlot& slot,
+                                 const ShaderMetadata* metadata,
+                                 std::shared_ptr<const Texture> texture,
+                                 raw_ptr<const Sampler> sampler) {
   if (!texture) {
     return false;
   }

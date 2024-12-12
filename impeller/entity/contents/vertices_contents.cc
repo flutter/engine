@@ -126,7 +126,7 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
       TileModeToAddressMode(tile_mode_y_, renderer.GetDeviceCapabilities())
           .value_or(SamplerAddressMode::kClampToEdge);
 
-  const std::unique_ptr<const Sampler>& dst_sampler =
+  raw_ptr<const Sampler> dst_sampler =
       renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           dst_sampler_descriptor);
 

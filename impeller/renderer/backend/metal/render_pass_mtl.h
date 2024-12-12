@@ -114,13 +114,12 @@ class RenderPassMTL final : public RenderPass {
                            BufferView view) override;
 
   // |RenderPass|
-  bool BindDynamicResource(
-      ShaderStage stage,
-      DescriptorType type,
-      const SampledImageSlot& slot,
-      std::unique_ptr<ShaderMetadata> metadata,
-      std::shared_ptr<const Texture> texture,
-      raw_ptr<const Sampler> sampler) override;
+  bool BindDynamicResource(ShaderStage stage,
+                           DescriptorType type,
+                           const SampledImageSlot& slot,
+                           std::unique_ptr<ShaderMetadata> metadata,
+                           std::shared_ptr<const Texture> texture,
+                           raw_ptr<const Sampler> sampler) override;
 
   RenderPassMTL(const RenderPassMTL&) = delete;
 

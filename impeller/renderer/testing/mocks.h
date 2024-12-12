@@ -244,7 +244,7 @@ class MockCommandQueue : public CommandQueue {
 
 class MockSamplerLibrary : public SamplerLibrary {
  public:
-  MOCK_METHOD(const std::unique_ptr<const Sampler>&,
+  MOCK_METHOD(raw_ptr<const Sampler>,
               GetSampler,
               (const SamplerDescriptor& descriptor),
               (override));
