@@ -18,6 +18,7 @@ FilterContentsFilterInput::FilterContentsFilterInput(
 FilterContentsFilterInput::~FilterContentsFilterInput() = default;
 
 std::optional<Snapshot> FilterContentsFilterInput::GetSnapshot(
+    std::string_view label,
     const ContentContext& renderer,
     const Entity& entity,
     std::optional<Rect> coverage_limit,
@@ -28,8 +29,8 @@ std::optional<Snapshot> FilterContentsFilterInput::GetSnapshot(
                                           coverage_limit,  // coverage_limit
                                           std::nullopt,    // sampler_descriptor
                                           true,            // msaa_enabled
-                                          /*mip_count=*/mip_count  //
-    );                                                             // label
+                                          /*mip_count=*/mip_count,  //
+                                          label);                   // label
   }
   return snapshot_;
 }

@@ -37,7 +37,8 @@ std::optional<Entity> LocalMatrixFilterContents::RenderFilter(
     const Matrix& effect_transform,
     const Rect& coverage,
     const std::optional<Rect>& coverage_hint) const {
-  std::optional<Snapshot> snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  std::optional<Snapshot> snapshot =
+      inputs[0]->GetSnapshot("LocalMatrix", renderer, entity);
   if (!snapshot.has_value()) {
     return std::nullopt;
   }

@@ -16,7 +16,8 @@ class PlaceholderFilterInput final : public FilterInput {
   ~PlaceholderFilterInput() override;
 
   // |FilterInput|
-  std::optional<Snapshot> GetSnapshot(const ContentContext& renderer,
+  std::optional<Snapshot> GetSnapshot(std::string_view label,
+                                      const ContentContext& renderer,
                                       const Entity& entity,
                                       std::optional<Rect> coverage_limit,
                                       int32_t mip_count = 1) const override;
