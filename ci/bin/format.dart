@@ -845,7 +845,7 @@ class DartFormatChecker extends FormatChecker {
         continue;
       }
       for (final Directory subdir in dir.listSync(recursive: true).whereType<Directory>().where((Directory dir) => path.basename(dir.path) == '.dart_tool')) {
-        if (subdir.path.contains('third_party')) {
+        if (subdir.path.contains('third_party') || subdir.path.contains('impeller/tessellator/dart') || subdir.path.contains('tools') || subdir.path.contains('shell/vmservice') || subdir.path.contains('ci') || subdir.path.contains('testing') || subdir.path.contains('flutter_frontend_server')) {
           continue;
         }
         print('Deleting ${subdir.path}');
