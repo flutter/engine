@@ -271,7 +271,8 @@ static void render_with_textures(FlRenderer* self,
     GLint texcoord_index = glGetAttribLocation(priv->program, "in_texcoord");
     glEnableVertexAttribArray(texcoord_index);
     glVertexAttribPointer(texcoord_index, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
+                          sizeof(GLfloat) * 4,
+                          reinterpret_cast<void*>(sizeof(GLfloat) * 2));
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
