@@ -89,8 +89,8 @@ TEST(DriverInfoVKTest, DisabledDevices) {
   EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 506"));
   EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 505"));
   EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 504"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 640"));
 
-  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 640"));
   EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 650"));
 }
 
