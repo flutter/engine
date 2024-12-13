@@ -891,13 +891,13 @@ class DartFormatChecker extends FormatChecker {
       });
     } else {
       final List<WorkerJob> completedJobs = await dartFmt.runToCompletion(jobs);
-      final List<WorkerJob> incorrectList = incorrect = [];
+      final List<WorkerJob> incorrectJobs = incorrect = [];
       for (final WorkerJob job in completedJobs) {
         if ((job.result.exitCode == 1 && job.result.stderr.isNotEmpty) || job.result.exitCode > 1)  {
           // The formatter had a problem formatting the file.
           errorJobs.add(job);
         } else if (job.result.exitCode == 1) {
-          incorrectList.add(job);
+          incorrectJobs.add(job);
         }
       }
     }
