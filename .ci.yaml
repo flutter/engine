@@ -380,8 +380,7 @@ targets:
       config_name: linux_license
       clobber: "true"
 
-  - name: Linux linux_web_engine_build
-    bringup: true
+  - name: Linux linux_web_engine
     recipe: engine_v2/engine_v2
     timeout: 120
     properties:
@@ -406,7 +405,8 @@ targets:
       - ci/**
       - flutter_frontend_server/**
 
-  - name: Linux linux_web_engine
+  - name: Linux linux_web_engine_build
+    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 120
     properties:
