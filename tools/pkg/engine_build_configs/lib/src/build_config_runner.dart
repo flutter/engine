@@ -634,7 +634,8 @@ final class BuildRunner extends Runner {
         processResult = _dryRunResult;
       } else {
         final bool shouldEmitAnsi =
-            io.stdout.supportsAnsiEscapes || io.Platform.environment['CLICOLOR_FORCE'] == '1';
+            (io.stdout.supportsAnsiEscapes && io.Platform.environment['CLICOLOR_FORCE'] != '0') ||
+            io.Platform.environment['CLICOLOR_FORCE'] == '1';
         final io.Process process = await processRunner.processManager.start(
           command,
           workingDirectory: engineSrcDir.path,
