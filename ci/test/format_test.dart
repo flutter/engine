@@ -205,7 +205,8 @@ void main() {
         formatterPath, <String>['--check', 'dart', '--fix'],
         workingDirectory: repoDir.path,
       );
-      expect(result.stderr, contains('format_test2.dart produced the following error'));
+      expect(result.stdout, contains('format_test2.dart produced the following error'));
+      expect(result.exitCode, isNot(0));
     } finally {
       fixture.gitRemove();
     }

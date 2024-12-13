@@ -934,7 +934,7 @@ class DartFormatChecker extends FormatChecker {
     } else {
       message('All dart files formatted correctly.');
     }
-    return incorrect.length;
+    return incorrect.length + errorJobs.length;
   }
 
   void _printErrorJobs(List<WorkerJob> errorJobs) {
