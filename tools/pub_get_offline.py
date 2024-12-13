@@ -127,13 +127,13 @@ def find_unlisted_packages():
   return unlisted
 
 
-def deleteConfigFiles():
+def delete_config_files():
   # Find all package_config.json that are not under version control.
-  gitCmd = ['git', 'ls-files', '-o', '**/.dart_tool/package_config.json']
-  filesToDelete = subprocess.check_output(
-      gitCmd, cwd=ENGINE_DIR, stderr=subprocess.STDOUT, text=True
+  gitcmd = ['git', 'ls-files', '-o', '**/.dart_tool/package_config.json']
+  files_to_delete = subprocess.check_output(
+      gitcmd, cwd=ENGINE_DIR, stderr=subprocess.STDOUT, text=True
   ).splitlines()
-  for file in filesToDelete:
+  for file in files_to_delete:
     os.remove(os.path.join(ENGINE_DIR, file))
 
 
@@ -147,7 +147,7 @@ def main():
 
   # Delete all package_config.json files. These may be stale.
   # Required ones will be regenerated fresh below.
-  deleteConfigFiles()
+  delete_config_files()
 
   # Ensure all relevant packages are listed in ALL_PACKAGES.
   unlisted = find_unlisted_packages()
