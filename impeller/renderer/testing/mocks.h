@@ -7,6 +7,7 @@
 
 #include "gmock/gmock.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/runtime_types.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/command_buffer.h"
@@ -184,6 +185,11 @@ class MockImpellerContext : public Context {
               GetCommandQueue,
               (),
               (const, override));
+
+  MOCK_METHOD(RuntimeStageBackend,
+              GetRuntimeStageBackend,
+              (),
+              (const, override));
 };
 
 class MockTexture : public Texture {
@@ -238,9 +244,9 @@ class MockCommandQueue : public CommandQueue {
 
 class MockSamplerLibrary : public SamplerLibrary {
  public:
-  MOCK_METHOD(const std::unique_ptr<const Sampler>&,
+  MOCK_METHOD(raw_ptr<const Sampler>,
               GetSampler,
-              (SamplerDescriptor descriptor),
+              (const SamplerDescriptor& descriptor),
               (override));
 };
 

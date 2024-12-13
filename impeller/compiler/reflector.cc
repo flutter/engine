@@ -312,6 +312,8 @@ static std::optional<RuntimeStageBackend> GetRuntimeStageBackend(
       return RuntimeStageBackend::kMetal;
     case TargetPlatform::kRuntimeStageGLES:
       return RuntimeStageBackend::kOpenGLES;
+    case TargetPlatform::kRuntimeStageGLES3:
+      return RuntimeStageBackend::kOpenGLES3;
     case TargetPlatform::kRuntimeStageVulkan:
       return RuntimeStageBackend::kVulkan;
     case TargetPlatform::kSkSL:
@@ -1388,7 +1390,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
         .argument_name = "texture",
     });
     proto.args.push_back(BindPrototypeArgument{
-        .type_name = "const std::unique_ptr<const Sampler>&",
+        .type_name = "raw_ptr<const Sampler>",
         .argument_name = "sampler",
     });
   }

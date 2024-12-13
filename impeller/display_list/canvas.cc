@@ -681,7 +681,7 @@ void Canvas::DrawPoints(const Point points[],
 void Canvas::DrawImage(const std::shared_ptr<Texture>& image,
                        Point offset,
                        const Paint& paint,
-                       SamplerDescriptor sampler) {
+                       const SamplerDescriptor& sampler) {
   if (!image) {
     return;
   }
@@ -689,14 +689,14 @@ void Canvas::DrawImage(const std::shared_ptr<Texture>& image,
   const auto source = Rect::MakeSize(image->GetSize());
   const auto dest = source.Shift(offset);
 
-  DrawImageRect(image, source, dest, paint, std::move(sampler));
+  DrawImageRect(image, source, dest, paint, sampler);
 }
 
 void Canvas::DrawImageRect(const std::shared_ptr<Texture>& image,
                            Rect source,
                            Rect dest,
                            const Paint& paint,
-                           SamplerDescriptor sampler,
+                           const SamplerDescriptor& sampler,
                            SourceRectConstraint src_rect_constraint) {
   if (!image || source.IsEmpty() || dest.IsEmpty()) {
     return;
@@ -727,7 +727,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Texture>& image,
   texture_contents->SetSourceRect(*clipped_source);
   texture_contents->SetStrictSourceRect(src_rect_constraint ==
                                         SourceRectConstraint::kStrict);
-  texture_contents->SetSamplerDescriptor(std::move(sampler));
+  texture_contents->SetSamplerDescriptor(sampler);
   texture_contents->SetOpacity(paint.color.alpha);
   texture_contents->SetDeferApplyingOpacity(paint.HasColorFilter());
 
@@ -1037,7 +1037,8 @@ void Canvas::SaveLayer(const Paint& paint,
     subpass_size = ISize(subpass_coverage.GetSize());
   } else {
     did_round_out = true;
-    subpass_size = ISize(IRect::RoundOut(subpass_coverage).GetSize());
+    subpass_size =
+        static_cast<ISize>(IRect::RoundOut(subpass_coverage).GetSize());
   }
   if (subpass_size.IsEmpty()) {
     return SkipUntilMatchingRestore(total_content_depth);

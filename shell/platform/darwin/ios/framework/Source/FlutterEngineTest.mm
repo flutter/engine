@@ -69,6 +69,17 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotNil(engine);
 }
 
+- (void)testShellGetters {
+  FlutterDartProject* project = [[FlutterDartProject alloc] init];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  XCTAssertNotNil(engine);
+
+  // Ensure getters don't deref _shell when it's null, and instead return nullptr.
+  XCTAssertEqual(engine.platformTaskRunner.get(), nullptr);
+  XCTAssertEqual(engine.uiTaskRunner.get(), nullptr);
+  XCTAssertEqual(engine.rasterTaskRunner.get(), nullptr);
+}
+
 - (void)testInfoPlist {
   // Check the embedded Flutter.framework Info.plist, not the linked dylib.
   NSURL* flutterFrameworkURL =
@@ -422,10 +433,10 @@ FLUTTER_ASSERT_ARC
                                         initialRoute:nil
                                       entrypointArgs:nil];
   XCTAssertNotNil(spawn);
-  XCTAssertTrue([engine iosPlatformView] != nullptr);
-  XCTAssertTrue([spawn iosPlatformView] != nullptr);
-  std::shared_ptr<flutter::IOSContext> engine_context = [engine iosPlatformView]->GetIosContext();
-  std::shared_ptr<flutter::IOSContext> spawn_context = [spawn iosPlatformView]->GetIosContext();
+  XCTAssertTrue(engine.platformView != nullptr);
+  XCTAssertTrue(spawn.platformView != nullptr);
+  std::shared_ptr<flutter::IOSContext> engine_context = engine.platformView->GetIosContext();
+  std::shared_ptr<flutter::IOSContext> spawn_context = spawn.platformView->GetIosContext();
   XCTAssertEqual(engine_context, spawn_context);
 }
 

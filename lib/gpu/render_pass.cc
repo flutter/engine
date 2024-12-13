@@ -84,6 +84,8 @@ bool RenderPass::Begin(flutter::gpu::CommandBuffer& command_buffer) {
 }
 
 void RenderPass::SetPipeline(fml::RefPtr<RenderPipeline> pipeline) {
+  // On debug this makes a difference, but not on release builds.
+  // NOLINTNEXTLINE(performance-move-const-arg)
   render_pipeline_ = std::move(pipeline);
 }
 
@@ -177,7 +179,7 @@ RenderPass::GetOrCreatePipeline() {
 }
 
 bool RenderPass::Draw() {
-  render_pass_->SetPipeline(GetOrCreatePipeline());
+  render_pass_->SetPipeline(impeller::PipelineRef(GetOrCreatePipeline()));
 
   for (const auto& [_, buffer] : vertex_uniform_bindings) {
     render_pass_->BindDynamicResource(
@@ -192,7 +194,7 @@ bool RenderPass::Draw() {
         texture.slot,
         std::make_unique<impeller::ShaderMetadata>(
             *texture.texture.GetMetadata()),
-        texture.texture.resource, *texture.sampler);
+        texture.texture.resource, texture.sampler);
   }
   for (const auto& [_, buffer] : fragment_uniform_bindings) {
     render_pass_->BindDynamicResource(
@@ -207,7 +209,7 @@ bool RenderPass::Draw() {
         impeller::DescriptorType::kSampledImage, texture.slot,
         std::make_unique<impeller::ShaderMetadata>(
             *texture.texture.GetMetadata()),
-        texture.texture.resource, *texture.sampler);
+        texture.texture.resource, texture.sampler);
   }
 
   render_pass_->SetVertexBuffer(vertex_buffer);
@@ -466,7 +468,7 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
       flutter::gpu::ToImpellerSamplerAddressMode(width_address_mode);
   sampler_desc.height_address_mode =
       flutter::gpu::ToImpellerSamplerAddressMode(height_address_mode);
-  const std::unique_ptr<const impeller::Sampler>& sampler =
+  auto sampler =
       wrapper->GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc);
 
   flutter::gpu::RenderPass::TextureUniformMap* uniform_map = nullptr;
@@ -486,7 +488,7 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
       impeller::TextureAndSampler{
           .slot = texture_binding->slot,
           .texture = {&texture_binding->metadata, texture->GetTexture()},
-          .sampler = &sampler,
+          .sampler = sampler,
       });
   return true;
 }

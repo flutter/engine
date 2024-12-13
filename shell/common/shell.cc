@@ -29,7 +29,6 @@
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
-#include "impeller/runtime_stage/runtime_stage.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
@@ -200,14 +199,7 @@ static impeller::RuntimeStageBackend DetermineRuntimeStageBackend(
   if (!impeller_context) {
     return impeller::RuntimeStageBackend::kSkSL;
   }
-  switch (impeller_context->GetBackendType()) {
-    case impeller::Context::BackendType::kMetal:
-      return impeller::RuntimeStageBackend::kMetal;
-    case impeller::Context::BackendType::kOpenGLES:
-      return impeller::RuntimeStageBackend::kOpenGLES;
-    case impeller::Context::BackendType::kVulkan:
-      return impeller::RuntimeStageBackend::kVulkan;
-  }
+  return impeller_context->GetRuntimeStageBackend();
 }
 
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
@@ -1641,12 +1633,17 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
 }
 
 fml::Milliseconds Shell::GetFrameBudget() {
+  if (cached_display_refresh_rate_.has_value()) {
+    return cached_display_refresh_rate_.value();
+  }
   double display_refresh_rate = display_manager_->GetMainDisplayRefreshRate();
   if (display_refresh_rate > 0) {
-    return fml::RefreshRateToFrameBudget(display_refresh_rate);
+    cached_display_refresh_rate_ =
+        fml::RefreshRateToFrameBudget(display_refresh_rate);
   } else {
-    return fml::kDefaultFrameBudget;
+    cached_display_refresh_rate_ = fml::kDefaultFrameBudget;
   }
+  return cached_display_refresh_rate_.value_or(fml::kDefaultFrameBudget);
 }
 
 fml::TimePoint Shell::GetLatestFrameTargetTime() const {
@@ -1664,7 +1661,7 @@ bool Shell::ShouldDiscardLayerTree(int64_t view_id,
   std::scoped_lock<std::mutex> lock(resize_mutex_);
   auto expected_frame_size = ExpectedFrameSize(view_id);
   return !expected_frame_size.isEmpty() &&
-         tree.frame_size() != expected_frame_size;
+         ToSkISize(tree.frame_size()) != expected_frame_size;
 }
 
 // |ServiceProtocol::Handler|

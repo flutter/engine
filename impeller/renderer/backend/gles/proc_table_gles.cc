@@ -6,7 +6,6 @@
 
 #include <sstream>
 
-#include "fml/closure.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/comparable.h"
 #include "impeller/base/strings.h"
@@ -180,12 +179,12 @@ void ProcTableGLES::ShaderSourceMapping(
 std::optional<std::string> ProcTableGLES::ComputeShaderWithDefines(
     const fml::Mapping& mapping,
     const std::vector<Scalar>& defines) const {
-  auto shader_source = std::string{
+  std::string shader_source = std::string{
       reinterpret_cast<const char*>(mapping.GetMapping()), mapping.GetSize()};
 
   // Look for the first newline after the '#version' header, which impellerc
   // will always emit as the first line of a compiled shader.
-  auto index = shader_source.find('\n');
+  size_t index = shader_source.find('\n');
   if (index == std::string::npos) {
     VALIDATION_LOG << "Failed to append constant data to shader";
     return std::nullopt;
@@ -358,13 +357,20 @@ static bool ResourceIsLive(const ProcTableGLES& gl,
   FML_UNREACHABLE();
 }
 
+bool ProcTableGLES::SupportsDebugLabels() const {
+  if (debug_label_max_length_ <= 0) {
+    return false;
+  }
+  if (!ObjectLabelKHR.IsAvailable()) {
+    return false;
+  }
+  return true;
+}
+
 bool ProcTableGLES::SetDebugLabel(DebugResourceType type,
                                   GLint name,
                                   std::string_view label) const {
-  if (debug_label_max_length_ <= 0) {
-    return true;
-  }
-  if (!ObjectLabelKHR.IsAvailable()) {
+  if (!SupportsDebugLabels()) {
     return true;
   }
   if (!ResourceIsLive(*this, type, name)) {
