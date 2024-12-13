@@ -860,26 +860,32 @@ class DartFormatChecker extends FormatChecker {
     );
 
     Iterable<WorkerJob> incorrect;
+    final List<WorkerJob> errorJobs = [];
     if (!fixing) {
       final Stream<WorkerJob> completedJobs = dartFmt.startWorkers(jobs);
       final List<WorkerJob> diffJobs = <WorkerJob>[];
       await for (final WorkerJob completedJob in completedJobs) {
         if (completedJob.result.exitCode == 1) {
-          diffJobs.add(
-            WorkerJob(
-              <String>[
-                'git',
-                'diff',
-                '--no-index',
-                '--no-color',
-                '--ignore-cr-at-eol',
-                '--',
-                completedJob.command.last,
-                '-',
-              ],
-              stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
-            ),
-          );
+          if (completedJob.result.stderr.isNotEmpty) {
+            // The formatter had a problem formatting the file.
+            errorJobs.add(completedJob);
+          } else {
+            diffJobs.add(
+              WorkerJob(
+                <String>[
+                  'git',
+                  'diff',
+                  '--no-index',
+                  '--no-color',
+                  '--ignore-cr-at-eol',
+                  '--',
+                  completedJob.command.last,
+                  '-',
+                ],
+                stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
+              ),
+            );
+          }
         }
       }
       final ProcessPool diffPool = ProcessPool(
@@ -892,7 +898,17 @@ class DartFormatChecker extends FormatChecker {
       });
     } else {
       final List<WorkerJob> completedJobs = await dartFmt.runToCompletion(jobs);
-      incorrect = completedJobs.where((WorkerJob job) => job.result.exitCode == 1);
+      final List<WorkerJob> incorrectList = incorrect = [];
+      for (final WorkerJob job in completedJobs) {
+        if (job.result.exitCode == 1) {
+          if (job.result.stderr.isNotEmpty) {
+            // The formatter had a problem formatting the file.
+            errorJobs.add(job);
+          } else {
+            incorrectList.add(job);
+          }
+        }
+      }
     }
 
     reportDone();
@@ -905,6 +921,7 @@ class DartFormatChecker extends FormatChecker {
       } else {
         error('Found ${incorrect.length} Dart file${plural ? 's' : ''}'
             ' which ${plural ? 'were' : 'was'} formatted incorrectly.');
+        stdout.writeln();
         stdout.writeln('To fix, run `et format` or:');
         stdout.writeln();
         stdout.writeln('git apply <<DONE');
@@ -918,10 +935,26 @@ class DartFormatChecker extends FormatChecker {
         stdout.writeln('DONE');
         stdout.writeln();
       }
+      _printErrorJobs(errorJobs);
+    } else if (errorJobs.isNotEmpty) {
+      _printErrorJobs(errorJobs);
     } else {
       message('All dart files formatted correctly.');
     }
     return incorrect.length;
+  }
+
+  void _printErrorJobs(List<WorkerJob> errorJobs) {
+    if (errorJobs.isNotEmpty) {
+      final bool plural = errorJobs.length > 1;
+      error('The formatter failed to run on ${errorJobs.length} Dart file${plural ? 's' : ''}.');
+      stdout.writeln();
+      for (final WorkerJob job in errorJobs) {
+        stdout.write('${job.command[job.command.length - 2]} produced the following error:');
+        stdout.write(job.result.stderr);
+        stdout.writeln();
+      }
+    }
   }
 }
 
