@@ -403,11 +403,13 @@ class CkImage implements ui.Image, StackTraceDebugger {
   CkImage(SkImage skImage, {this.imageSource}) {
     box = CountedRef<CkImage, SkImage>(skImage, this, 'SkImage');
     _init();
+    imageSource?.refCount++;
   }
 
   CkImage.cloneOf(this.box, {this.imageSource}) {
     _init();
     box.ref(this);
+    imageSource?.refCount++;
   }
 
   void _init() {
@@ -454,6 +456,8 @@ class CkImage implements ui.Image, StackTraceDebugger {
     ui.Image.onDispose?.call(this);
     _disposed = true;
     box.unref(this);
+
+    imageSource?.refCount--;
     imageSource?.close();
   }
 
@@ -645,7 +649,23 @@ sealed class ImageSource {
   DomCanvasImageSource get canvasImageSource;
   int get width;
   int get height;
-  void close();
+
+  /// The number of references to this image source.
+  ///
+  /// Calling [close] is a no-op if [refCount] is greater than 0.
+  ///
+  /// Only when [refCount] is 0 will the [close] method actually close the
+  /// image source.
+  int refCount = 0;
+
+  void close() {
+    print('Closing with refs = $refCount');
+    if (refCount == 0) {
+      _doClose();
+    }
+  }
+
+  void _doClose();
 }
 
 class VideoFrameImageSource extends ImageSource {
@@ -654,7 +674,7 @@ class VideoFrameImageSource extends ImageSource {
   final VideoFrame videoFrame;
 
   @override
-  void close() {
+  void _doClose() {
     // Do nothing. Skia will close the VideoFrame when the SkImage is disposed.
   }
 
@@ -674,7 +694,7 @@ class ImageElementImageSource extends ImageSource {
   final DomHTMLImageElement imageElement;
 
   @override
-  void close() {
+  void _doClose() {
     // There's no way to immediately close the <img> element. Just let the
     // browser garbage collect it.
   }
@@ -695,7 +715,8 @@ class ImageBitmapImageSource extends ImageSource {
   final DomImageBitmap imageBitmap;
 
   @override
-  void close() {
+  void _doClose() {
+    print('!!!!!!!');
     imageBitmap.close();
   }
 
