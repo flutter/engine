@@ -834,9 +834,7 @@ class DartFormatChecker extends FormatChecker {
   @override
   Future<bool> fixFormatting() async {
     message('Fixing Dart formatting...');
-    await _runDartFormat(fixing: true);
-    // The dart formatter shouldn't fail when fixing errors.
-    return true;
+    return (await _runDartFormat(fixing: true)) == 0;
   }
 
   Future<int> _runDartFormat({required bool fixing}) async {
@@ -934,7 +932,7 @@ class DartFormatChecker extends FormatChecker {
     } else {
       message('All dart files formatted correctly.');
     }
-    return incorrect.length + errorJobs.length;
+    return fixing ? errorJobs.length : (incorrect.length + errorJobs.length);
   }
 
   void _printErrorJobs(List<WorkerJob> errorJobs) {
