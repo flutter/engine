@@ -134,6 +134,7 @@ def delete_config_files():
       gitcmd, cwd=ENGINE_DIR, stderr=subprocess.STDOUT, text=True
   ).splitlines()
   for file in files_to_delete:
+    print('Deleting %s...' % file)
     os.remove(os.path.join(ENGINE_DIR, file))
 
 
