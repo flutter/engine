@@ -329,6 +329,11 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDiffRoundRect(
   AccumulateComplexity(complexity);
 }
 
+void DisplayListMetalComplexityCalculator::MetalHelper::drawRoundSuperellipse(
+    const DlRoundSuperellipse& rse) {
+  // TODO(dkwingsmt): implement
+}
+
 void DisplayListMetalComplexityCalculator::MetalHelper::drawPath(
     const DlPath& path) {
   if (IsComplex()) {

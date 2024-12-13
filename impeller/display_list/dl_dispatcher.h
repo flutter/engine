@@ -25,6 +25,7 @@ using DlPoint = flutter::DlPoint;
 using DlRect = flutter::DlRect;
 using DlIRect = flutter::DlIRect;
 using DlRoundRect = flutter::DlRoundRect;
+using DlRoundSuperellipse = flutter::DlRoundSuperellipse;
 using DlPath = flutter::DlPath;
 
 class DlDispatcherBase : public flutter::DlOpReceiver {

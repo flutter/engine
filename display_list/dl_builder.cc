@@ -1226,11 +1226,11 @@ void DisplayListBuilder::DrawDiffRoundRect(const DlRoundRect& outer,
   drawDiffRoundRect(outer, inner);
 }
 void DisplayListBuilder::DrawRoundSuperellipse(const DlRoundSuperellipse& rse,
-                                       const DlPaint& paint) {
+                                               const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawRSuperellipseFlags);
   drawRoundSuperellipse(rse);
 }
-void DisplayListBuilder::drawRoundSuperellipse(const DlRoundSuperellipse& rse) override {
+void DisplayListBuilder::drawRoundSuperellipse(const DlRoundSuperellipse& rse) {
   if (rse.IsRect()) {
     drawRect(rse.GetBounds());
   } else if (rse.IsCircle()) {

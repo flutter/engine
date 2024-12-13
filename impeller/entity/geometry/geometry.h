@@ -84,7 +84,7 @@ class Geometry {
                                                  const Size& radii);
 
   static std::unique_ptr<Geometry> MakeRoundSuperellipse(const Rect& rect,
-                                                 Scalar corner_radius);
+                                                         Scalar corner_radius);
 
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,

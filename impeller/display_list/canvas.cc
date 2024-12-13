@@ -533,9 +533,10 @@ void Canvas::DrawRoundRect(const RoundRect& round_rect, const Paint& paint) {
   DrawPath(path, paint);
 }
 
-void Canvas::DrawRoundSuperellipse(const RoundSuperellipse& rse, const Paint& paint) {
+void Canvas::DrawRoundSuperellipse(const RoundSuperellipse& rse,
+                                   const Paint& paint) {
   auto& rect = rse.GetBounds();
-  auto& corner_radius = rse.GetCornerRadius();
+  Scalar corner_radius = rse.GetCornerRadius();
 
   if (paint.style == Paint::Style::kStroke) {
     // TODO(dkwingsmt): Add path

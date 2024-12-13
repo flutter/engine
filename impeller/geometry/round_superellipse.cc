@@ -4,16 +4,19 @@
 
 #include "flutter/impeller/geometry/round_superellipse.h"
 
+#include <cmath>
+
 namespace impeller {
 
-RoundSuperellipse RoundSuperellipse::MakeRectRadius(const Rect& rect, Size corner_radius) {
-  if (bounds.IsEmpty() || !bounds.IsFinite() ||  //
-      !std::isfinite(corner_radius) ) {
+RoundSuperellipse RoundSuperellipse::MakeRectRadius(const Rect& rect,
+                                                    Scalar corner_radius) {
+  if (rect.IsEmpty() || !rect.IsFinite() ||  //
+      !std::isfinite(corner_radius)) {
     // preserve the empty bounds as they might be strokable
-    return RoundSuperellipse(bounds, 0);
+    return RoundSuperellipse(rect, 0);
   }
 
-  return RoundSuperellipse(bounds, radii);
+  return RoundSuperellipse(rect, corner_radius);
 }
 
 }  // namespace impeller

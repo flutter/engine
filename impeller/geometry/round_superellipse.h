@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_GEOMETRY_ROUND_RECT_H_
-#define FLUTTER_IMPELLER_GEOMETRY_ROUND_RECT_H_
+#ifndef FLUTTER_IMPELLER_GEOMETRY_ROUND_SUPERELLIPSE_H_
+#define FLUTTER_IMPELLER_GEOMETRY_ROUND_SUPERELLIPSE_H_
 
 #include "flutter/impeller/geometry/point.h"
 #include "flutter/impeller/geometry/rect.h"
@@ -14,10 +14,11 @@ namespace impeller {
 struct RoundSuperellipse {
   RoundSuperellipse() = default;
 
-  static RoundSuperellipse MakeRectRadius(const Rect& rect, Size corner_radius);
+  static RoundSuperellipse MakeRectRadius(const Rect& rect,
+                                          Scalar corner_radius);
 
   constexpr const Rect& GetBounds() const { return bounds_; }
-  constexpr const float& GetCornerRadius() const { return corner_radius_; }
+  constexpr float GetCornerRadius() const { return corner_radius_; }
 
   [[nodiscard]] constexpr bool IsFinite() const {
     return bounds_.IsFinite() && std::isfinite(corner_radius_);
@@ -31,12 +32,9 @@ struct RoundSuperellipse {
 
   [[nodiscard]] constexpr bool IsCircle() const {
     return !bounds_.IsEmpty() &&
-           ScalarNearlyEqual(corner_radius_,
-                             bounds_.GetWidth() * 0.5f) &&
-           ScalarNearlyEqual(corner_radius_,
-                             bounds_.GetHeight() * 0.5f);
+           ScalarNearlyEqual(corner_radius_, bounds_.GetWidth() * 0.5f) &&
+           ScalarNearlyEqual(corner_radius_, bounds_.GetHeight() * 0.5f);
   }
-
 
   /// @brief  Returns a new round rectangle translated by the given offset.
   [[nodiscard]] constexpr RoundSuperellipse Shift(Scalar dx, Scalar dy) const {
@@ -47,7 +45,7 @@ struct RoundSuperellipse {
   }
 
   [[nodiscard]] constexpr bool operator==(const RoundSuperellipse& rr) const {
-    return bounds_ == rr.bounds_ && radii_ == rr.radii_;
+    return bounds_ == rr.bounds_ && corner_radius_ == rr.corner_radius_;
   }
 
   [[nodiscard]] constexpr bool operator!=(const RoundSuperellipse& r) const {
@@ -59,7 +57,7 @@ struct RoundSuperellipse {
       : bounds_(bounds), corner_radius_(corner_radius) {}
 
   const Rect bounds_;
-  const float corner_radius_;
+  const float corner_radius_ = 0;
 };
 
 }  // namespace impeller
@@ -68,8 +66,8 @@ namespace std {
 
 inline std::ostream& operator<<(std::ostream& out,
                                 const impeller::RoundSuperellipse& rr) {
-  out << "("                                 //
-      << "rect: " << rr.GetBounds() << ", "  //
+  out << "("                                        //
+      << "rect: " << rr.GetBounds() << ", "         //
       << "corner_radius: " << rr.GetCornerRadius()  //
       << ")";
   return out;
@@ -77,4 +75,4 @@ inline std::ostream& operator<<(std::ostream& out,
 
 }  // namespace std
 
-#endif  // FLUTTER_IMPELLER_GEOMETRY_ROUND_RECT_H_
+#endif  // FLUTTER_IMPELLER_GEOMETRY_ROUND_SUPERELLIPSE_H_
