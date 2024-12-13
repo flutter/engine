@@ -330,19 +330,39 @@ bool DriverInfoVK::IsEmulator() const {
 
 bool DriverInfoVK::IsKnownBadDriver() const {
   if (adreno_gpu_.has_value()) {
-    auto adreno = adreno_gpu_.value();
+    AdrenoGPU adreno = adreno_gpu_.value();
+    // See:
+    // https://github.com/flutter/flutter/issues/154103
+    //
+    // Reports "VK_INCOMPLETE" when compiling certain entity shader with
+    // vkCreateGraphicsPipelines, which is not a valid return status.
+    // See https://github.com/flutter/flutter/issues/155185 .
+    //
+    // https://github.com/flutter/flutter/issues/155185
+    // Unknown crashes but device is not easily acquirable.
     switch (adreno) {
-      // See:
-      // https://github.com/flutter/flutter/issues/154103
-      //
-      // Reports "VK_INCOMPLETE" when compiling certain entity shader with
-      // vkCreateGraphicsPipelines, which is not a valid return status.
-      // See https://github.com/flutter/flutter/issues/155185 .
+      case AdrenoGPU::kAdreno640:
       case AdrenoGPU::kAdreno630:
-      // See:
-      // https://github.com/flutter/flutter/issues/155185
-      // Unknown crashes but device is not easily acquirable.
+      case AdrenoGPU::kAdreno620:
+      case AdrenoGPU::kAdreno619:
+      case AdrenoGPU::kAdreno619L:
+      case AdrenoGPU::kAdreno618:
+      case AdrenoGPU::kAdreno616:
+      case AdrenoGPU::kAdreno615:
+      case AdrenoGPU::kAdreno613:
+      case AdrenoGPU::kAdreno612:
+      case AdrenoGPU::kAdreno610:
+      case AdrenoGPU::kAdreno608:
+      case AdrenoGPU::kAdreno605:
+      case AdrenoGPU::kAdreno540:
+      case AdrenoGPU::kAdreno530:
+      case AdrenoGPU::kAdreno512:
+      case AdrenoGPU::kAdreno510:
+      case AdrenoGPU::kAdreno509:
+      case AdrenoGPU::kAdreno508:
       case AdrenoGPU::kAdreno506:
+      case AdrenoGPU::kAdreno505:
+      case AdrenoGPU::kAdreno504:
         return true;
       default:
         return false;
