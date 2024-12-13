@@ -193,6 +193,24 @@ void main() {
     }
   });
 
+  test('Prints error if dart formatter fails', () {
+    final TestFileFixture fixture = TestFileFixture(target.FormatCheck.dart);
+    final io.File dartFile = io.File('${repoDir.path}/format_test2.dart');
+    dartFile.writeAsStringSync('P\n');
+    fixture.files.add(dartFile);
+
+    try {
+      fixture.gitAdd();
+      final io.ProcessResult result = io.Process.runSync(
+        formatterPath, <String>['--check', 'dart', '--fix'],
+        workingDirectory: repoDir.path,
+      );
+      expect(result.stderr, contains('format_test2.dart produced the following error'));
+    } finally {
+      fixture.gitRemove();
+    }
+  });
+
   test('Can fix GN formatting errors', () {
     final TestFileFixture fixture = TestFileFixture(target.FormatCheck.gn);
     try {

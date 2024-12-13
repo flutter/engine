@@ -865,27 +865,22 @@ class DartFormatChecker extends FormatChecker {
       final Stream<WorkerJob> completedJobs = dartFmt.startWorkers(jobs);
       final List<WorkerJob> diffJobs = <WorkerJob>[];
       await for (final WorkerJob completedJob in completedJobs) {
-        if (completedJob.result.exitCode == 1) {
-          if (completedJob.result.stderr.isNotEmpty) {
-            // The formatter had a problem formatting the file.
-            errorJobs.add(completedJob);
-          } else {
-            diffJobs.add(
-              WorkerJob(
-                <String>[
-                  'git',
-                  'diff',
-                  '--no-index',
-                  '--no-color',
-                  '--ignore-cr-at-eol',
-                  '--',
-                  completedJob.command.last,
-                  '-',
-                ],
-                stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw),
-              ),
-            );
-          }
+        if ((completedJob.result.exitCode == 1 && completedJob.result.stderr.isNotEmpty) || completedJob.result.exitCode > 1)  {
+          // The formatter had a problem formatting the file.
+          errorJobs.add(completedJob);
+        } else if (completedJob.result.exitCode == 1) {
+          diffJobs.add(
+            WorkerJob(<String>[
+              'git',
+              'diff',
+              '--no-index',
+              '--no-color',
+              '--ignore-cr-at-eol',
+              '--',
+              completedJob.command.last,
+              '-',
+            ], stdinRaw: codeUnitsAsStream(completedJob.result.stdoutRaw)),
+          );
         }
       }
       final ProcessPool diffPool = ProcessPool(
@@ -900,13 +895,11 @@ class DartFormatChecker extends FormatChecker {
       final List<WorkerJob> completedJobs = await dartFmt.runToCompletion(jobs);
       final List<WorkerJob> incorrectList = incorrect = [];
       for (final WorkerJob job in completedJobs) {
-        if (job.result.exitCode == 1) {
-          if (job.result.stderr.isNotEmpty) {
-            // The formatter had a problem formatting the file.
-            errorJobs.add(job);
-          } else {
-            incorrectList.add(job);
-          }
+        if ((job.result.exitCode == 1 && job.result.stderr.isNotEmpty) || job.result.exitCode > 1)  {
+          // The formatter had a problem formatting the file.
+          errorJobs.add(job);
+        } else if (job.result.exitCode == 1) {
+          incorrectList.add(job);
         }
       }
     }
@@ -950,7 +943,7 @@ class DartFormatChecker extends FormatChecker {
       error('The formatter failed to run on ${errorJobs.length} Dart file${plural ? 's' : ''}.');
       stdout.writeln();
       for (final WorkerJob job in errorJobs) {
-        stdout.write('${job.command[job.command.length - 2]} produced the following error:');
+        stdout.writeln('--> ${job.command.last} produced the following error:');
         stdout.write(job.result.stderr);
         stdout.writeln();
       }
