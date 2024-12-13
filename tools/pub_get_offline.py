@@ -127,6 +127,16 @@ def find_unlisted_packages():
   return unlisted
 
 
+def deleteConfigFiles():
+  # Find all package_config.json that are not under version control.
+  gitCmd = ['git', 'ls-files', '-o', '**/.dart_tool/package_config.json']
+  filesToDelete = subprocess.check_output(
+      gitCmd, cwd=ENGINE_DIR, stderr=subprocess.STDOUT, text=True
+  ).splitlines()
+  for file in filesToDelete:
+    os.remove(os.path.join(ENGINE_DIR, file))
+
+
 def main():
   # Intentionally use the Dart SDK prebuilt instead of the Flutter prebuilt
   # (i.e. prebuilts/{platform}/dart-sdk/bin/dart) because the script has to run
@@ -134,6 +144,10 @@ def main():
   dart_sdk_bin = os.path.join(
       SRC_ROOT, 'flutter', 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
   )
+
+  # Delete all package_config.json files. These may be stale.
+  # Required ones will be regenerated fresh below.
+  deleteConfigFiles()
 
   # Ensure all relevant packages are listed in ALL_PACKAGES.
   unlisted = find_unlisted_packages()
