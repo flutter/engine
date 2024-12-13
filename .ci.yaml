@@ -381,6 +381,7 @@ targets:
       clobber: "true"
 
   - name: Linux linux_web_engine_build
+    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 120
     properties:
