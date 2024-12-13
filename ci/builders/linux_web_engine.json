@@ -25,17 +25,6 @@
           "flutter/web_sdk:flutter_web_sdk_archive"
         ]
       },
-      "archives": [
-        {
-          "name": "wasm_release",
-          "base_path": "out/wasm_release/zip_archives/",
-          "type": "gcs",
-          "include_paths": [
-            "out/wasm_release/zip_archives/flutter-web-sdk.zip"
-          ],
-          "realm": "production"
-        }
-      ],
       "generators": {
         "tasks": [
           {
