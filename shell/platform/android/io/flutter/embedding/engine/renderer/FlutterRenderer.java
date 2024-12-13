@@ -64,7 +64,7 @@ public class FlutterRenderer implements TextureRegistry {
    * the OpenGLES/{@link SurfaceTextureSurfaceProducer} code branch. This flag has undefined
    * behavior if set to true while running in a Vulkan (Impeller) context.
    */
-  @VisibleForTesting public static boolean debugForceSurfaceProducerGlTextures = false;
+  @VisibleForTesting public static boolean debugForceSurfaceProducerGlTextures = true;
 
   /** Whether to disable clearing of the Surface used to render platform views. */
   @VisibleForTesting public static boolean debugDisableSurfaceClear = false;
