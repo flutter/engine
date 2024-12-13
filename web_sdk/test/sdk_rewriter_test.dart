@@ -198,6 +198,8 @@ void printSomething() {
 import 'package:some_package/some_package.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart'
     if (dart.library.html) 'package:ui/src/engine/skwasm/skwasm_stub.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart'
+    if (dart.library.js_interop) 'package:ui/src/engine/skwasm/skwasm_stub.dart';
 import 'package:some_package/some_package' as some_package;
 
 void printSomething() {
