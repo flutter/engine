@@ -172,9 +172,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
                          const DlRoundRect& inner,
                          const DlPaint& paint) override;
   // |DlCanvas|
-  // TODO(dkwingsmt): Make it override
   void DrawRoundSuperellipse(const DlRoundSuperellipse& rse,
-                             const DlPaint& paint);
+                             const DlPaint& paint) override;
   // |DlCanvas|
   void DrawPath(const DlPath& path, const DlPaint& paint) override;
   // |DlCanvas|
