@@ -35,7 +35,21 @@
           ],
           "realm": "production"
         }
-      ]
+      ],
+      "generators": {
+        "tasks": [
+          {
+            "name": "copy artifacts for web tests",
+            "parameters": [
+              "test",
+              "--copy-artifacts"
+            ],
+            "scripts": [
+              "flutter/lib/web_ui/dev/felt"
+            ]
+          }
+        ]
+      }
     }
   ]
 }

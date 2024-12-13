@@ -120,9 +120,9 @@ class GenerateBuilderJsonCommand extends Command<bool> {
             'realm': 'production',
           }
         ],
-      if (forTesting)
-        'generators': <String, dynamic>{
-          'tasks': <dynamic>[
+      'generators': <String, dynamic>{
+        'tasks': <dynamic>[
+          if (forTesting)
             <String, dynamic>{
               'name': 'check licenses',
               'parameters': <String>[
@@ -130,6 +130,7 @@ class GenerateBuilderJsonCommand extends Command<bool> {
               ],
               'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
             },
+          if (forTesting)
             <String, dynamic>{
               'name': 'web engine analysis',
               'parameters': <String>[
@@ -137,16 +138,16 @@ class GenerateBuilderJsonCommand extends Command<bool> {
               ],
               'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
             },
-            <String, dynamic>{
-              'name': 'copy artifacts for web tests',
-              'parameters': <String>[
-                'test',
-                '--copy-artifacts',
-              ],
-              'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
-            },
-          ]
-        },
+          <String, dynamic>{
+            'name': 'copy artifacts for web tests',
+            'parameters': <String>[
+              'test',
+              '--copy-artifacts',
+            ],
+            'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
+          },
+        ]
+      },
     };
   }
 
