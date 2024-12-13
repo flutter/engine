@@ -579,6 +579,7 @@ struct DrawColorOp final : DrawOpBase {
 // SkOval is same as DlRect
 // DlRoundRect is 48 more bytes, using 52 bytes which rounds up to 56 bytes
 //        total (4 bytes unused)
+// TODO(dkwingsmt): Evaluate DlRoundSuperellipse here
 #define DEFINE_DRAW_1ARG_OP(op_name, arg_type, arg_name)             \
   struct Draw##op_name##Op final : DrawOpBase {                      \
     static constexpr auto kType = DisplayListOpType::kDraw##op_name; \
@@ -595,6 +596,7 @@ struct DrawColorOp final : DrawOpBase {
 DEFINE_DRAW_1ARG_OP(Rect, DlRect, rect)
 DEFINE_DRAW_1ARG_OP(Oval, DlRect, oval)
 DEFINE_DRAW_1ARG_OP(RoundRect, DlRoundRect, rrect)
+DEFINE_DRAW_1ARG_OP(RoundSuperellipse, DlRoundSuperellipse, rse)
 #undef DEFINE_DRAW_1ARG_OP
 
 // 4 byte header + 16 byte payload uses 20 bytes but is rounded

@@ -438,6 +438,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void drawDiffRoundRect(const DlRoundRect& outer,
                          const DlRoundRect& inner) override;
   // |DlOpReceiver|
+  void drawRoundSuperellipse(const DlRoundRoundSuperellipse& rse) override;
+  // |DlOpReceiver|
   void drawPath(const DlPath& path) override;
   // |DlOpReceiver|
   void drawArc(const DlRect& bounds,

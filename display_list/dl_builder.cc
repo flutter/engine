@@ -1223,6 +1223,27 @@ void DisplayListBuilder::DrawDiffRoundRect(const DlRoundRect& outer,
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawDRRectFlags);
   drawDiffRoundRect(outer, inner);
 }
+void DisplayListBuilder::DrawRoundSuperellipse(const DlRoundSuperellipse& rse,
+                                       const DlPaint& paint) {
+  SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawRSuperellipseFlags);
+  drawRoundSuperellipse(rse);
+}
+void DisplayListBuilder::drawRoundSuperellipse(const DlRoundSuperellipse& rse) override {
+  if (rse.IsRect()) {
+    drawRect(rse.GetBounds());
+  } else if (rse.IsCircle()) {
+    drawOval(rse.GetBounds());
+  } else {
+    DisplayListAttributeFlags flags = kDrawRSuperellipseFlags;
+    OpResult result = PaintResult(current_, flags);
+    if (result != OpResult::kNoEffect &&
+        AccumulateOpBounds(ToSkRect(rse.GetBounds()), flags)) {
+      Push<DrawRoundSuperellipseOp>(0, rse);
+      CheckLayerOpacityCompatibility();
+      UpdateLayerResult(result);
+    }
+  }
+}
 void DisplayListBuilder::drawPath(const DlPath& path) {
   DisplayListAttributeFlags flags = kDrawPathFlags;
   OpResult result = PaintResult(current_, flags);
