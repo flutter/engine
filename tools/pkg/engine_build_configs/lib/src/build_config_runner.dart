@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
-import 'dart:io' as io show Directory, File, Process, ProcessResult;
+import 'dart:io' as io show Directory, File, Platform, Process, ProcessResult, stdout;
 import 'dart:math';
 
 import 'package:meta/meta.dart' show visibleForTesting;
@@ -633,12 +633,14 @@ final class BuildRunner extends Runner {
       if (dryRun) {
         processResult = _dryRunResult;
       } else {
+        final bool shouldEmitAnsi =
+            io.stdout.supportsAnsiEscapes || io.Platform.environment['CLICOLOR_FORCE'] == '1';
         final io.Process process = await processRunner.processManager.start(
           command,
           workingDirectory: engineSrcDir.path,
           environment: {
             ...rbeConfig.environment,
-            'CLICOLOR_FORCE': '1',
+            if (shouldEmitAnsi) 'CLICOLOR_FORCE': '1',
           }
         );
         final List<int> stderrOutput = <int>[];
