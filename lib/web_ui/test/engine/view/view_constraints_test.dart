@@ -139,11 +139,11 @@ Future<void> testMain() async {
       expect(
         ViewConstraints.fromJs(constraints, size),
         const ViewConstraints(
-          // ignore: avoid_redundant_argument_values
           minWidth: 500,
-          maxWidth: double.infinity,
           // ignore: avoid_redundant_argument_values
+          maxWidth: double.infinity,
           minHeight: 300,
+          // ignore: avoid_redundant_argument_values
           maxHeight: double.infinity,
         ),
       );

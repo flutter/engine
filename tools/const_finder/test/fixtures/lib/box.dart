@@ -218,10 +218,11 @@ const Box box2_99 = Box(box2_98, box2_98);
 
 Object confuse(Box x) {
   try {
+    // ignore: only_throw_errors
     throw x;
   } catch (e) {
     return e;
-  } // ignore: only_throw_errors
+  }
 }
 
 void main() {
