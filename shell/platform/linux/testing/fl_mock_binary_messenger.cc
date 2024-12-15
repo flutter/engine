@@ -385,6 +385,9 @@ static void fl_mock_binary_messenger_init(FlMockBinaryMessenger* self) {
   self->mock_method_channels = g_hash_table_new_full(
       g_str_hash, g_str_equal, g_free,
       reinterpret_cast<GDestroyNotify>(mock_method_channel_free));
+  self->mock_event_channels = g_hash_table_new_full(
+      g_str_hash, g_str_equal, g_free,
+      reinterpret_cast<GDestroyNotify>(mock_event_channel_free));
   self->mock_error_channels = g_hash_table_new_full(
       g_str_hash, g_str_equal, g_free,
       reinterpret_cast<GDestroyNotify>(mock_error_channel_free));
