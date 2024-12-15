@@ -959,6 +959,31 @@ TEST_P(AiksTest, CanPictureConvertToImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.Build()));
 }
 
+TEST_P(AiksTest, CanPictureConvertToImageWithMips) {
+  DisplayListBuilder recorder_canvas;
+  DlPaint paint;
+  paint.setColor(DlColor::RGBA(0.9568, 0.2627, 0.2118, 1.0));
+  recorder_canvas.DrawRect(SkRect::MakeXYWH(100.0, 100.0, 600, 600), paint);
+  paint.setColor(DlColor::RGBA(0.1294, 0.5882, 0.9529, 1.0));
+  recorder_canvas.DrawRect(SkRect::MakeXYWH(200.0, 200.0, 600, 600), paint);
+
+  DisplayListBuilder canvas;
+  AiksContext renderer(GetContext(), nullptr);
+  paint.setColor(DlColor::kTransparent());
+  canvas.DrawPaint(paint);
+
+  auto image =
+      DisplayListToTexture(recorder_canvas.Build(), {1000, 1000}, renderer,
+                           /*reset_host_buffer=*/true, /*generate_mips=*/true);
+  if (image) {
+    canvas.DrawImage(DlImageImpeller::Make(image), SkPoint{}, {});
+    paint.setColor(DlColor::RGBA(0.1, 0.1, 0.1, 0.2));
+    canvas.DrawRect(SkRect::MakeSize({1000, 1000}), paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.Build()));
+}
+
 // Regression test for https://github.com/flutter/flutter/issues/142358 .
 // Without a change to force render pass construction the image is left in an
 // undefined layout and triggers a validation error.
