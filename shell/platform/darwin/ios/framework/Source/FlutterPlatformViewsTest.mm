@@ -74,6 +74,9 @@ const float kFloatCompareEpsilon = 0.001;
   self.viewCreated = YES;
 }
 
+- (void)dealloc {
+  gMockPlatformView = nil;
+}
 @end
 
 @interface FlutterPlatformViewsTestMockFlutterPlatformFactory
@@ -115,6 +118,10 @@ const float kFloatCompareEpsilon = 0.001;
   }
   self.viewCreated = YES;
 }
+
+- (void)dealloc {
+  gMockPlatformView = nil;
+}
 @end
 
 @interface FlutterPlatformViewsTestMockWebViewFactory : NSObject <FlutterPlatformViewFactory>
@@ -138,6 +145,93 @@ const float kFloatCompareEpsilon = 0.001;
   return nil;
 }
 
+@end
+
+@interface FlutterPlatformViewsTestMockWrapperWebView : NSObject <FlutterPlatformView>
+@property(nonatomic, strong) UIView* view;
+@property(nonatomic, assign) BOOL viewCreated;
+@end
+
+@implementation FlutterPlatformViewsTestMockWrapperWebView
+- (instancetype)init {
+  if (self = [super init]) {
+    _view = [[UIView alloc] init];
+    [_view addSubview:[[WKWebView alloc] init]];
+    gMockPlatformView = _view;
+    _viewCreated = NO;
+  }
+  return self;
+}
+
+- (UIView*)view {
+  [self checkViewCreatedOnce];
+  return _view;
+}
+
+- (void)checkViewCreatedOnce {
+  if (self.viewCreated) {
+    abort();
+  }
+  self.viewCreated = YES;
+}
+
+- (void)dealloc {
+  gMockPlatformView = nil;
+}
+@end
+
+@interface FlutterPlatformViewsTestMockWrapperWebViewFactory : NSObject <FlutterPlatformViewFactory>
+@end
+
+@implementation FlutterPlatformViewsTestMockWrapperWebViewFactory
+- (NSObject<FlutterPlatformView>*)createWithFrame:(CGRect)frame
+                                   viewIdentifier:(int64_t)viewId
+                                        arguments:(id _Nullable)args {
+  return [[FlutterPlatformViewsTestMockWrapperWebView alloc] init];
+}
+@end
+
+@interface FlutterPlatformViewsTestMockNestedWrapperWebView : NSObject <FlutterPlatformView>
+@property(nonatomic, strong) UIView* view;
+@property(nonatomic, assign) BOOL viewCreated;
+@end
+
+@implementation FlutterPlatformViewsTestMockNestedWrapperWebView
+- (instancetype)init {
+  if (self = [super init]) {
+    _view = [[UIView alloc] init];
+    UIView* childView = [[UIView alloc] init];
+    [_view addSubview:childView];
+    [childView addSubview:[[WKWebView alloc] init]];
+    gMockPlatformView = _view;
+    _viewCreated = NO;
+  }
+  return self;
+}
+
+- (UIView*)view {
+  [self checkViewCreatedOnce];
+  return _view;
+}
+
+- (void)checkViewCreatedOnce {
+  if (self.viewCreated) {
+    abort();
+  }
+  self.viewCreated = YES;
+}
+@end
+
+@interface FlutterPlatformViewsTestMockNestedWrapperWebViewFactory
+    : NSObject <FlutterPlatformViewFactory>
+@end
+
+@implementation FlutterPlatformViewsTestMockNestedWrapperWebViewFactory
+- (NSObject<FlutterPlatformView>*)createWithFrame:(CGRect)frame
+                                   viewIdentifier:(int64_t)viewId
+                                        arguments:(id _Nullable)args {
+  return [[FlutterPlatformViewsTestMockNestedWrapperWebView alloc] init];
+}
 @end
 
 namespace flutter {
@@ -1016,7 +1110,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     }
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
-                              inputRadius:(CGFloat)expectInputRadius]) {
+                              inputRadius:expectInputRadius]) {
       [newVisualEffectViews addObject:subview];
     }
   }
@@ -1072,7 +1166,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     }
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
-                              inputRadius:(CGFloat)expectInputRadius]) {
+                              inputRadius:expectInputRadius]) {
       [newVisualEffectViews addObject:subview];
     }
   }
@@ -1127,7 +1221,7 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     }
     if ([self validateOneVisualEffectView:subview
                             expectedFrame:CGRectMake(0, 0, 10, 10)
-                              inputRadius:(CGFloat)expectInputRadius]) {
+                              inputRadius:expectInputRadius]) {
       [newVisualEffectViews addObject:subview];
     }
   }
@@ -3151,6 +3245,132 @@ fml::RefPtr<fml::TaskRunner> GetDefaultTaskRunner() {
     XCTAssertEqual(touchInteceptorView.gestureRecognizers[0], delayingRecognizer);
     XCTAssertEqual(touchInteceptorView.gestureRecognizers[1], forwardingRecognizer);
   }
+}
+
+- (void)
+    testFlutterPlatformViewBlockGestureUnderEagerPolicyShouldRemoveAndAddBackDelayingRecognizerForWrapperWebView {
+  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
+  FlutterPlatformViewsController* flutterPlatformViewsController =
+      [[FlutterPlatformViewsController alloc] init];
+  flutterPlatformViewsController.taskRunner = GetDefaultTaskRunner();
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/mock_delegate.settings_.enable_impeller
+          ? flutter::IOSRenderingAPI::kMetal
+          : flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/flutterPlatformViewsController,
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
+
+  FlutterPlatformViewsTestMockWrapperWebViewFactory* factory =
+      [[FlutterPlatformViewsTestMockWrapperWebViewFactory alloc] init];
+  [flutterPlatformViewsController
+                   registerViewFactory:factory
+                                withId:@"MockWrapperWebView"
+      gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
+  FlutterResult result = ^(id result) {
+  };
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall
+                       methodCallWithMethodName:@"create"
+                                      arguments:@{@"id" : @2, @"viewType" : @"MockWrapperWebView"}]
+            result:result];
+
+  XCTAssertNotNil(gMockPlatformView);
+
+  // Find touch inteceptor view
+  UIView* touchInteceptorView = gMockPlatformView;
+  while (touchInteceptorView != nil &&
+         ![touchInteceptorView isKindOfClass:[FlutterTouchInterceptingView class]]) {
+    touchInteceptorView = touchInteceptorView.superview;
+  }
+  XCTAssertNotNil(touchInteceptorView);
+
+  XCTAssert(touchInteceptorView.gestureRecognizers.count == 2);
+  UIGestureRecognizer* delayingRecognizer = touchInteceptorView.gestureRecognizers[0];
+  UIGestureRecognizer* forwardingRecognizer = touchInteceptorView.gestureRecognizers[1];
+
+  XCTAssert([delayingRecognizer isKindOfClass:[FlutterDelayingGestureRecognizer class]]);
+  XCTAssert([forwardingRecognizer isKindOfClass:[ForwardingGestureRecognizer class]]);
+
+  [(FlutterTouchInterceptingView*)touchInteceptorView blockGesture];
+
+  if (@available(iOS 18.2, *)) {
+    // Since we remove and add back delayingRecognizer, it would be reordered to the last.
+    XCTAssertEqual(touchInteceptorView.gestureRecognizers[0], forwardingRecognizer);
+    XCTAssertEqual(touchInteceptorView.gestureRecognizers[1], delayingRecognizer);
+  } else {
+    XCTAssertEqual(touchInteceptorView.gestureRecognizers[0], delayingRecognizer);
+    XCTAssertEqual(touchInteceptorView.gestureRecognizers[1], forwardingRecognizer);
+  }
+}
+
+- (void)
+    testFlutterPlatformViewBlockGestureUnderEagerPolicyShouldNotRemoveAndAddBackDelayingRecognizerForNestedWrapperWebView {
+  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/GetDefaultTaskRunner(),
+                               /*raster=*/GetDefaultTaskRunner(),
+                               /*ui=*/GetDefaultTaskRunner(),
+                               /*io=*/GetDefaultTaskRunner());
+  FlutterPlatformViewsController* flutterPlatformViewsController =
+      [[FlutterPlatformViewsController alloc] init];
+  flutterPlatformViewsController.taskRunner = GetDefaultTaskRunner();
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/mock_delegate.settings_.enable_impeller
+          ? flutter::IOSRenderingAPI::kMetal
+          : flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/flutterPlatformViewsController,
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
+
+  FlutterPlatformViewsTestMockNestedWrapperWebViewFactory* factory =
+      [[FlutterPlatformViewsTestMockNestedWrapperWebViewFactory alloc] init];
+  [flutterPlatformViewsController
+                   registerViewFactory:factory
+                                withId:@"MockNestedWrapperWebView"
+      gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
+  FlutterResult result = ^(id result) {
+  };
+  [flutterPlatformViewsController
+      onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                     arguments:@{
+                                                       @"id" : @2,
+                                                       @"viewType" : @"MockNestedWrapperWebView"
+                                                     }]
+            result:result];
+
+  XCTAssertNotNil(gMockPlatformView);
+
+  // Find touch inteceptor view
+  UIView* touchInteceptorView = gMockPlatformView;
+  while (touchInteceptorView != nil &&
+         ![touchInteceptorView isKindOfClass:[FlutterTouchInterceptingView class]]) {
+    touchInteceptorView = touchInteceptorView.superview;
+  }
+  XCTAssertNotNil(touchInteceptorView);
+
+  XCTAssert(touchInteceptorView.gestureRecognizers.count == 2);
+  UIGestureRecognizer* delayingRecognizer = touchInteceptorView.gestureRecognizers[0];
+  UIGestureRecognizer* forwardingRecognizer = touchInteceptorView.gestureRecognizers[1];
+
+  XCTAssert([delayingRecognizer isKindOfClass:[FlutterDelayingGestureRecognizer class]]);
+  XCTAssert([forwardingRecognizer isKindOfClass:[ForwardingGestureRecognizer class]]);
+
+  [(FlutterTouchInterceptingView*)touchInteceptorView blockGesture];
+
+  XCTAssertEqual(touchInteceptorView.gestureRecognizers[0], delayingRecognizer);
+  XCTAssertEqual(touchInteceptorView.gestureRecognizers[1], forwardingRecognizer);
 }
 
 - (void)

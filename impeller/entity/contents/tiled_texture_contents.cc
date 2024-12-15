@@ -47,8 +47,8 @@ void TiledTextureContents::SetTileModes(Entity::TileMode x_tile_mode,
   y_tile_mode_ = y_tile_mode;
 }
 
-void TiledTextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {
-  sampler_descriptor_ = std::move(desc);
+void TiledTextureContents::SetSamplerDescriptor(const SamplerDescriptor& desc) {
+  sampler_descriptor_ = desc;
 }
 
 void TiledTextureContents::SetColorFilter(ColorFilterProc color_filter) {
@@ -175,7 +175,7 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
     int32_t mip_count,
-    const std::string& label) const {
+    std::string_view label) const {
   std::optional<Rect> geometry_coverage = GetGeometry()->GetCoverage({});
   if (GetInverseEffectTransform().IsIdentity() &&
       GetGeometry()->IsAxisAlignedRect() &&
