@@ -343,46 +343,46 @@ typedef enum {
 ///   can get the p for a RGBA8888 formatted buffer like this:
 ///   const uint8_t *p = ((const uint8_t*) allocation) + row_bytes*y + x*4;
 typedef enum {
-  /// pixel with 8 bit grayscale value.
+  /// Pixel with 8 bit grayscale value.
   /// The grayscale value is the luma value calculated from r, g, b
   /// according to BT.709. (gray = r*0.2126 + g*0.7152 + b*0.0722)
   kFlutterSoftwarePixelFormatGray8,
 
-  /// pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word.
+  /// Pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word.
   ///   r = (p >> 11) & 0x1F;
   ///   g = (p >> 5) & 0x3F;
   ///   b = p & 0x1F;
   kFlutterSoftwarePixelFormatRGB565,
 
-  /// pixel with 4 bits each for alpha, red, green, blue; in 16-bit word.
+  /// Pixel with 4 bits each for alpha, red, green, blue; in 16-bit word.
   ///   r = (p >> 8) & 0xF;
   ///   g = (p >> 4) & 0xF;
   ///   b = p & 0xF;
   ///   a = (p >> 12) & 0xF;
   kFlutterSoftwarePixelFormatRGBA4444,
 
-  /// pixel with 8 bits each for red, green, blue, alpha.
+  /// Pixel with 8 bits each for red, green, blue, alpha.
   ///   r = p[0];
   ///   g = p[1];
   ///   b = p[2];
   ///   a = p[3];
   kFlutterSoftwarePixelFormatRGBA8888,
 
-  /// pixel with 8 bits each for red, green and blue and 8 unused bits.
+  /// Pixel with 8 bits each for red, green and blue and 8 unused bits.
   ///   r = p[0];
   ///   g = p[1];
   ///   b = p[2];
   kFlutterSoftwarePixelFormatRGBX8888,
 
-  /// pixel with 8 bits each for blue, green, red and alpha.
+  /// Pixel with 8 bits each for blue, green, red and alpha.
   ///   r = p[2];
   ///   g = p[1];
   ///   b = p[0];
   ///   a = p[3];
   kFlutterSoftwarePixelFormatBGRA8888,
 
-  /// either kFlutterSoftwarePixelFormatBGRA8888 or
-  /// kFlutterSoftwarePixelFormatRGBA8888 depending on CPU endianess and OS
+  /// Either kFlutterSoftwarePixelFormatBGRA8888 or
+  /// kFlutterSoftwarePixelFormatRGBA8888 depending on CPU endianess and OS.
   kFlutterSoftwarePixelFormatNative32,
 } FlutterSoftwarePixelFormat;
 
