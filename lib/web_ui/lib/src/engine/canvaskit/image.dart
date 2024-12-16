@@ -7,6 +7,7 @@ import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
@@ -658,10 +659,13 @@ sealed class ImageSource {
   /// image source.
   int refCount = 0;
 
+  @visibleForTesting
+  bool debugIsClosed = false;
+
   void close() {
-    print('Closing with refs = $refCount');
     if (refCount == 0) {
       _doClose();
+      debugIsClosed = true;
     }
   }
 
@@ -716,7 +720,6 @@ class ImageBitmapImageSource extends ImageSource {
 
   @override
   void _doClose() {
-    print('!!!!!!!');
     imageBitmap.close();
   }
 
