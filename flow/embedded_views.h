@@ -117,6 +117,14 @@ class Mutator {
         filter_mutation_(
             std::make_shared<ImageFilterMutation>(filter, filter_rect)) {}
 
+  explicit Mutator(const DlRect& rect) : Mutator(ToSkRect(rect)) {}
+  explicit Mutator(const DlRoundRect& rrect) : Mutator(ToSkRRect(rrect)) {}
+  explicit Mutator(const DlPath& path) : Mutator(path.GetSkPath()) {}
+  explicit Mutator(const DlMatrix& matrix) : Mutator(ToSkMatrix(matrix)) {}
+  explicit Mutator(const std::shared_ptr<DlImageFilter>& filter,
+                   const DlRect& filter_rect)
+      : Mutator(filter, ToSkRect(filter_rect)) {}
+
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
   const SkRRect& GetRRect() const { return rrect_; }
@@ -339,8 +347,9 @@ class EmbedderViewSlice {
   virtual DlCanvas* canvas() = 0;
   virtual void end_recording() = 0;
   virtual const DlRegion& getRegion() const = 0;
-  DlRegion region(const SkRect& query) const {
-    return DlRegion::MakeIntersection(getRegion(), DlRegion(query.roundOut()));
+  DlRegion region(const DlRect& query) const {
+    DlRegion rquery = DlRegion(DlIRect::RoundOut(query));
+    return DlRegion::MakeIntersection(getRegion(), rquery);
   }
 
   virtual void render_into(DlCanvas* canvas) = 0;
