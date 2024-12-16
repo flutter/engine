@@ -327,10 +327,10 @@ typedef enum {
 ///     occupying the lowest memory address.
 ///
 ///   - all other formats are called packed formats, and the component order
-///     as specified in the format name refers to the order from most significant
-///     to least significant bits in the native type.
-///     for example, for kFlutterSoftwarePixelFormatRGB565, R occupies the 5 most
-///     significant bits, G the middle 6 bits, and B the 5 least significant bits.
+///     as specified in the format name refers to the order from most
+///     significant to least significant bits in the native type. for example,
+///     for kFlutterSoftwarePixelFormatRGB565, R occupies the 5 most significant
+///     bits, G the middle 6 bits, and B the 5 least significant bits.
 ///
 /// Each pixel format in this list is documented with an example on how to get
 /// the color components from the pixel.
@@ -349,23 +349,36 @@ typedef enum {
   kFlutterSoftwarePixelFormatGray8,
 
   /// pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word.
-  ///   r = (p >> 11) & 0x1F; g = (p >> 5) & 0x3F; b = p & 0x1F;
+  ///   r = (p >> 11) & 0x1F;
+  ///   g = (p >> 5) & 0x3F;
+  ///   b = p & 0x1F;
   kFlutterSoftwarePixelFormatRGB565,
 
-  /// pixel with 4 bits for alpha, red, green, blue; in 16-bit word.
-  ///   r = (p >> 8) & 0xF; g = (p >> 4) & 0xF; b = p & 0xF; a = (p >> 12) & 0xF;
+  /// pixel with 4 bits each for alpha, red, green, blue; in 16-bit word.
+  ///   r = (p >> 8) & 0xF;
+  ///   g = (p >> 4) & 0xF;
+  ///   b = p & 0xF;
+  ///   a = (p >> 12) & 0xF;
   kFlutterSoftwarePixelFormatRGBA4444,
 
-  /// pixel with 8 bits for red, green, blue, alpha.
-  ///   r = p[0]; g = p[1]; b = p[2]; a = p[3];
+  /// pixel with 8 bits each for red, green, blue, alpha.
+  ///   r = p[0];
+  ///   g = p[1];
+  ///   b = p[2];
+  ///   a = p[3];
   kFlutterSoftwarePixelFormatRGBA8888,
 
-  /// pixel with 8 bits for red, green and blue and 8 unused bits.
-  ///   r = p[0]; g = p[1]; b = p[2];
+  /// pixel with 8 bits each for red, green and blue and 8 unused bits.
+  ///   r = p[0];
+  ///   g = p[1];
+  ///   b = p[2];
   kFlutterSoftwarePixelFormatRGBX8888,
 
-  /// pixel with 8 bits for blue, green, red and alpha.
-  ///   r = p[2]; g = p[1]; b = p[0]; a = p[3];
+  /// pixel with 8 bits each for blue, green, red and alpha.
+  ///   r = p[2];
+  ///   g = p[1];
+  ///   b = p[0];
+  ///   a = p[3];
   kFlutterSoftwarePixelFormatBGRA8888,
 
   /// either kFlutterSoftwarePixelFormatBGRA8888 or
