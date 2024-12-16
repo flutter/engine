@@ -11,19 +11,12 @@ _wrapper_includes = [
   "include/flutter/flutter_engine.h",
   "include/flutter/flutter_view_controller.h",
   "include/flutter/flutter_view.h",
-  "include/flutter/flutter_win32_window.h",
-  "include/flutter/flutter_window_controller.h",
   "include/flutter/plugin_registrar_windows.h",
-  "include/flutter/win32_window.h",
-  "include/flutter/win32_wrapper.h",
 ]
 
 _wrapper_sources = [
   "flutter_engine.cc",
   "flutter_view_controller.cc",
-  "flutter_win32_window.cc",
-  "flutter_window_controller.cc",
-  "win32_window.cc",
 ]
 
 # This code will be merged into .../common/client_wrapper for client use,
@@ -46,8 +39,6 @@ source_set("client_wrapper_windows") {
     "//flutter/shell/platform/common/client_wrapper:client_wrapper",
     "//flutter/shell/platform/windows:flutter_windows_headers",
   ]
-
-  libs = [ "dwmapi.lib" ]
 
   configs +=
       [ "//flutter/shell/platform/common:desktop_library_implementation" ]
@@ -88,7 +79,6 @@ executable("client_wrapper_windows_unittests") {
     "flutter_engine_unittests.cc",
     "flutter_view_controller_unittests.cc",
     "flutter_view_unittests.cc",
-    "flutter_window_controller_unittests.cc",
     "plugin_registrar_windows_unittests.cc",
   ]
 
@@ -99,7 +89,6 @@ executable("client_wrapper_windows_unittests") {
     ":client_wrapper_library_stubs_windows",
     ":client_wrapper_windows",
     ":client_wrapper_windows_fixtures",
-    "//flutter/shell/platform/common/client_wrapper",
     "//flutter/shell/platform/common/client_wrapper:client_wrapper_library_stubs",
     "//flutter/testing",
 
@@ -121,9 +110,6 @@ client_wrapper_file_archive_list = [
 win_client_wrapper_file_archive_list = [
   "flutter_engine.cc",
   "flutter_view_controller.cc",
-  "flutter_win32_window.cc",
-  "flutter_window_controller.cc",
-  "win32_window.cc",
 ]
 
 zip_bundle("client_wrapper_archive") {
