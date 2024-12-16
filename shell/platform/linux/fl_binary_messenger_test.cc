@@ -96,6 +96,8 @@ TEST(FlBinaryMessengerTest, SendNullptr) {
         called = true;
 
         EXPECT_STREQ(message->channel, "test");
+        // Note we don't check message->message as it could be nullptr or a
+        // pointer to an buffer - either way it wouldn't be accessed.
         EXPECT_EQ(message->message_size, static_cast<size_t>(0));
 
         return kSuccess;
