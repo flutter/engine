@@ -194,25 +194,10 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
   pass_info.setClearValueCount(clear_count);
 
   if (resolve_image_vk_) {
-    // If the resolve image has mip levels, only mip level 0 will be
-    // transitioned by the render pass. All subsequent mip levels must have an
-    // explicit barrier inserted to transition from undefined.
-    if (resolve_image_vk_->GetTextureDescriptor().mip_count > 1) {
-      BarrierVK barrier;
-      barrier.new_layout = vk::ImageLayout::eGeneral;
-      barrier.cmd_buffer = command_buffer_vk_;
-      barrier.src_access = vk::AccessFlagBits::eShaderRead;
-      barrier.src_stage = vk::PipelineStageFlagBits::eFragmentShader;
-      barrier.dst_access = vk::AccessFlagBits::eColorAttachmentWrite |
-                           vk::AccessFlagBits::eTransferWrite;
-      barrier.dst_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                          vk::PipelineStageFlagBits::eTransfer;
-      TextureVK::Cast(*resolve_image_vk_).SetLayout(barrier);
-    } else {
-      TextureVK::Cast(*resolve_image_vk_)
-          .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
-    }
-  } else if (color_image_vk_) {
+    TextureVK::Cast(*resolve_image_vk_)
+        .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
+  }
+  if (color_image_vk_) {
     TextureVK::Cast(*resolve_image_vk_)
         .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
   }
