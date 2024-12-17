@@ -167,7 +167,10 @@ class Canvas {
 
   void DrawPaint(const Paint& paint);
 
-  void DrawLine(const Point& p0, const Point& p1, const Paint& paint);
+  void DrawLine(const Point& p0,
+                const Point& p1,
+                const Paint& paint,
+                bool reuse_depth = false);
 
   void DrawRect(const Rect& rect, const Paint& paint);
 

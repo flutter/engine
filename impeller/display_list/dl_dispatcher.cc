@@ -675,7 +675,7 @@ void DlDispatcherBase::drawPoints(PointMode mode,
       for (uint32_t i = 1; i < count; i += 2) {
         Point p0 = points[i - 1];
         Point p1 = points[i];
-        GetCanvas().DrawLine(p0, p1, paint);
+        GetCanvas().DrawLine(p0, p1, paint, /*reuse_depth=*/i > 1);
       }
       break;
     case flutter::DlCanvas::PointMode::kPolygon:
@@ -683,7 +683,7 @@ void DlDispatcherBase::drawPoints(PointMode mode,
         Point p0 = points[0];
         for (uint32_t i = 1; i < count; i++) {
           Point p1 = points[i];
-          GetCanvas().DrawLine(p0, p1, paint);
+          GetCanvas().DrawLine(p0, p1, paint, /*reuse_depth=*/i > 1);
           p0 = p1;
         }
       }

@@ -338,8 +338,6 @@ struct RenderPassData {
           scissor.GetWidth(),                                         // width
           scissor.GetHeight()                                         // height
       );
-    } else {
-      gl.Disable(GL_SCISSOR_TEST);
     }
 
     //--------------------------------------------------------------------------
