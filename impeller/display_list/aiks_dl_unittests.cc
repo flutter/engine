@@ -992,12 +992,11 @@ TEST_P(AiksTest, DepthValuesForLineMode) {
   builder.Save();
   builder.ClipPath(path);
 
-  std::vector<DlPoint> points = {
-      DlPoint::MakeXY(0, -200), DlPoint::MakeXY(400, 200),
-      DlPoint::MakeXY(0, -100), DlPoint::MakeXY(400, 300),
-      DlPoint::MakeXY(0, 0),    DlPoint::MakeXY(400, 400),
-      DlPoint::MakeXY(0, 100),  DlPoint::MakeXY(400, 500),
-      DlPoint::MakeXY(0, 150),  DlPoint::MakeXY(400, 600)};
+  std::vector<SkPoint> points = {
+      SkPoint::Make(0, -200),  SkPoint::Make(400, 200), SkPoint::Make(0, -100),
+      SkPoint::Make(400, 300), SkPoint::Make(0, 0),     SkPoint::Make(400, 400),
+      SkPoint::Make(0, 100),   SkPoint::Make(400, 500), SkPoint::Make(0, 150),
+      SkPoint::Make(400, 600)};
 
   builder.DrawPoints(DisplayListBuilder::PointMode::kLines, points.size(),
                      points.data(),
@@ -1021,12 +1020,11 @@ TEST_P(AiksTest, DepthValuesForPolygonMode) {
   builder.Save();
   builder.ClipPath(path);
 
-  std::vector<DlPoint> points = {
-      DlPoint::MakeXY(0, -200), DlPoint::MakeXY(400, 200),
-      DlPoint::MakeXY(0, -100), DlPoint::MakeXY(400, 300),
-      DlPoint::MakeXY(0, 0),    DlPoint::MakeXY(400, 400),
-      DlPoint::MakeXY(0, 100),  DlPoint::MakeXY(400, 500),
-      DlPoint::MakeXY(0, 150),  DlPoint::MakeXY(400, 600)};
+  std::vector<SkPoint> points = {
+      SkPoint::Make(0, -200),  SkPoint::Make(400, 200), SkPoint::Make(0, -100),
+      SkPoint::Make(400, 300), SkPoint::Make(0, 0),     SkPoint::Make(400, 400),
+      SkPoint::Make(0, 100),   SkPoint::Make(400, 500), SkPoint::Make(0, 150),
+      SkPoint::Make(400, 600)};
 
   builder.DrawPoints(DisplayListBuilder::PointMode::kPolygon, points.size(),
                      points.data(),
