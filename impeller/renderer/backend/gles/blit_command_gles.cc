@@ -220,7 +220,7 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
   }
 
   if (!tex_descriptor.IsValid() ||
-      source.range.length !=
+      source.GetRange().length !=
           BytesPerPixelForPixelFormat(tex_descriptor.format) *
               destination_region.Area()) {
     return false;
@@ -263,8 +263,8 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
   }
   const auto& gl = reactor.GetProcTable();
   gl.BindTexture(texture_type, gl_handle.value());
-  const GLvoid* tex_data =
-      data.buffer_view.buffer->OnGetContents() + data.buffer_view.range.offset;
+  const GLvoid* tex_data = data.buffer_view.GetBuffer()->OnGetContents() +
+                           data.buffer_view.GetRange().offset;
 
   // GL_INVALID_OPERATION if the texture array has not been
   // defined by a previous glTexImage2D operation.
@@ -371,6 +371,8 @@ bool BlitResizeTextureCommandGLES::Encode(const ReactorGLES& reactor) const {
     VALIDATION_LOG << "Texture blit fallback not implemented yet for GLES2.";
     return false;
   }
+
+  destination->SetCoordinateSystem(source->GetCoordinateSystem());
 
   GLuint read_fbo = GL_NONE;
   GLuint draw_fbo = GL_NONE;

@@ -140,6 +140,9 @@ static UIKeyboardType ToUIKeyboardType(NSDictionary* type) {
   if ([inputType isEqualToString:@"TextInputType.visiblePassword"]) {
     return UIKeyboardTypeASCIICapable;
   }
+  if ([inputType isEqualToString:@"TextInputType.webSearch"]) {
+    return UIKeyboardTypeWebSearch;
+  }
   return UIKeyboardTypeDefault;
 }
 
@@ -659,6 +662,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 @implementation FlutterTextSelectionRect
 
+// Synthesize properties declared readonly in UITextSelectionRect.
 @synthesize rect = _rect;
 @synthesize writingDirection = _writingDirection;
 @synthesize containsStart = _containsStart;

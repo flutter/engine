@@ -37,6 +37,9 @@ class CommandBufferMTL final : public CommandBuffer {
   bool OnSubmitCommands(CompletionCallback callback) override;
 
   // |CommandBuffer|
+  void OnWaitUntilCompleted() override;
+
+  // |CommandBuffer|
   void OnWaitUntilScheduled() override;
 
   // |CommandBuffer|

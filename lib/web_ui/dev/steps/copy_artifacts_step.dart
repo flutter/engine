@@ -137,6 +137,10 @@ class CopyArtifactsStep implements PipelineStep {
     ));
 
     for (final io.File imageFile in testImagesDir.listSync(recursive: true).whereType<io.File>()) {
+      // Skip files that are used by Skia to test handling of invalid input.
+      if (pathlib.basename(imageFile.path).contains('invalid')) {
+        continue;
+      }
       final io.File destination = io.File(pathlib.join(
         environment.webTestsArtifactsDir.path,
         'test_images',
@@ -230,7 +234,9 @@ class CopyArtifactsStep implements PipelineStep {
       'skwasm.wasm',
       'skwasm.wasm.map',
       'skwasm.js',
-      'skwasm.worker.js',
+      'skwasm_st.wasm',
+      'skwasm_st.wasm.map',
+      'skwasm_st.js',
     ]) {
       final io.File sourceFile = io.File(pathlib.join(
         outBuildPath,

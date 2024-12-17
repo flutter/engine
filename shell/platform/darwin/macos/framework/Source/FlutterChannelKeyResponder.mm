@@ -29,6 +29,7 @@
 
 @implementation FlutterChannelKeyResponder
 
+// Synthesize properties declared in FlutterKeyPrimaryResponder protocol.
 @synthesize layoutMap;
 
 - (nonnull instancetype)initWithChannel:(nonnull FlutterBasicMessageChannel*)channel {
@@ -131,10 +132,13 @@
         return;
       }
       break;
-    default: {
-      NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
-      callback(false);
-    }
+    default:
+      [[unlikely]] {
+        NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
+        callback(false);
+        // This should not happen. Return to suppress clang-tidy warning on `type` being nil.
+        return;
+      }
   }
   _previouslyPressedFlags = modifierFlags;
   NSMutableDictionary* keyMessage = [@{

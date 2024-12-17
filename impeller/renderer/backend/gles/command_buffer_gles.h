@@ -19,11 +19,11 @@ class CommandBufferGLES final : public CommandBuffer {
  private:
   friend class ContextGLES;
 
-  ReactorGLES::Ref reactor_;
+  std::shared_ptr<ReactorGLES> reactor_;
   bool is_valid_ = false;
 
   CommandBufferGLES(std::weak_ptr<const Context> context,
-                    ReactorGLES::Ref reactor);
+                    std::shared_ptr<ReactorGLES> reactor);
 
   // |CommandBuffer|
   void SetLabel(std::string_view label) const override;
@@ -33,6 +33,9 @@ class CommandBufferGLES final : public CommandBuffer {
 
   // |CommandBuffer|
   bool OnSubmitCommands(CompletionCallback callback) override;
+
+  // |CommandBuffer|
+  void OnWaitUntilCompleted() override;
 
   // |CommandBuffer|
   void OnWaitUntilScheduled() override;

@@ -33,7 +33,7 @@ class CommandBufferVK final
 
   /// @brief Ensure that [object] is kept alive until this command buffer
   ///        completes execution.
-  bool Track(std::shared_ptr<SharedObjectVK> object);
+  bool Track(const std::shared_ptr<SharedObjectVK>& object);
 
   /// @brief Ensure that [buffer] is kept alive until this command buffer
   ///        completes execution.
@@ -45,7 +45,7 @@ class CommandBufferVK final
 
   /// @brief Ensure that [texture] is kept alive until this command buffer
   ///        completes execution.
-  bool Track(std::shared_ptr<const TextureSourceVK> texture);
+  bool Track(const std::shared_ptr<const TextureSourceVK>& texture);
 
   /// @brief Retrieve the native command buffer from this object.
   vk::CommandBuffer GetCommandBuffer() const;
@@ -77,12 +77,6 @@ class CommandBufferVK final
       const ContextVK& context);
 
   // Visible for testing.
-  bool IsTracking(const std::shared_ptr<const DeviceBuffer>& texture) const;
-
-  // Visible for testing.
-  bool IsTracking(const std::shared_ptr<const Texture>& texture) const;
-
-  // Visible for testing.
   DescriptorPoolVK& GetDescriptorPool() const;
 
  private:
@@ -104,6 +98,9 @@ class CommandBufferVK final
 
   // |CommandBuffer|
   bool OnSubmitCommands(CompletionCallback callback) override;
+
+  // |CommandBuffer|
+  void OnWaitUntilCompleted() override;
 
   // |CommandBuffer|
   void OnWaitUntilScheduled() override;

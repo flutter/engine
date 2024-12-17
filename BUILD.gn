@@ -183,10 +183,10 @@ group("unittests") {
   # Compile all unittests targets if enabled.
   if (enable_unittests) {
     public_deps += [
+      "//flutter/assets:assets_unittests",
       "//flutter/display_list:display_list_rendertests",
       "//flutter/display_list:display_list_unittests",
       "//flutter/flow:flow_unittests",
-      "//flutter/fml:fml_arc_unittests",
       "//flutter/fml:fml_unittests",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:dart_plugin_registrant_unittests",
@@ -196,6 +196,7 @@ group("unittests") {
       "//flutter/shell/platform/embedder:embedder_a11y_unittests",
       "//flutter/shell/platform/embedder:embedder_proctable_unittests",
       "//flutter/shell/platform/embedder:embedder_unittests",
+      "//flutter/testing:testing_unittests",
       "//flutter/testing/dart",
       "//flutter/testing/smoke_test_failure",
       "//flutter/third_party/tonic/tests:tonic_unittests",
