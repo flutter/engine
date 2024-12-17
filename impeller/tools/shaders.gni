@@ -151,6 +151,11 @@ template("impeller_shaders") {
 
   group(target_name) {
     public_deps = []
+
+    if (is_asan && is_mac) {
+      public_deps += [ "//flutter/impeller/compiler:copy_asan_runtime_dylib" ]
+    }
+
     if (impeller_enable_metal) {
       public_deps += [ ":$mtl_shaders" ]
     }
