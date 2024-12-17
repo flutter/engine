@@ -225,6 +225,7 @@ class LuciConfig {
   LuciConfig(this.realm);
 
   factory LuciConfig.fromJson(String contextJson) {
+    print('luci context json: $contextJson');
     final json = jsonDecode(contextJson) as Map<String, Object?>;
     final LuciRealm realm = switch (json['realm']) {
       'flutter:prod' => LuciRealm.Prod,
