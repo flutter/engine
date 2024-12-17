@@ -114,15 +114,6 @@ bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
   return true;
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopEngineCreateViewController(
-    FlutterDesktopEngineRef engine,
-    const FlutterDesktopViewControllerProperties* properties) {
-  if (s_stub_implementation) {
-    return s_stub_implementation->EngineCreateViewController(properties);
-  }
-  return nullptr;
-}
-
 uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
   if (s_stub_implementation) {
     return s_stub_implementation->EngineProcessMessages();
@@ -236,18 +227,4 @@ void FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate(
     return s_stub_implementation
         ->PluginRegistrarUnregisterTopLevelWindowProcDelegate(delegate);
   }
-}
-
-UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor) {
-  if (s_stub_implementation) {
-    return s_stub_implementation->GetDpiForMonitor(monitor);
-  }
-  return 96;
-}
-
-UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
-  if (s_stub_implementation) {
-    return s_stub_implementation->GetDpiForHWND(hwnd);
-  }
-  return 96;
 }
