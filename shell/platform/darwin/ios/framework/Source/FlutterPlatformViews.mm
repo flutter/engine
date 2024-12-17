@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
+#import <WebKit/WebKit.h>
+
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
@@ -564,11 +566,48 @@ static BOOL _preparedOnce = NO;
   self.delayingRecognizer.state = UIGestureRecognizerStateFailed;
 }
 
+- (BOOL)containsWebView:(UIView*)view remainingSubviewDepth:(int)remainingSubviewDepth {
+  if (remainingSubviewDepth < 0) {
+    return NO;
+  }
+  if ([view isKindOfClass:[WKWebView class]]) {
+    return YES;
+  }
+  for (UIView* subview in view.subviews) {
+    if ([self containsWebView:subview remainingSubviewDepth:remainingSubviewDepth - 1]) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
 - (void)blockGesture {
   switch (_blockingPolicy) {
     case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
       // We block all other gesture recognizers immediately in this policy.
       self.delayingRecognizer.state = UIGestureRecognizerStateEnded;
+
+      // On iOS 18.2, WKWebView's internal recognizer likely caches the old state of its blocking
+      // recognizers (i.e. delaying recognizer), resulting in non-tappable links. See
+      // https://github.com/flutter/flutter/issues/158961. Removing and adding back the delaying
+      // recognizer solves the problem, possibly because UIKit notifies all the recognizers related
+      // to (blocking or blocked by) this recognizer. It is not possible to inject this workaround
+      // from the web view plugin level. Right now we only observe this issue for
+      // FlutterPlatformViewGestureRecognizersBlockingPolicyEager, but we should try it if a similar
+      // issue arises for the other policy.
+      if (@available(iOS 18.2, *)) {
+        // This workaround is designed for WKWebView only. The 1P web view plugin provides a
+        // WKWebView itself as the platform view. However, some 3P plugins provide wrappers of
+        // WKWebView instead. So we perform DFS to search the view hierarchy (with a depth limit).
+        // Passing a limit of 0 means only searching for platform view itself; Pass 1 to include its
+        // children as well, and so on. We should be conservative and start with a small number. The
+        // AdMob banner has a WKWebView at depth 7.
+        if ([self containsWebView:self.embeddedView remainingSubviewDepth:1]) {
+          [self removeGestureRecognizer:self.delayingRecognizer];
+          [self addGestureRecognizer:self.delayingRecognizer];
+        }
+      }
+
       break;
     case FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded:
       if (self.delayingRecognizer.touchedEndedWithoutBlocking) {
