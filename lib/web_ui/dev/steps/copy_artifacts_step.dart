@@ -7,6 +7,7 @@ import 'dart:io' as io;
 
 import 'package:path/path.dart' as pathlib;
 
+import '../common.dart';
 import '../environment.dart';
 import '../exceptions.dart';
 import '../felt_config.dart';
@@ -32,6 +33,8 @@ class CopyArtifactsStep implements PipelineStep {
 
   @override
   Future<void> run() async {
+    print('LUCI realm: ${luciConfig?.realm}');
+
     await environment.webTestsArtifactsDir.create(recursive: true);
     await buildHostPage();
     await copyTestFonts();

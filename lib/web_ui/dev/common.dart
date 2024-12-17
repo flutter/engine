@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as path;
@@ -212,6 +213,38 @@ class DevNull implements StringSink {
   @override
   void writeln([Object? obj = '']) {}
 }
+
+enum LuciRealm {
+  Prod,
+  Staging,
+  Try,
+  Unknown,
+}
+
+class LuciConfig {
+  LuciConfig(this.realm);
+
+  factory LuciConfig.fromJson(String contextJson) {
+    final json = jsonDecode(contextJson) as Map<String, Object?>;
+    final LuciRealm realm = switch (json['realm']) {
+      'flutter:prod' => LuciRealm.Prod,
+      'flutter:staging' => LuciRealm.Staging,
+      'flutter:try' => LuciRealm.Try,
+      _ => LuciRealm.Unknown,
+    };
+    return LuciConfig(realm);
+  }
+
+  final LuciRealm realm;
+}
+
+final LuciConfig? luciConfig = () {
+  final String? contextPath = io.Platform.environment['LUCI_CONTEXT'];
+  if (contextPath == null) {
+    return null;
+  }
+  return LuciConfig.fromJson(io.File(contextPath).readAsStringSync());
+}();
 
 /// Whether the felt command is running on LUCI.
 bool get isLuci => io.Platform.environment['LUCI_CONTEXT'] != null;
