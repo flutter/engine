@@ -11,6 +11,7 @@ import 'browser.dart';
 import 'chrome.dart';
 import 'edge.dart';
 import 'environment.dart';
+import 'exceptions.dart';
 import 'felt_config.dart';
 import 'firefox.dart';
 import 'safari_macos.dart';
@@ -225,7 +226,6 @@ class LuciConfig {
   LuciConfig(this.realm);
 
   factory LuciConfig.fromJson(String contextJson) {
-    print('luci context json: $contextJson');
     final json = jsonDecode(contextJson) as Map<String, Object?>;
     final LuciRealm realm = switch ((json['realm'] as Map<String, Object?>?)?['name']) {
       'flutter:prod' => LuciRealm.Prod,
@@ -253,6 +253,19 @@ bool get isLuci => io.Platform.environment['LUCI_CONTEXT'] != null;
 /// Whether the felt command is running on one of the Continuous Integration
 /// environements.
 bool get isCi => isLuci;
+
+final String gitRevision = () {
+  final result = io.Process.runSync(
+    'git',
+    <String>['rev-parse', 'HEAD'],
+    workingDirectory: path.join(environment.engineSrcDir.path, 'flutter'),
+    stderrEncoding: utf8,
+    stdoutEncoding: utf8);
+  if (result.exitCode != 0) {
+    throw ToolExit('Failed to get git revision. Exit code: ${result.exitCode} Error: ${result.stderr}');
+  }
+  return (result.stdout as String).trim();
+}();
 
 const String kChrome = 'chrome';
 const String kEdge = 'edge';
