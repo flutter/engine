@@ -335,6 +335,7 @@
 ../../../flutter/shell/platform/common/text_editing_delta_unittests.cc
 ../../../flutter/shell/platform/common/text_input_model_unittests.cc
 ../../../flutter/shell/platform/common/text_range_unittests.cc
+../../../flutter/shell/platform/common/windowing_unittests.cc
 ../../../flutter/shell/platform/darwin/Doxyfile
 ../../../flutter/shell/platform/darwin/common/availability_version_check_unittests.cc
 ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_codecs_unittest.mm
@@ -405,6 +406,7 @@
 ../../../flutter/shell/platform/windows/direct_manipulation_unittests.cc
 ../../../flutter/shell/platform/windows/dpi_utils_unittests.cc
 ../../../flutter/shell/platform/windows/fixtures
+../../../flutter/shell/platform/windows/flutter_host_window_controller_unittests.cc
 ../../../flutter/shell/platform/windows/flutter_project_bundle_unittests.cc
 ../../../flutter/shell/platform/windows/flutter_window_unittests.cc
 ../../../flutter/shell/platform/windows/flutter_windows_engine_unittests.cc
@@ -425,6 +427,7 @@
 ../../../flutter/shell/platform/windows/text_input_plugin_unittest.cc
 ../../../flutter/shell/platform/windows/window_proc_delegate_manager_unittests.cc
 ../../../flutter/shell/platform/windows/window_unittests.cc
+../../../flutter/shell/platform/windows/windowing_handler_unittests.cc
 ../../../flutter/shell/platform/windows/windows_lifecycle_manager_unittests.cc
 ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
 ../../../flutter/shell/testing
