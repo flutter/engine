@@ -227,7 +227,7 @@ class LuciConfig {
   factory LuciConfig.fromJson(String contextJson) {
     print('luci context json: $contextJson');
     final json = jsonDecode(contextJson) as Map<String, Object?>;
-    final LuciRealm realm = switch (json['realm']) {
+    final LuciRealm realm = switch ((json['realm'] as Map<String, Object?>?)?['name']) {
       'flutter:prod' => LuciRealm.Prod,
       'flutter:staging' => LuciRealm.Staging,
       'flutter:try' => LuciRealm.Try,
