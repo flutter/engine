@@ -198,7 +198,7 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
         .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
   }
   if (color_image_vk_) {
-    TextureVK::Cast(*resolve_image_vk_)
+    TextureVK::Cast(*color_image_vk_)
         .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
   }
 
