@@ -602,6 +602,13 @@ void DlDispatcherBase::drawDiffRoundRect(const DlRoundRect& outer,
 }
 
 // |flutter::DlOpReceiver|
+void DlDispatcherBase::drawRoundSuperellipse(const DlRoundSuperellipse& rse) {
+  AUTO_DEPTH_WATCHER(1u);
+
+  GetCanvas().DrawRoundSuperellipse(rse, paint_);
+}
+
+// |flutter::DlOpReceiver|
 void DlDispatcherBase::drawPath(const DlPath& path) {
   AUTO_DEPTH_WATCHER(1u);
 

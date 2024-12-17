@@ -335,6 +335,11 @@ void DisplayListGLComplexityCalculator::GLHelper::drawDiffRoundRect(
   AccumulateComplexity(complexity);
 }
 
+void DisplayListGLComplexityCalculator::GLHelper::drawRoundSuperellipse(
+    const DlRoundSuperellipse& rse) {
+  // TODO(dkwingsmt): implement
+}
+
 void DisplayListGLComplexityCalculator::GLHelper::drawPath(const DlPath& path) {
   if (IsComplex()) {
     return;

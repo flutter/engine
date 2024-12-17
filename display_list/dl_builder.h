@@ -172,6 +172,9 @@ class DisplayListBuilder final : public virtual DlCanvas,
                          const DlRoundRect& inner,
                          const DlPaint& paint) override;
   // |DlCanvas|
+  void DrawRoundSuperellipse(const DlRoundSuperellipse& rse,
+                             const DlPaint& paint) override;
+  // |DlCanvas|
   void DrawPath(const DlPath& path, const DlPaint& paint) override;
   // |DlCanvas|
   void DrawArc(const DlRect& bounds,
@@ -437,6 +440,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // |DlOpReceiver|
   void drawDiffRoundRect(const DlRoundRect& outer,
                          const DlRoundRect& inner) override;
+  // |DlOpReceiver|
+  void drawRoundSuperellipse(const DlRoundSuperellipse& rse) override;
   // |DlOpReceiver|
   void drawPath(const DlPath& path) override;
   // |DlOpReceiver|
