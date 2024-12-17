@@ -23,7 +23,8 @@ final class HeaderGuardCheck {
     this.fix = false,
     StringSink? stdOut,
     StringSink? stdErr,
-  }) : _stdOut = stdOut ?? io.stdout, _stdErr = stdErr ?? io.stderr;
+  }) : _stdOut = stdOut ?? io.stdout,
+       _stdErr = stdErr ?? io.stderr;
 
   /// Parses the command line arguments and creates a new header guard checker.
   factory HeaderGuardCheck.fromCommandLine(List<String> arguments) {
@@ -135,7 +136,9 @@ final class HeaderGuardCheck {
         continue;
       }
 
-      final String expectedGuard = headerFile.computeExpectedName(engineRoot: source.flutterDir.path);
+      final String expectedGuard = headerFile.computeExpectedName(
+        engineRoot: source.flutterDir.path,
+      );
       if (headerFile.guard!.ifndefValue != expectedGuard) {
         _stdErr.writeln(headerFile.guard!.ifndefSpan!.message('Expected #ifndef $expectedGuard'));
         yield headerFile;
@@ -157,35 +160,36 @@ final class HeaderGuardCheck {
 
 final Engine? _engine = Engine.tryFindWithin(p.dirname(p.fromUri(io.Platform.script)));
 
-final ArgParser _parser = ArgParser()
-  ..addFlag(
-    'fix',
-    help: 'Automatically fixes most header guards.',
-  )
-  ..addOption(
-    'root',
-    abbr: 'r',
-    help: 'Path to the engine source root.',
-    valueHelp: 'path/to/engine/src',
-    defaultsTo: _engine?.srcDir.path,
-  )
-  ..addMultiOption(
-    'include',
-    abbr: 'i',
-    help: 'Paths to include in the check.',
-    valueHelp: 'path/to/dir/or/file (relative to the engine root)',
-    defaultsTo: <String>[],
-  )
-  ..addMultiOption(
-    'exclude',
-    abbr: 'e',
-    help: 'Paths to exclude from the check.',
-    valueHelp: 'path/to/dir/or/file (relative to the engine root)',
-    defaultsTo: _engine != null ? <String>[
-      'build',
-      'buildtools',
-      'impeller/compiler/code_gen_template.h',
-      'prebuilts',
-      'third_party',
-    ] : null,
-  );
+final ArgParser _parser =
+    ArgParser()
+      ..addFlag('fix', help: 'Automatically fixes most header guards.')
+      ..addOption(
+        'root',
+        abbr: 'r',
+        help: 'Path to the engine source root.',
+        valueHelp: 'path/to/engine/src',
+        defaultsTo: _engine?.srcDir.path,
+      )
+      ..addMultiOption(
+        'include',
+        abbr: 'i',
+        help: 'Paths to include in the check.',
+        valueHelp: 'path/to/dir/or/file (relative to the engine root)',
+        defaultsTo: <String>[],
+      )
+      ..addMultiOption(
+        'exclude',
+        abbr: 'e',
+        help: 'Paths to exclude from the check.',
+        valueHelp: 'path/to/dir/or/file (relative to the engine root)',
+        defaultsTo:
+            _engine != null
+                ? <String>[
+                  'build',
+                  'buildtools',
+                  'impeller/compiler/code_gen_template.h',
+                  'prebuilts',
+                  'third_party',
+                ]
+                : null,
+      );
