@@ -14,9 +14,6 @@ constexpr char kChannelName[] = "flutter/windowing";
 
 // Methods for creating different types of windows.
 constexpr char kCreateWindowMethod[] = "createWindow";
-constexpr char kCreateDialogMethod[] = "createDialog";
-constexpr char kCreateSatelliteMethod[] = "createSatellite";
-constexpr char kCreatePopupMethod[] = "createPopup";
 
 // The method to destroy a window.
 constexpr char kDestroyWindowMethod[] = "destroyWindow";
@@ -110,12 +107,6 @@ std::wstring ArchetypeToWideString(flutter::WindowArchetype archetype) {
   switch (archetype) {
     case flutter::WindowArchetype::regular:
       return L"regular";
-    case flutter::WindowArchetype::dialog:
-      return L"dialog";
-    case flutter::WindowArchetype::satellite:
-      return L"satellite";
-    case flutter::WindowArchetype::popup:
-      return L"popup";
   }
   FML_UNREACHABLE();
 }
@@ -146,12 +137,6 @@ void WindowingHandler::HandleMethodCall(
 
   if (method == kCreateWindowMethod) {
     HandleCreateWindow(WindowArchetype::regular, method_call, *result);
-  } else if (method == kCreateDialogMethod) {
-    HandleCreateWindow(WindowArchetype::dialog, method_call, *result);
-  } else if (method == kCreateSatelliteMethod) {
-    HandleCreateWindow(WindowArchetype::satellite, method_call, *result);
-  } else if (method == kCreatePopupMethod) {
-    HandleCreateWindow(WindowArchetype::popup, method_call, *result);
   } else if (method == kDestroyWindowMethod) {
     HandleDestroyWindow(method_call, *result);
   } else {
@@ -185,110 +170,10 @@ void WindowingHandler::HandleCreateWindow(WindowArchetype archetype,
     return;
   }
 
-  std::optional<WindowPositioner> positioner;
-  std::optional<WindowRectangle> anchor_rect;
-
-  if (archetype == WindowArchetype::satellite ||
-      archetype == WindowArchetype::popup) {
-    if (auto const anchor_rect_it = map->find(EncodableValue(kAnchorRectKey));
-        anchor_rect_it != map->end()) {
-      if (!anchor_rect_it->second.IsNull()) {
-        auto const anchor_rect_list =
-            GetListValuesForKeyOrSendError<int, 4>(kAnchorRectKey, map, result);
-        if (!anchor_rect_list) {
-          return;
-        }
-        anchor_rect =
-            WindowRectangle{{anchor_rect_list->at(0), anchor_rect_list->at(1)},
-                            {anchor_rect_list->at(2), anchor_rect_list->at(3)}};
-      }
-    } else {
-      result.Error(kInvalidValueError, "Map does not contain required '" +
-                                           std::string(kAnchorRectKey) +
-                                           "' key.");
-      return;
-    }
-
-    auto const positioner_parent_anchor = GetSingleValueForKeyOrSendError<int>(
-        kPositionerParentAnchorKey, map, result);
-    if (!positioner_parent_anchor) {
-      return;
-    }
-    auto const positioner_child_anchor = GetSingleValueForKeyOrSendError<int>(
-        kPositionerChildAnchorKey, map, result);
-    if (!positioner_child_anchor) {
-      return;
-    }
-    auto const child_anchor =
-        static_cast<WindowPositioner::Anchor>(positioner_child_anchor.value());
-
-    auto const positioner_offset_list = GetListValuesForKeyOrSendError<int, 2>(
-        kPositionerOffsetKey, map, result);
-    if (!positioner_offset_list) {
-      return;
-    }
-    auto const positioner_constraint_adjustment =
-        GetSingleValueForKeyOrSendError<int>(kPositionerConstraintAdjustmentKey,
-                                             map, result);
-    if (!positioner_constraint_adjustment) {
-      return;
-    }
-    positioner = WindowPositioner{
-        .anchor_rect = anchor_rect,
-        .parent_anchor = static_cast<WindowPositioner::Anchor>(
-            positioner_parent_anchor.value()),
-        .child_anchor = child_anchor,
-        .offset = {positioner_offset_list->at(0),
-                   positioner_offset_list->at(1)},
-        .constraint_adjustment =
-            static_cast<WindowPositioner::ConstraintAdjustment>(
-                positioner_constraint_adjustment.value())};
-  }
-
-  std::optional<FlutterViewId> parent_view_id;
-  if (archetype == WindowArchetype::dialog ||
-      archetype == WindowArchetype::satellite ||
-      archetype == WindowArchetype::popup) {
-    if (auto const parent_it = map->find(EncodableValue(kParentKey));
-        parent_it != map->end()) {
-      if (parent_it->second.IsNull()) {
-        if (archetype != WindowArchetype::dialog) {
-          result.Error(
-              kInvalidValueError,
-              "Value for '" + std::string(kParentKey) + "' must not be null.");
-          return;
-        }
-      } else {
-        if (auto const* const parent = std::get_if<int>(&parent_it->second)) {
-          parent_view_id = *parent >= 0 ? std::optional<FlutterViewId>(*parent)
-                                        : std::nullopt;
-          if (!parent_view_id.has_value() &&
-              (archetype == WindowArchetype::satellite ||
-               archetype == WindowArchetype::popup)) {
-            result.Error(kInvalidValueError,
-                         "Value for '" + std::string(kParentKey) + "' (" +
-                             std::to_string(parent_view_id.value()) +
-                             ") must be nonnegative.");
-            return;
-          }
-        } else {
-          result.Error(kInvalidValueError, "Value for '" +
-                                               std::string(kParentKey) +
-                                               "' must be of type int.");
-          return;
-        }
-      }
-    } else {
-      result.Error(kInvalidValueError, "Map does not contain required '" +
-                                           std::string(kParentKey) + "' key.");
-      return;
-    }
-  }
-
   if (std::optional<WindowMetadata> const data_opt =
           controller_->CreateHostWindow(
               title, {.width = size_list->at(0), .height = size_list->at(1)},
-              archetype, positioner, parent_view_id)) {
+              archetype)) {
     WindowMetadata const& data = data_opt.value();
     result.Success(EncodableValue(EncodableMap{
         {EncodableValue(kViewIdKey), EncodableValue(data.view_id)},

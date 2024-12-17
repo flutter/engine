@@ -145,10 +145,7 @@ source_set("common_cpp_core") {
     "windowing.h",
   ]
 
-  sources = [
-    "path_utils.cc",
-    "windowing.cc",
-  ]
+  sources = [ "path_utils.cc" ]
 
   public_configs = [ "//flutter:config" ]
 }
@@ -161,10 +158,7 @@ if (enable_unittests) {
   executable("common_cpp_core_unittests") {
     testonly = true
 
-    sources = [
-      "path_utils_unittests.cc",
-      "windowing_unittests.cc",
-    ]
+    sources = [ "path_utils_unittests.cc" ]
 
     deps = [
       ":common_cpp_core",

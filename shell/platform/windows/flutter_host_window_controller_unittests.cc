@@ -115,8 +115,7 @@ TEST_F(FlutterHostWindowControllerTest, CreateRegularWindow) {
 
   // Create the window.
   std::optional<WindowMetadata> const result =
-      host_window_controller()->CreateHostWindow(title, size, archetype,
-                                                 std::nullopt, std::nullopt);
+      host_window_controller()->CreateHostWindow(title, size, archetype);
 
   // Verify the onWindowCreated callback was invoked.
   EXPECT_TRUE(called_onWindowCreated);
@@ -183,8 +182,7 @@ TEST_F(FlutterHostWindowControllerTest, DestroyWindow) {
 
   // Create the window.
   std::optional<WindowMetadata> const result =
-      host_window_controller()->CreateHostWindow(title, size, archetype,
-                                                 std::nullopt, std::nullopt);
+      host_window_controller()->CreateHostWindow(title, size, archetype);
   ASSERT_TRUE(result.has_value());
 
   // Destroy the window and ensure onWindowDestroyed was invoked.

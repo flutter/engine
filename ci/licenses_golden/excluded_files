@@ -335,7 +335,6 @@
 ../../../flutter/shell/platform/common/text_editing_delta_unittests.cc
 ../../../flutter/shell/platform/common/text_input_model_unittests.cc
 ../../../flutter/shell/platform/common/text_range_unittests.cc
-../../../flutter/shell/platform/common/windowing_unittests.cc
 ../../../flutter/shell/platform/darwin/Doxyfile
 ../../../flutter/shell/platform/darwin/common/availability_version_check_unittests.cc
 ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_codecs_unittest.mm

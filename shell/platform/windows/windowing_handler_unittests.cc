@@ -54,9 +54,7 @@ class MockFlutterHostWindowController : public FlutterHostWindowController {
               CreateHostWindow,
               (std::wstring const& title,
                WindowSize const& size,
-               WindowArchetype archetype,
-               std::optional<WindowPositioner> positioner,
-               std::optional<FlutterViewId> parent_view_id),
+               WindowArchetype archetype),
               (override));
   MOCK_METHOD(bool, DestroyHostWindow, (FlutterViewId view_id), (override));
 
@@ -112,10 +110,8 @@ TEST_F(WindowingHandlerTest, HandleCreateRegularWindow) {
       [&success](const EncodableValue* result) { success = true; }, nullptr,
       nullptr);
 
-  EXPECT_CALL(
-      *controller(),
-      CreateHostWindow(StrEq(L"regular"), size, WindowArchetype::regular,
-                       Eq(std::nullopt), Eq(std::nullopt)))
+  EXPECT_CALL(*controller(), CreateHostWindow(StrEq(L"regular"), size,
+                                              WindowArchetype::regular))
       .Times(1);
 
   SimulateWindowingMessage(&messenger, kCreateWindowMethod,

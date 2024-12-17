@@ -32,24 +32,14 @@ class FlutterHostWindowController {
   // |title| is the window title string. |preferred_size| is the preferred size
   // of the client rectangle, i.e., the size expected for the child view, in
   // logical coordinates. The actual size may differ. The window style is
-  // determined by |archetype|. For |WindowArchetype::satellite| and
-  // |WindowArchetype::popup|, both |parent_view_id| and |positioner| must be
-  // provided; |positioner| is used only for these archetypes. For
-  // |WindowArchetype::dialog|, a modal dialog is created if |parent_view_id| is
-  // specified; otherwise, the dialog is modeless. For
-  // |WindowArchetype::regular|, |positioner| and |parent_view_id| should be
-  // std::nullopt. When |parent_view_id| is specified, the |FlutterHostWindow|
-  // that hosts the view with ID |parent_view_id| will become the owner window
-  // of the |FlutterHostWindow| created by this function.
+  // determined by |archetype|.
   //
   // Returns a |WindowMetadata| with the metadata of the window just created, or
   // std::nullopt if the window could not be created.
   virtual std::optional<WindowMetadata> CreateHostWindow(
       std::wstring const& title,
       WindowSize const& preferred_size,
-      WindowArchetype archetype,
-      std::optional<WindowPositioner> positioner,
-      std::optional<FlutterViewId> parent_view_id);
+      WindowArchetype archetype);
 
   // Destroys the window that hosts the view with ID |view_id|.
   //
@@ -84,12 +74,6 @@ class FlutterHostWindowController {
   // the dimensions of the drop-shadow area.
   WindowSize GetWindowSize(FlutterViewId view_id) const;
 
-  // Hides all satellite windows managed by this controller, except those that
-  // are descendants of |opt_out_hwnd| or own a dialog. If |opt_out_hwnd| is
-  // nullptr (default), only satellites that own a dialog are excluded from
-  // being hidden.
-  void HideWindowsSatellites(HWND opt_out_hwnd = nullptr);
-
   // Sends the "onWindowChanged" message to the Flutter engine.
   void SendOnWindowChanged(FlutterViewId view_id) const;
 
@@ -100,9 +84,6 @@ class FlutterHostWindowController {
   // Sends the "onWindowDestroyed" message to the Flutter engine.
   void SendOnWindowDestroyed(FlutterViewId view_id) const;
 
-  // Shows the satellite windows of |hwnd| and of its ancestors.
-  void ShowWindowAndAncestorsSatellites(HWND hwnd);
-
   // The Flutter engine that owns this controller.
   FlutterWindowsEngine* const engine_;
 
@@ -111,14 +92,6 @@ class FlutterHostWindowController {
 
   // The host windows managed by this controller.
   std::map<FlutterViewId, std::unique_ptr<FlutterHostWindow>> windows_;
-
-  // Controls whether satellites can be hidden when there is no active window
-  // in the window subtree starting from the satellite's top-level window. If
-  // set to nullptr, satellite hiding is enabled. If set to a non-null value,
-  // satellite hiding remains disabled until the window represented by this
-  // handle is destroyed. After the window is destroyed, this is reset to
-  // nullptr.
-  HWND disable_satellite_hiding_ = nullptr;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterHostWindowController);
 };
