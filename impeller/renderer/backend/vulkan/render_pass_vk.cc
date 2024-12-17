@@ -24,8 +24,6 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -91,15 +89,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
             attachment.texture->GetTextureDescriptor().format,        //
             attachment.texture->GetTextureDescriptor().sample_count,  //
             attachment.load_action,                                   //
-            attachment.store_action,                                  //
-            TextureVK::Cast(*attachment.texture).GetLayout()          //
+            attachment.store_action                                   //
         );
-        TextureVK::Cast(*attachment.texture)
-            .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
-        if (attachment.resolve_texture) {
-          TextureVK::Cast(*attachment.resolve_texture)
-              .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
-        }
         return true;
       });
 
@@ -201,6 +192,15 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
       static_cast<uint32_t>(target_size.height);
   pass_info.setPClearValues(clears.data());
   pass_info.setClearValueCount(clear_count);
+
+  if (resolve_image_vk_) {
+    TextureVK::Cast(*resolve_image_vk_)
+        .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
+  }
+  if (color_image_vk_) {
+    TextureVK::Cast(*color_image_vk_)
+        .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
+  }
 
   command_buffer_vk_.beginRenderPass(pass_info, vk::SubpassContents::eInline);
 
