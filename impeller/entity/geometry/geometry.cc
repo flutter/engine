@@ -13,7 +13,6 @@
 #include "impeller/entity/geometry/ellipse_geometry.h"
 #include "impeller/entity/geometry/fill_path_geometry.h"
 #include "impeller/entity/geometry/line_geometry.h"
-#include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/round_rect_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
@@ -61,12 +60,6 @@ std::unique_ptr<Geometry> Geometry::MakeFillPath(
     const Path& path,
     std::optional<Rect> inner_rect) {
   return std::make_unique<FillPathGeometry>(path, inner_rect);
-}
-
-std::unique_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
-                                                   Scalar radius,
-                                                   bool round) {
-  return std::make_unique<PointFieldGeometry>(std::move(points), radius, round);
 }
 
 std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
@@ -133,9 +126,7 @@ bool Geometry::CanApplyMaskFilter() const {
 Scalar Geometry::ComputeStrokeAlphaCoverage(const Matrix& transform,
                                             Scalar stroke_width) {
   Scalar scaled_stroke_width = transform.GetMaxBasisLengthXY() * stroke_width;
-  // If the stroke width is 0 or greater than kMinStrokeSizeMSAA, don't apply
-  // any additional alpha. This is intended to match Skia behavior.
-  if (scaled_stroke_width == 0.0 || scaled_stroke_width >= kMinStrokeSizeMSAA) {
+  if (scaled_stroke_width == 0.0 || scaled_stroke_width >= kMinStrokeSize) {
     return 1.0;
   }
   // This scalling is eyeballed from Skia.

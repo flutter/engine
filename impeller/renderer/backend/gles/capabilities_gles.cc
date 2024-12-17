@@ -22,6 +22,10 @@ static const constexpr char* kNvidiaTextureBorderClampExt =
 static const constexpr char* kMultisampledRenderToTextureExt =
     "GL_EXT_multisampled_render_to_texture";
 
+// https://registry.khronos.org/OpenGL/extensions/EXT/EXT_multisampled_render_to_texture2.txt
+static const constexpr char* kMultisampledRenderToTexture2Ext =
+    "GL_EXT_multisampled_render_to_texture2";
+
 CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
   {
     GLint value = 0;
@@ -109,6 +113,10 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     default_glyph_atlas_format_ = PixelFormat::kR8UNormInt;
   }
 
+  if (desc->GetGlVersion().major_version >= 3) {
+    supports_texture_to_texture_blits_ = true;
+  }
+
   supports_framebuffer_fetch_ = desc->HasExtension(kFramebufferFetchExt);
 
   if (desc->HasExtension(kTextureBorderClampExt) ||
@@ -119,13 +127,19 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
   if (desc->HasExtension(kMultisampledRenderToTextureExt)) {
     supports_implicit_msaa_ = true;
 
-    // We hard-code 4x MSAA, so let's make sure it's supported.
-    GLint value = 0;
-    gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
-    supports_offscreen_msaa_ = value >= 4;
+    if (desc->HasExtension(kMultisampledRenderToTexture2Ext)) {
+      // We hard-code 4x MSAA, so let's make sure it's supported.
+      GLint value = 0;
+      gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
+      supports_offscreen_msaa_ = value >= 4;
+    }
   }
-
+  is_es_ = desc->IsES();
   is_angle_ = desc->IsANGLE();
+}
+
+bool CapabilitiesGLES::IsES() const {
+  return is_es_;
 }
 
 size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
@@ -154,7 +168,7 @@ bool CapabilitiesGLES::SupportsSSBO() const {
 }
 
 bool CapabilitiesGLES::SupportsTextureToTextureBlits() const {
-  return false;
+  return supports_texture_to_texture_blits_;
 }
 
 bool CapabilitiesGLES::SupportsFramebufferFetch() const {
@@ -199,6 +213,10 @@ PixelFormat CapabilitiesGLES::GetDefaultDepthStencilFormat() const {
 
 bool CapabilitiesGLES::IsANGLE() const {
   return is_angle_;
+}
+
+bool CapabilitiesGLES::SupportsPrimitiveRestart() const {
+  return false;
 }
 
 PixelFormat CapabilitiesGLES::GetDefaultGlyphAtlasFormat() const {

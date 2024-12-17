@@ -7,7 +7,7 @@
 
 #include "impeller/renderer/render_pass.h"
 
-namespace impeller {
+namespace impeller::testing {
 
 class RecordingRenderPass : public RenderPass {
  public:
@@ -46,27 +46,34 @@ class RecordingRenderPass : public RenderPass {
   // |RenderPass|
   fml::Status Draw() override;
 
-  // |RenderPass|
   bool BindResource(ShaderStage stage,
                     DescriptorType type,
                     const ShaderUniformSlot& slot,
-                    const ShaderMetadata& metadata,
+                    const ShaderMetadata* metadata,
                     BufferView view) override;
 
-  // |RenderPass|
-  bool BindResource(ShaderStage stage,
-                    DescriptorType type,
-                    const ShaderUniformSlot& slot,
-                    const std::shared_ptr<const ShaderMetadata>& metadata,
-                    BufferView view) override;
-
-  // |RenderPass|
   bool BindResource(ShaderStage stage,
                     DescriptorType type,
                     const SampledImageSlot& slot,
-                    const ShaderMetadata& metadata,
+                    const ShaderMetadata* metadata,
                     std::shared_ptr<const Texture> texture,
                     const std::unique_ptr<const Sampler>& sampler) override;
+
+  // |RenderPass|
+  bool BindDynamicResource(ShaderStage stage,
+                           DescriptorType type,
+                           const ShaderUniformSlot& slot,
+                           std::unique_ptr<ShaderMetadata> metadata,
+                           BufferView view) override;
+
+  // |RenderPass|
+  bool BindDynamicResource(
+      ShaderStage stage,
+      DescriptorType type,
+      const SampledImageSlot& slot,
+      std::unique_ptr<ShaderMetadata> metadata,
+      std::shared_ptr<const Texture> texture,
+      const std::unique_ptr<const Sampler>& sampler) override;
 
   // |RenderPass|
   void OnSetLabel(std::string_view label) override;
@@ -82,6 +89,6 @@ class RecordingRenderPass : public RenderPass {
   std::vector<Command> commands_;
 };
 
-}  // namespace impeller
+}  // namespace impeller::testing
 
 #endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_TEST_RECORDING_RENDER_PASS_H_

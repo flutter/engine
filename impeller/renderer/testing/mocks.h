@@ -7,6 +7,7 @@
 
 #include "gmock/gmock.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/runtime_types.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/command_buffer.h"
@@ -128,6 +129,7 @@ class MockCommandBuffer : public CommandBuffer {
               OnSubmitCommands,
               (CompletionCallback callback),
               (override));
+  MOCK_METHOD(void, OnWaitUntilCompleted, (), (override));
   MOCK_METHOD(void, OnWaitUntilScheduled, (), (override));
   MOCK_METHOD(std::shared_ptr<ComputePass>,
               OnCreateComputePass,
@@ -183,6 +185,11 @@ class MockImpellerContext : public Context {
               GetCommandQueue,
               (),
               (const, override));
+
+  MOCK_METHOD(RuntimeStageBackend,
+              GetRuntimeStageBackend,
+              (),
+              (const, override));
 };
 
 class MockTexture : public Texture {
@@ -218,6 +225,7 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(bool, SupportsDecalSamplerAddressMode, (), (const, override));
   MOCK_METHOD(bool, SupportsDeviceTransientTextures, (), (const, override));
   MOCK_METHOD(bool, SupportsTriangleFan, (), (const override));
+  MOCK_METHOD(bool, SupportsPrimitiveRestart, (), (const override));
   MOCK_METHOD(PixelFormat, GetDefaultColorFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));

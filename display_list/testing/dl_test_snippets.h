@@ -7,6 +7,9 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/effects/color_filters/dl_blend_color_filter.h"
+#include "flutter/display_list/effects/dl_color_sources.h"
+#include "flutter/display_list/effects/dl_image_filters.h"
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -23,7 +26,7 @@ sk_sp<DisplayList> GetSampleNestedDisplayList();
 
 typedef const std::function<void(DlOpReceiver&)> DlInvoker;
 
-constexpr SkPoint kEndPoints[] = {
+constexpr DlPoint kEndPoints[] = {
     {0, 0},
     {100, 100},
 };
@@ -88,10 +91,11 @@ static auto TestImage1 = MakeTestImage(40, 40, 5);
 static auto TestImage2 = MakeTestImage(50, 50, 5);
 static auto TestSkImage = MakeTestImage(30, 30, 5)->skia_image();
 
-static const DlImageColorSource kTestSource1(TestImage1,
-                                             DlTileMode::kClamp,
-                                             DlTileMode::kMirror,
-                                             kLinearSampling);
+static const std::shared_ptr<DlColorSource> kTestSource1 =
+    DlColorSource::MakeImage(TestImage1,
+                             DlTileMode::kClamp,
+                             DlTileMode::kMirror,
+                             kLinearSampling);
 static const std::shared_ptr<DlColorSource> kTestSource2 =
     DlColorSource::MakeLinear(kEndPoints[0],
                               kEndPoints[1],
@@ -123,14 +127,18 @@ static const std::shared_ptr<DlColorSource> kTestSource5 =
                              kColors,
                              kStops,
                              DlTileMode::kDecal);
-static const DlBlendColorFilter kTestBlendColorFilter1(DlColor::kRed(),
-                                                       DlBlendMode::kDstATop);
-static const DlBlendColorFilter kTestBlendColorFilter2(DlColor::kBlue(),
-                                                       DlBlendMode::kDstATop);
-static const DlBlendColorFilter kTestBlendColorFilter3(DlColor::kRed(),
-                                                       DlBlendMode::kDstIn);
-static const DlMatrixColorFilter kTestMatrixColorFilter1(kRotateColorMatrix);
-static const DlMatrixColorFilter kTestMatrixColorFilter2(kInvertColorMatrix);
+
+static const auto kTestBlendColorFilter1 =
+    DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kDstATop);
+static const auto kTestBlendColorFilter2 =
+    DlColorFilter::MakeBlend(DlColor::kBlue(), DlBlendMode::kDstATop);
+static const auto kTestBlendColorFilter3 =
+    DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kDstOver);
+static const auto kTestMatrixColorFilter1 =
+    DlColorFilter::MakeMatrix(kRotateColorMatrix);
+static const auto kTestMatrixColorFilter2 =
+    DlColorFilter::MakeMatrix(kInvertColorMatrix);
+
 static const DlBlurImageFilter kTestBlurImageFilter1(5.0,
                                                      5.0,
                                                      DlTileMode::kClamp);
@@ -150,13 +158,13 @@ static const DlErodeImageFilter kTestErodeImageFilter1(4.0, 4.0);
 static const DlErodeImageFilter kTestErodeImageFilter2(4.0, 3.0);
 static const DlErodeImageFilter kTestErodeImageFilter3(3.0, 4.0);
 static const DlMatrixImageFilter kTestMatrixImageFilter1(
-    SkMatrix::RotateDeg(45),
+    DlMatrix::MakeRotationZ(DlDegrees(45)),
     kNearestSampling);
 static const DlMatrixImageFilter kTestMatrixImageFilter2(
-    SkMatrix::RotateDeg(85),
+    DlMatrix::MakeRotationZ(DlDegrees(85)),
     kNearestSampling);
 static const DlMatrixImageFilter kTestMatrixImageFilter3(
-    SkMatrix::RotateDeg(45),
+    DlMatrix::MakeRotationZ(DlDegrees(45)),
     kLinearSampling);
 static const DlComposeImageFilter kTestComposeImageFilter1(
     kTestBlurImageFilter1,

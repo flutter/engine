@@ -21,7 +21,7 @@ TEST_F(ShellTest, ConvertPaintToDlPaint) {
         Dart_GetField(dart_paint, tonic::ToDart("_objects"));
     Dart_Handle paint_data = Dart_GetField(dart_paint, tonic::ToDart("_data"));
     Paint ui_paint(paint_objects, paint_data);
-    ui_paint.toDlPaint(dl_paint);
+    ui_paint.toDlPaint(dl_paint, DlTileMode::kClamp);
     message_latch->Signal();
   };
 
@@ -52,7 +52,7 @@ TEST_F(ShellTest, ConvertPaintToDlPaint) {
   ASSERT_EQ(dl_paint.getBlendMode(), DlBlendMode::kModulate);
   ASSERT_EQ(static_cast<uint32_t>(dl_paint.getColor().argb()), 0x11223344u);
   ASSERT_EQ(*dl_paint.getColorFilter(),
-            DlBlendColorFilter(DlColor(0x55667788), DlBlendMode::kXor));
+            *DlColorFilter::MakeBlend(DlColor(0x55667788), DlBlendMode::kXor));
   ASSERT_EQ(*dl_paint.getMaskFilter(),
             DlBlurMaskFilter(DlBlurStyle::kInner, 0.75));
   ASSERT_EQ(dl_paint.getDrawStyle(), DlDrawStyle::kStroke);

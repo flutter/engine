@@ -8,6 +8,7 @@
 
 #import <OCMock/OCMock.h>
 
+#include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
@@ -20,6 +21,9 @@
 #include "flutter/testing/testing.h"
 
 #pragma mark - Test Helper Classes
+
+static const FlutterPointerEvent kDefaultFlutterPointerEvent = {};
+static const FlutterKeyEvent kDefaultFlutterKeyEvent = {};
 
 // A wrap to convert FlutterKeyEvent to a ObjC class.
 @interface KeyEventWrapper : NSObject
@@ -339,7 +343,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
       [engineMock binaryMessenger])
       .andReturn(binaryMessengerMock);
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:kDefaultFlutterKeyEvent
                                                   callback:nil
                                                   userData:nil])
       .andCall([FlutterViewControllerTestObjC class],
@@ -375,7 +379,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
 - (bool)testCtrlTabKeyEventIsPropagated:(id)engineMock {
   __block bool called = false;
   __block FlutterKeyEvent last_event;
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:kDefaultFlutterKeyEvent
                                                   callback:nil
                                                   userData:nil])
       .andDo((^(NSInvocation* invocation) {
@@ -419,7 +423,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
 - (bool)testKeyEquivalentIsPassedToTextInputPlugin:(id)engineMock {
   __block bool called = false;
   __block FlutterKeyEvent last_event;
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:kDefaultFlutterKeyEvent
                                                   callback:nil
                                                   userData:nil])
       .andDo((^(NSInvocation* invocation) {
@@ -471,7 +475,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
       [engineMock binaryMessenger])
       .andReturn(binaryMessengerMock);
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:kDefaultFlutterKeyEvent
                                                   callback:nil
                                                   userData:nil])
       .andCall([FlutterViewControllerTestObjC class],
@@ -545,7 +549,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
       [engineMock binaryMessenger])
       .andReturn(binaryMessengerMock);
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:kDefaultFlutterKeyEvent
                                                   callback:nil
                                                   userData:nil])
       .andCall([FlutterViewControllerTestObjC class],
@@ -598,7 +602,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
       [engineMock binaryMessenger])
       .andReturn(binaryMessengerMock);
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:kDefaultFlutterKeyEvent
                                                   callback:nil
                                                   userData:nil])
       .andCall([FlutterViewControllerTestObjC class],
@@ -655,7 +659,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
       .andReturn(binaryMessengerMock);
   __block bool called = false;
   __block FlutterKeyEvent last_event;
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:kDefaultFlutterKeyEvent
                                                   callback:nil
                                                   userData:nil])
       .andDo((^(NSInvocation* invocation) {
@@ -715,7 +719,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   OCMStub([engineMock renderer]).andReturn(renderer_);
   __block bool called = false;
   __block FlutterPointerEvent last_event;
-  OCMStub([[engineMock ignoringNonObjectArgs] sendPointerEvent:FlutterPointerEvent{}])
+  OCMStub([[engineMock ignoringNonObjectArgs] sendPointerEvent:kDefaultFlutterPointerEvent])
       .andDo((^(NSInvocation* invocation) {
         FlutterPointerEvent* event;
         [invocation getArgument:&event atIndex:2];
@@ -1019,29 +1023,27 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
 
   // Test for pan events.
   // Start gesture.
-  CGEventRef cgEventStart = CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
+  fml::CFRef<CGEventRef> cgEventStart(
+      CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0));
   CGEventSetType(cgEventStart, kCGEventScrollWheel);
   CGEventSetIntegerValueField(cgEventStart, kCGScrollWheelEventScrollPhase, kCGScrollPhaseBegan);
   CGEventSetIntegerValueField(cgEventStart, kCGScrollWheelEventIsContinuous, 1);
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventStart]];
-  CFRelease(cgEventStart);
 
-  CGEventRef cgEventUpdate = CGEventCreateCopy(cgEventStart);
+  fml::CFRef<CGEventRef> cgEventUpdate(CGEventCreateCopy(cgEventStart));
   CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventScrollPhase, kCGScrollPhaseChanged);
   CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventDeltaAxis2, 1);  // pan_x
   CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventDeltaAxis1, 2);  // pan_y
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventUpdate]];
-  CFRelease(cgEventUpdate);
 
   NSEvent* mouseEvent = flutter::testing::CreateMouseEvent(0x00);
   [viewController mouseEntered:mouseEvent];
   [viewController mouseExited:mouseEvent];
 
   // End gesture.
-  CGEventRef cgEventEnd = CGEventCreateCopy(cgEventStart);
+  fml::CFRef<CGEventRef> cgEventEnd(CGEventCreateCopy(cgEventStart));
   CGEventSetIntegerValueField(cgEventEnd, kCGScrollWheelEventScrollPhase, kCGScrollPhaseEnded);
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventEnd]];
-  CFRelease(cgEventEnd);
 
   return true;
 }
@@ -1139,7 +1141,7 @@ static void SwizzledNoop(id self, SEL _cmd) {}
 
   // Capture calls to sendKeyEvent
   __block NSMutableArray<KeyEventWrapper*>* events = [NSMutableArray array];
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:kDefaultFlutterKeyEvent
                                                   callback:nil
                                                   userData:nil])
       .andDo((^(NSInvocation* invocation) {

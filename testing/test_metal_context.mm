@@ -8,60 +8,54 @@
 #include <iostream>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendContext.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlDirectContext.h"
 
-namespace flutter {
+static_assert(__has_feature(objc_arc), "ARC must be enabled.");
+
+namespace flutter::testing {
 
 TestMetalContext::TestMetalContext() {
-  auto device = fml::scoped_nsprotocol{MTLCreateSystemDefaultDevice()};
+  id<MTLDevice> device = MTLCreateSystemDefaultDevice();
   if (!device) {
     FML_LOG(ERROR) << "Could not acquire Metal device.";
     return;
   }
 
-  auto command_queue = fml::scoped_nsobject{[device.get() newCommandQueue]};
+  id<MTLCommandQueue> command_queue = [device newCommandQueue];
   if (!command_queue) {
     FML_LOG(ERROR) << "Could not create the default command queue.";
     return;
   }
 
-  [command_queue.get() setLabel:@"Flutter Test Queue"];
+  [command_queue setLabel:@"Flutter Test Queue"];
 
   GrMtlBackendContext backendContext = {};
   // Skia expect arguments to `MakeMetal` transfer ownership of the reference in for release later
   // when the GrDirectContext is collected.
-  backendContext.fDevice.reset([device.get() retain]);
-  backendContext.fQueue.reset([command_queue.get() retain]);
+  backendContext.fDevice.retain((__bridge GrMTLHandle)device);
+  backendContext.fQueue.retain((__bridge GrMTLHandle)command_queue);
   skia_context_ = GrDirectContexts::MakeMetal(backendContext);
   if (!skia_context_) {
     FML_LOG(ERROR) << "Could not create the GrDirectContext from the Metal Device "
                       "and command queue.";
   }
-
-  device_ = [device.get() retain];
-  command_queue_ = [command_queue.get() retain];
+  device_ = device;
+  command_queue_ = command_queue;
 }
 
 TestMetalContext::~TestMetalContext() {
   std::scoped_lock lock(textures_mutex_);
   textures_.clear();
-  if (device_) {
-    [(__bridge id)device_ release];
-  }
-  if (command_queue_) {
-    [(__bridge id)command_queue_ release];
-  }
 }
 
-void* TestMetalContext::GetMetalDevice() const {
+id<MTLDevice> TestMetalContext::GetMetalDevice() const {
   return device_;
 }
 
-void* TestMetalContext::GetMetalCommandQueue() const {
+id<MTLCommandQueue> TestMetalContext::GetMetalCommandQueue() const {
   return command_queue_;
 }
 
@@ -71,36 +65,41 @@ sk_sp<GrDirectContext> TestMetalContext::GetSkiaContext() const {
 
 TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const SkISize& size) {
   std::scoped_lock lock(textures_mutex_);
-  auto texture_descriptor = fml::scoped_nsobject{
-      [[MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
-                                                          width:size.width()
-                                                         height:size.height()
-                                                      mipmapped:NO] retain]};
+  MTLTextureDescriptor* texture_descriptor =
+      [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
+                                                         width:size.width()
+                                                        height:size.height()
+                                                     mipmapped:NO];
 
   // The most pessimistic option and disables all optimizations but allows tests
   // the most flexible access to the surface. They may read and write to the
   // surface from shaders or use as a pixel view.
-  texture_descriptor.get().usage = MTLTextureUsageUnknown;
+  texture_descriptor.usage = MTLTextureUsageUnknown;
 
   if (!texture_descriptor) {
     FML_CHECK(false) << "Invalid texture descriptor.";
     return {.texture_id = -1, .texture = nullptr};
   }
 
-  id<MTLDevice> device = (__bridge id<MTLDevice>)GetMetalDevice();
-  sk_cfp<void*> texture = sk_cfp<void*>{[device newTextureWithDescriptor:texture_descriptor.get()]};
+  if (!device_) {
+    FML_CHECK(false) << "Invalid Metal device.";
+    return {.texture_id = -1, .texture = nullptr};
+  }
 
+  id<MTLTexture> texture = [device_ newTextureWithDescriptor:texture_descriptor];
   if (!texture) {
     FML_CHECK(false) << "Could not create texture from texture descriptor.";
     return {.texture_id = -1, .texture = nullptr};
   }
 
   const int64_t texture_id = texture_id_ctr_++;
-  textures_[texture_id] = texture;
+  sk_cfp<void*> texture_ptr;
+  texture_ptr.retain((__bridge void*)texture);
+  textures_[texture_id] = texture_ptr;
 
   return {
       .texture_id = texture_id,
-      .texture = texture.get(),
+      .texture = (__bridge void*)texture,
   };
 }
 
@@ -127,4 +126,4 @@ TestMetalContext::TextureInfo TestMetalContext::GetTextureInfo(int64_t texture_i
   }
 }
 
-}  // namespace flutter
+}  // namespace flutter::testing

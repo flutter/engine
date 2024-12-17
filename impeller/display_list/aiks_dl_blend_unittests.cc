@@ -66,7 +66,7 @@ TEST_P(AiksTest, CanRenderAdvancedBlendColorFilterWithSaveLayer) {
   builder.ClipRect(layer_rect);
 
   DlPaint save_paint;
-  save_paint.setColorFilter(DlBlendColorFilter::Make(
+  save_paint.setColorFilter(DlColorFilter::MakeBlend(
       DlColor::RGBA(0, 1, 0, 0.5), DlBlendMode::kDifference));
   builder.SaveLayer(&layer_rect, &save_paint);
 
@@ -154,7 +154,7 @@ TEST_P(AiksTest, DrawAdvancedBlendPartlyOffscreen) {
   std::vector<Scalar> stops = {0.0, 1.0};
 
   DlPaint paint;
-  SkMatrix matrix = SkMatrix::Scale(0.3, 0.3);
+  DlMatrix matrix = DlMatrix::MakeScale({0.3, 0.3, 1.0});
   paint.setColorSource(DlColorSource::MakeLinear(
       /*start_point=*/{0, 0},             //
       /*end_point=*/{100, 100},           //
@@ -233,7 +233,7 @@ TEST_P(AiksTest, ColorFilterBlend) {
         srcPaint.setBlendMode(blend_modes[i]);
         if (has_color_filter) {
           std::shared_ptr<const DlColorFilter> color_filter =
-              DlBlendColorFilter::Make(DlColor::RGBA(0.9, 0.5, 0.0, 1.0),
+              DlColorFilter::MakeBlend(DlColor::RGBA(0.9, 0.5, 0.0, 1.0),
                                        DlBlendMode::kSrcIn);
           srcPaint.setColorFilter(color_filter);
         }
@@ -290,7 +290,7 @@ TEST_P(AiksTest, ColorFilterAdvancedBlend) {
         srcPaint.setBlendMode(blend_modes[i]);
         if (has_color_filter) {
           std::shared_ptr<const DlColorFilter> color_filter =
-              DlBlendColorFilter::Make(DlColor::RGBA(0.9, 0.5, 0.0, 1.0),
+              DlColorFilter::MakeBlend(DlColor::RGBA(0.9, 0.5, 0.0, 1.0),
                                        DlBlendMode::kSrcIn);
           srcPaint.setColorFilter(color_filter);
         }
@@ -338,6 +338,7 @@ TEST_P(AiksTest, ColorFilterAdvancedBlendNoFbFetch) {
   FLT_FORWARD(mock_capabilities, old_capabilities, SupportsTriangleFan);
   FLT_FORWARD(mock_capabilities, old_capabilities,
               SupportsDecalSamplerAddressMode);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsPrimitiveRestart);
   ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
 
   bool has_color_filter = true;
@@ -381,7 +382,7 @@ TEST_P(AiksTest, ColorFilterAdvancedBlendNoFbFetch) {
         srcPaint.setBlendMode(blend_modes[i]);
         if (has_color_filter) {
           std::shared_ptr<const DlColorFilter> color_filter =
-              DlBlendColorFilter::Make(DlColor::RGBA(0.9, 0.5, 0.0, 1.0),
+              DlColorFilter::MakeBlend(DlColor::RGBA(0.9, 0.5, 0.0, 1.0),
                                        DlBlendMode::kMultiply);
           srcPaint.setColorFilter(color_filter);
         }
@@ -444,7 +445,7 @@ TEST_P(AiksTest, BlendModePlusAlphaColorFilterWideGamut) {
 
   DlPaint save_paint;
   save_paint.setColorFilter(
-      DlBlendColorFilter::Make(DlColor::RGBA(1, 0, 0, 1), DlBlendMode::kPlus));
+      DlColorFilter::MakeBlend(DlColor::RGBA(1, 0, 0, 1), DlBlendMode::kPlus));
   builder.SaveLayer(nullptr, &save_paint);
 
   paint.setColor(DlColor::kRed());
@@ -470,7 +471,7 @@ TEST_P(AiksTest, ForegroundBlendSubpassCollapseOptimization) {
 
   DlPaint save_paint;
   save_paint.setColorFilter(
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kColorDodge));
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kColorDodge));
   builder.SaveLayer(nullptr, &save_paint);
 
   builder.Translate(500, 300);
@@ -720,7 +721,7 @@ TEST_P(AiksTest, ForegroundPipelineBlendAppliesTransformCorrectly) {
   builder.Rotate(30);
 
   DlPaint image_paint;
-  image_paint.setColorFilter(DlBlendColorFilter::Make(
+  image_paint.setColorFilter(DlColorFilter::MakeBlend(
       DlColor::RGBA(255.0f / 255.0f, 165.0f / 255.0f, 0.0f / 255.0f, 1.0f),
       DlBlendMode::kSrcIn));
 
@@ -738,7 +739,7 @@ TEST_P(AiksTest, ForegroundAdvancedBlendAppliesTransformCorrectly) {
   builder.Rotate(30);
 
   DlPaint image_paint;
-  image_paint.setColorFilter(DlBlendColorFilter::Make(
+  image_paint.setColorFilter(DlColorFilter::MakeBlend(
       DlColor::RGBA(255.0f / 255.0f, 165.0f / 255.0f, 0.0f / 255.0f, 1.0f),
       DlBlendMode::kColorDodge));
 
@@ -897,8 +898,28 @@ TEST_P(AiksTest, DestructiveBlendColorFilterFloodsClip) {
 
   DlPaint save_paint;
   save_paint.setColorFilter(
-      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc));
+      DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrc));
   builder.SaveLayer(nullptr, &save_paint);
+  builder.Restore();
+
+  // Should be solid red as the destructive color filter floods the clip.
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(AiksTest, AdvancedBlendColorFilterWithDestinationOpacity) {
+  DisplayListBuilder builder;
+
+  builder.DrawPaint(DlPaint(DlColor::kWhite()));
+
+  DlPaint save_paint;
+  save_paint.setOpacity(0.3);
+  save_paint.setColorFilter(DlColorFilter::MakeBlend(DlColor::kTransparent(),
+                                                     DlBlendMode::kSaturation));
+  builder.SaveLayer(nullptr, &save_paint);
+  builder.DrawRect(SkRect::MakeXYWH(100, 100, 300, 300),
+                   DlPaint(DlColor::kMaroon()));
+  builder.DrawRect(SkRect::MakeXYWH(200, 200, 300, 300),
+                   DlPaint(DlColor::kBlue()));
   builder.Restore();
 
   // Should be solid red as the destructive color filter floods the clip.

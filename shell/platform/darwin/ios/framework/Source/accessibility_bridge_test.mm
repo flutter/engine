@@ -279,8 +279,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
                                  /*ui=*/thread_task_runner,
                                  /*io=*/thread_task_runner);
 
-    auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-    flutterPlatformViewsController->SetTaskRunner(thread_task_runner);
+    FlutterPlatformViewsController* flutterPlatformViewsController =
+        [[FlutterPlatformViewsController alloc] init];
+    flutterPlatformViewsController.taskRunner = thread_task_runner;
     auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
         /*delegate=*/mock_delegate,
         /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -294,19 +295,22 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
     OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
     std::string label = "some label";
-    flutterPlatformViewsController->SetFlutterView(mockFlutterView);
+    flutterPlatformViewsController.flutterView = mockFlutterView;
 
     MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory alloc] init];
-    flutterPlatformViewsController->RegisterViewFactory(
-        factory, @"MockFlutterPlatformView",
-        FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+    [flutterPlatformViewsController
+                     registerViewFactory:factory
+                                  withId:@"MockFlutterPlatformView"
+        gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
     FlutterResult result = ^(id result) {
     };
-    flutterPlatformViewsController->OnMethodCall(
-        [FlutterMethodCall
-            methodCallWithMethodName:@"create"
-                           arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-        result);
+    [flutterPlatformViewsController
+        onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                       arguments:@{
+                                                         @"id" : @2,
+                                                         @"viewType" : @"MockFlutterPlatformView"
+                                                       }]
+              result:result];
 
     auto bridge = std::make_unique<flutter::AccessibilityBridge>(
         /*view_controller=*/mockFlutterViewController,
@@ -322,7 +326,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     flutter::CustomAccessibilityActionUpdates actions;
     bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
     XCTAssertNotNil(gMockPlatformView);
-    flutterPlatformViewsController->Reset();
+    [flutterPlatformViewsController reset];
   }
   XCTAssertNil(gMockPlatformView);
 }
@@ -340,8 +344,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
                                  /*ui=*/thread_task_runner,
                                  /*io=*/thread_task_runner);
 
-    auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-    flutterPlatformViewsController->SetTaskRunner(thread_task_runner);
+    FlutterPlatformViewsController* flutterPlatformViewsController =
+        [[FlutterPlatformViewsController alloc] init];
+    flutterPlatformViewsController.taskRunner = thread_task_runner;
     auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
         /*delegate=*/mock_delegate,
         /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -353,16 +358,19 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         /*is_gpu_disabled_sync_switch=*/std::make_shared<fml::SyncSwitch>());
 
     MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory alloc] init];
-    flutterPlatformViewsController->RegisterViewFactory(
-        factory, @"MockFlutterPlatformView",
-        FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+    [flutterPlatformViewsController
+                     registerViewFactory:factory
+                                  withId:@"MockFlutterPlatformView"
+        gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
     FlutterResult result = ^(id result) {
     };
-    flutterPlatformViewsController->OnMethodCall(
-        [FlutterMethodCall
-            methodCallWithMethodName:@"create"
-                           arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
-        result);
+    [flutterPlatformViewsController
+        onMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                       arguments:@{
+                                                         @"id" : @2,
+                                                         @"viewType" : @"MockFlutterPlatformView"
+                                                       }]
+              result:result];
 
     auto bridge = std::make_unique<flutter::AccessibilityBridge>(
         /*view_controller=*/flutterViewController,
@@ -370,7 +378,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         /*platform_views_controller=*/flutterPlatformViewsController);
 
     XCTAssertNotNil(gMockPlatformView);
-    flutterPlatformViewsController->Reset();
+    [flutterPlatformViewsController reset];
     platform_view->NotifyDestroyed();
   }
   XCTAssertNil(gMockPlatformView);
@@ -387,8 +395,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
                                /*ui=*/thread_task_runner,
                                /*io=*/thread_task_runner);
 
-  auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread_task_runner);
+  FlutterPlatformViewsController* flutterPlatformViewsController =
+      [[FlutterPlatformViewsController alloc] init];
+  flutterPlatformViewsController.taskRunner = thread_task_runner;
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -484,8 +493,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
                                /*ui=*/thread_task_runner,
                                /*io=*/thread_task_runner);
 
-  auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread_task_runner);
+  FlutterPlatformViewsController* flutterPlatformViewsController =
+      [[FlutterPlatformViewsController alloc] init];
+  flutterPlatformViewsController.taskRunner = thread_task_runner;
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -559,8 +569,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
                                /*ui=*/thread_task_runner,
                                /*io=*/thread_task_runner);
 
-  auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-  flutterPlatformViewsController->SetTaskRunner(thread_task_runner);
+  FlutterPlatformViewsController* flutterPlatformViewsController =
+      [[FlutterPlatformViewsController alloc] init];
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/mock_delegate.settings_.enable_impeller
@@ -1402,9 +1412,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/std::make_shared<fml::SyncSwitch>());
   fml::AutoResetWaitableEvent latch;
   thread_task_runner->PostTask([&] {
-    auto weakFactory =
-        std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(flutterViewController);
-    platform_view->SetOwnerViewController(weakFactory->GetWeakNSObject());
+    platform_view->SetOwnerViewController(flutterViewController);
     auto bridge =
         std::make_unique<flutter::AccessibilityBridge>(/*view=*/nil,
                                                        /*platform_view=*/platform_view.get(),
@@ -2091,9 +2099,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/std::make_shared<fml::SyncSwitch>());
   fml::AutoResetWaitableEvent latch;
   thread_task_runner->PostTask([&] {
-    auto weakFactory =
-        std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(flutterViewController);
-    platform_view->SetOwnerViewController(weakFactory->GetWeakNSObject());
+    platform_view->SetOwnerViewController(flutterViewController);
     auto bridge =
         std::make_unique<flutter::AccessibilityBridge>(/*view=*/nil,
                                                        /*platform_view=*/platform_view.get(),
@@ -2179,14 +2185,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         /*is_gpu_disabled_sync_switch=*/std::make_shared<fml::SyncSwitch>());
 
     id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-    auto flutterPlatformViewsController = std::make_shared<flutter::PlatformViewsController>();
-    flutterPlatformViewsController->SetTaskRunner(thread_task_runner);
+    FlutterPlatformViewsController* flutterPlatformViewsController =
+        [[FlutterPlatformViewsController alloc] init];
+    flutterPlatformViewsController.taskRunner = thread_task_runner;
 
     OCMStub([mockFlutterViewController platformViewsController])
-        .andReturn(flutterPlatformViewsController.get());
-    auto weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(
-        mockFlutterViewController);
-    platform_view->SetOwnerViewController(weakFactory->GetWeakNSObject());
+        .andReturn(flutterPlatformViewsController);
+    platform_view->SetOwnerViewController(mockFlutterViewController);
 
     platform_view->SetSemanticsEnabled(true);
     XCTAssertNotEqual(test_delegate.set_semantics_enabled_calls, 0);

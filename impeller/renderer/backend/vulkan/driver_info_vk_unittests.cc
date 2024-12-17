@@ -36,6 +36,19 @@ TEST_P(DriverInfoVKTest, CanDumpToLog) {
   EXPECT_TRUE(log.str().find("Driver Information") != std::string::npos);
 }
 
+TEST(DriverInfoVKTest, CanIdentifyBadMaleoonDriver) {
+  auto const context =
+      MockVulkanContextBuilder()
+          .SetPhysicalPropertiesCallback(
+              [](VkPhysicalDevice device, VkPhysicalDeviceProperties* prop) {
+                prop->vendorID = 0x19E5;  // Huawei
+                prop->deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+              })
+          .Build();
+
+  EXPECT_TRUE(context->GetDriverInfo()->IsKnownBadDriver());
+}
+
 bool IsBadVersionTest(std::string_view driver_name, bool qc = true) {
   auto const context =
       MockVulkanContextBuilder()
@@ -93,6 +106,18 @@ TEST(DriverInfoVKTest, DriverParsingAdreno) {
 
 TEST(DriverInfoVKTest, DisabledDevices) {
   EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 630"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 620"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 610"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 530"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 512"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 509"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 508"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 506"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 505"));
+  EXPECT_TRUE(IsBadVersionTest("Adreno (TM) 504"));
+
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 640"));
+  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 650"));
 }
 
 TEST(DriverInfoVKTest, EnabledDevicesMali) {
@@ -109,13 +134,6 @@ TEST(DriverInfoVKTest, EnabledDevicesAdreno) {
   EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 720"));
   EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 710"));
   EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 702"));
-  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 530"));
-  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 512"));
-  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 509"));
-  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 508"));
-  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 506"));
-  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 505"));
-  EXPECT_FALSE(IsBadVersionTest("Adreno (TM) 504"));
 }
 
 }  // namespace impeller::testing

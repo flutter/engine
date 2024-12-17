@@ -14,7 +14,7 @@
 #include "flutter/display_list/dl_tile_mode.h"
 #include "flutter/display_list/effects/dl_color_filter.h"
 #include "flutter/display_list/effects/dl_color_source.h"
-#include "flutter/display_list/effects/dl_image_filter.h"
+#include "flutter/display_list/effects/dl_image_filters.h"
 #include "flutter/display_list/effects/dl_mask_filter.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
@@ -522,18 +522,18 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
 
   // Pipeline blended image.
   {
-    auto filter = flutter::DlBlendColorFilter(flutter::DlColor::kYellow(),
-                                              flutter::DlBlendMode::kModulate);
-    paint.setColorFilter(&filter);
+    auto filter = flutter::DlColorFilter::MakeBlend(
+        flutter::DlColor::kYellow(), flutter::DlBlendMode::kModulate);
+    paint.setColorFilter(filter);
     builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
                       flutter::DlImageSampling::kNearestNeighbor, &paint);
   }
 
   // Advanced blended image.
   {
-    auto filter = flutter::DlBlendColorFilter(flutter::DlColor::kRed(),
-                                              flutter::DlBlendMode::kScreen);
-    paint.setColorFilter(&filter);
+    auto filter = flutter::DlColorFilter::MakeBlend(
+        flutter::DlColor::kRed(), flutter::DlBlendMode::kScreen);
+    paint.setColorFilter(filter);
     builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(250, 250),
                       flutter::DlImageSampling::kNearestNeighbor, &paint);
   }
@@ -552,17 +552,15 @@ TEST_P(DisplayListTest, CanDrawWithColorFilterImageFilter) {
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
 
-  auto color_filter =
-      std::make_shared<flutter::DlMatrixColorFilter>(invert_color_matrix);
-  auto image_filter =
-      std::make_shared<flutter::DlColorFilterImageFilter>(color_filter);
+  auto color_filter = flutter::DlColorFilter::MakeMatrix(invert_color_matrix);
+  auto image_filter = flutter::DlImageFilter::MakeColorFilter(color_filter);
 
-  paint.setImageFilter(image_filter.get());
+  paint.setImageFilter(image_filter);
   builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
                     flutter::DlImageSampling::kNearestNeighbor, &paint);
 
   builder.Translate(0, 700);
-  paint.setColorFilter(color_filter.get());
+  paint.setColorFilter(color_filter);
   builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
                     flutter::DlImageSampling::kNearestNeighbor, &paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -628,13 +626,11 @@ TEST_P(DisplayListTest, CanClampTheResultingColorOfColorMatrixFilter) {
       0, 0, 0, 0.5, 0,  //
   };
   auto inner_color_filter =
-      std::make_shared<flutter::DlMatrixColorFilter>(inner_color_matrix);
+      flutter::DlColorFilter::MakeMatrix(inner_color_matrix);
   auto outer_color_filter =
-      std::make_shared<flutter::DlMatrixColorFilter>(outer_color_matrix);
-  auto inner =
-      std::make_shared<flutter::DlColorFilterImageFilter>(inner_color_filter);
-  auto outer =
-      std::make_shared<flutter::DlColorFilterImageFilter>(outer_color_filter);
+      flutter::DlColorFilter::MakeMatrix(outer_color_matrix);
+  auto inner = flutter::DlImageFilter::MakeColorFilter(inner_color_filter);
+  auto outer = flutter::DlImageFilter::MakeColorFilter(outer_color_filter);
   auto compose = std::make_shared<flutter::DlComposeImageFilter>(outer, inner);
 
   flutter::DisplayListBuilder builder;
@@ -1010,9 +1006,10 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
 
       // Set the matrix filter
       auto filter_matrix =
-          SkMatrix::MakeAll(scale[0], skew[0], translation[0],  //
-                            skew[1], scale[1], translation[1],  //
-                            0, 0, 1);
+          Matrix::MakeRow(scale[0], skew[0], 0.0f, translation[0],  //
+                          skew[1], scale[1], 0.0f, translation[1],  //
+                          0.0f, 0.0f, 1.0f, 0.0f,                   //
+                          0.0f, 0.0f, 0.0f, 1.0f);
 
       if (enable) {
         switch (selected_matrix_type) {
@@ -1071,8 +1068,8 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilterWhenSavingLayer) {
 
     flutter::DlPaint save_paint;
     SkRect bounds = SkRect::MakeXYWH(100, 100, 100, 100);
-    SkMatrix translate_matrix =
-        SkMatrix::Translate(translation[0], translation[1]);
+    Matrix translate_matrix =
+        Matrix::MakeTranslation({translation[0], translation[1]});
     if (enable_save_layer) {
       auto filter = flutter::DlMatrixImageFilter(
           translate_matrix, flutter::DlImageSampling::kNearestNeighbor);
@@ -1083,10 +1080,10 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilterWhenSavingLayer) {
       builder.Transform(translate_matrix);
     }
 
-    SkMatrix filter_matrix = SkMatrix::I();
-    filter_matrix.postTranslate(-150, -150);
-    filter_matrix.postScale(0.2f, 0.2f);
-    filter_matrix.postTranslate(150, 150);
+    Matrix filter_matrix;
+    filter_matrix.Translate({150, 150});
+    filter_matrix.Scale({0.2f, 0.2f});
+    filter_matrix.Translate({-150, -150});
     auto filter = flutter::DlMatrixImageFilter(
         filter_matrix, flutter::DlImageSampling::kNearestNeighbor);
 
@@ -1108,13 +1105,11 @@ TEST_P(DisplayListTest, CanDrawRectWithLinearToSrgbColorFilter) {
   flutter::DlPaint paint;
   paint.setColor(flutter::DlColor(0xFF2196F3).withAlpha(128));
   flutter::DisplayListBuilder builder;
-  paint.setColorFilter(
-      flutter::DlLinearToSrgbGammaColorFilter::kInstance.get());
+  paint.setColorFilter(flutter::DlColorFilter::MakeLinearToSrgbGamma());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
   builder.Translate(0, 200);
 
-  paint.setColorFilter(
-      flutter::DlSrgbToLinearGammaColorFilter::kInstance.get());
+  paint.setColorFilter(flutter::DlColorFilter::MakeSrgbToLinearGamma());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1162,9 +1157,9 @@ TEST_P(DisplayListTest, CanDrawPaintWithColorSource) {
   builder.Translate(500, 500);
   builder.ClipRect(clip_bounds, flutter::DlCanvas::ClipOp::kIntersect, false);
   auto texture = CreateTextureForFixture("table_mountain_nx.png");
-  auto image = std::make_shared<flutter::DlImageColorSource>(
-      DlImageImpeller::Make(texture), flutter::DlTileMode::kRepeat,
-      flutter::DlTileMode::kRepeat);
+  auto image = flutter::DlColorSource::MakeImage(DlImageImpeller::Make(texture),
+                                                 flutter::DlTileMode::kRepeat,
+                                                 flutter::DlTileMode::kRepeat);
   paint.setColorSource(image);
   builder.DrawPaint(paint);
   builder.Restore();
@@ -1238,11 +1233,11 @@ TEST_P(DisplayListTest, CanDrawCorrectlyWithColorFilterAndImageFilter) {
       0, 0, 0, 1, 0,  //
   };
   auto green_color_filter =
-      std::make_shared<flutter::DlMatrixColorFilter>(green_color_matrix);
+      flutter::DlColorFilter::MakeMatrix(green_color_matrix);
   auto blue_color_filter =
-      std::make_shared<flutter::DlMatrixColorFilter>(blue_color_matrix);
+      flutter::DlColorFilter::MakeMatrix(blue_color_matrix);
   auto blue_image_filter =
-      std::make_shared<flutter::DlColorFilterImageFilter>(blue_color_filter);
+      flutter::DlImageFilter::MakeColorFilter(blue_color_filter);
 
   flutter::DlPaint paint;
   paint.setColor(flutter::DlColor::kRed());
@@ -1261,30 +1256,41 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
   std::array<flutter::DlColor, 2> colors = {flutter::DlColor::kBlue(),
                                             flutter::DlColor::kGreen()};
   std::array<float, 2> stops = {0, 1};
+  auto texture = CreateTextureForFixture("airplane.jpg");
+  auto matrix = flutter::DlMatrix::MakeTranslation({-300, -110});
   std::array<std::shared_ptr<flutter::DlColorSource>, 2> color_sources = {
-      std::make_shared<flutter::DlColorColorSource>(flutter::DlColor::kWhite()),
+      flutter::DlColorSource::MakeImage(
+          DlImageImpeller::Make(texture), flutter::DlTileMode::kRepeat,
+          flutter::DlTileMode::kRepeat, flutter::DlImageSampling::kLinear,
+          &matrix),
       flutter::DlColorSource::MakeLinear(
-          SkPoint::Make(0, 0), SkPoint::Make(100, 50), 2, colors.data(),
-          stops.data(), flutter::DlTileMode::kClamp)};
+          flutter::DlPoint(0, 0), flutter::DlPoint(100, 50), 2, colors.data(),
+          stops.data(), flutter::DlTileMode::kClamp),
+  };
 
-  int offset = 100;
+  builder.Save();
+  builder.Translate(0, 100);
   for (const auto& color_source : color_sources) {
     flutter::DlPaint paint;
     paint.setColorSource(color_source);
     paint.setMaskFilter(blur_filter);
 
+    builder.Save();
+    builder.Translate(100, 0);
     paint.setDrawStyle(flutter::DlDrawStyle::kFill);
-    builder.DrawRRect(
-        SkRRect::MakeRectXY(SkRect::MakeXYWH(100, offset, 100, 50), 30, 30),
-        paint);
+    builder.DrawRRect(SkRRect::MakeRectXY(SkRect::MakeWH(100, 50), 30, 30),
+                      paint);
+
     paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
     paint.setStrokeWidth(10);
-    builder.DrawRRect(
-        SkRRect::MakeRectXY(SkRect::MakeXYWH(300, offset, 100, 50), 30, 30),
-        paint);
+    builder.Translate(200, 0);
+    builder.DrawRRect(SkRRect::MakeRectXY(SkRect::MakeWH(100, 50), 30, 30),
+                      paint);
 
-    offset += 100;
+    builder.Restore();
+    builder.Translate(0, 100);
   }
+  builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -1532,7 +1538,7 @@ TEST_P(DisplayListTest, DrawMaskBlursThatMightUseSaveLayers) {
   auto normal_filter =
       flutter::DlBlurMaskFilter::Make(flutter::DlBlurStyle::kNormal, 5.0f);
   auto rotate_if = flutter::DlMatrixImageFilter::Make(
-      SkMatrix::RotateDeg(10), flutter::DlImageSampling::kLinear);
+      Matrix::MakeRotationZ(Degrees(10)), flutter::DlImageSampling::kLinear);
   flutter::DlPaint normal_if_paint =
       flutter::DlPaint()                         //
           .setMaskFilter(solid_filter)           //

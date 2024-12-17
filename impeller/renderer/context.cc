@@ -25,4 +25,16 @@ bool Context::FlushCommandBuffers() {
   return true;
 }
 
+std::shared_ptr<const IdleWaiter> Context::GetIdleWaiter() const {
+  return nullptr;
+}
+
+void Context::ResetThreadLocalState() const {
+  // Nothing to do.
+}
+
+bool Context::AddTrackingFence(const std::shared_ptr<Texture>& texture) const {
+  return false;
+}
+
 }  // namespace impeller

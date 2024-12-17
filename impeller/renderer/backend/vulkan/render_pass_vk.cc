@@ -56,12 +56,14 @@ static std::vector<vk::ClearValue> GetVKClearValues(
     const RenderTarget& target) {
   std::vector<vk::ClearValue> clears;
 
-  for (const auto& [_, color] : target.GetColorAttachments()) {
-    clears.emplace_back(VKClearValueFromColor(color.clear_color));
-    if (color.resolve_texture) {
-      clears.emplace_back(VKClearValueFromColor(color.clear_color));
-    }
-  }
+  target.IterateAllColorAttachments(
+      [&clears](size_t index, const ColorAttachment& attachment) -> bool {
+        clears.emplace_back(VKClearValueFromColor(attachment.clear_color));
+        if (attachment.resolve_texture) {
+          clears.emplace_back(VKClearValueFromColor(attachment.clear_color));
+        }
+        return true;
+      });
 
   const auto& depth = target.GetDepthAttachment();
   const auto& stencil = target.GetStencilAttachment();
@@ -83,21 +85,24 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const std::shared_ptr<CommandBufferVK>& command_buffer) const {
   RenderPassBuilderVK builder;
 
-  for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
-    builder.SetColorAttachment(
-        bind_point,                                          //
-        color.texture->GetTextureDescriptor().format,        //
-        color.texture->GetTextureDescriptor().sample_count,  //
-        color.load_action,                                   //
-        color.store_action                                   //
-    );
-    TextureVK::Cast(*color.texture)
-        .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
-    if (color.resolve_texture) {
-      TextureVK::Cast(*color.resolve_texture)
-          .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
-    }
-  }
+  render_target_.IterateAllColorAttachments(
+      [&](size_t bind_point, const ColorAttachment& attachment) -> bool {
+        builder.SetColorAttachment(
+            bind_point,                                               //
+            attachment.texture->GetTextureDescriptor().format,        //
+            attachment.texture->GetTextureDescriptor().sample_count,  //
+            attachment.load_action,                                   //
+            attachment.store_action,                                  //
+            TextureVK::Cast(*attachment.texture).GetLayout()          //
+        );
+        TextureVK::Cast(*attachment.texture)
+            .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
+        if (attachment.resolve_texture) {
+          TextureVK::Cast(*attachment.resolve_texture)
+              .SetLayoutWithoutEncoding(vk::ImageLayout::eGeneral);
+        }
+        return true;
+      });
 
   if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
     builder.SetDepthStencilAttachment(
@@ -136,10 +141,9 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
                            const RenderTarget& target,
                            std::shared_ptr<CommandBufferVK> command_buffer)
     : RenderPass(context, target), command_buffer_(std::move(command_buffer)) {
-  color_image_vk_ =
-      render_target_.GetColorAttachments().find(0u)->second.texture;
-  resolve_image_vk_ =
-      render_target_.GetColorAttachments().find(0u)->second.resolve_texture;
+  const ColorAttachment& color0 = render_target_.GetColorAttachment(0);
+  color_image_vk_ = color0.texture;
+  resolve_image_vk_ = color0.resolve_texture;
 
   const auto& vk_context = ContextVK::Cast(*context);
   command_buffer_vk_ = command_buffer_->GetCommandBuffer();
@@ -253,16 +257,19 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   // This bit must be consistent to ensure compatibility with the pass created
   // earlier. Follow this order: Color attachments, then depth-stencil, then
   // stencil.
-  for (const auto& [_, color] : render_target_.GetColorAttachments()) {
-    // The bind point doesn't matter here since that information is present in
-    // the render pass.
-    attachments.emplace_back(
-        TextureVK::Cast(*color.texture).GetRenderTargetView());
-    if (color.resolve_texture) {
-      attachments.emplace_back(
-          TextureVK::Cast(*color.resolve_texture).GetRenderTargetView());
-    }
-  }
+  render_target_.IterateAllColorAttachments(
+      [&attachments](size_t index, const ColorAttachment& attachment) -> bool {
+        // The bind point doesn't matter here since that information is present
+        // in the render pass.
+        attachments.emplace_back(
+            TextureVK::Cast(*attachment.texture).GetRenderTargetView());
+        if (attachment.resolve_texture) {
+          attachments.emplace_back(TextureVK::Cast(*attachment.resolve_texture)
+                                       .GetRenderTargetView());
+        }
+        return true;
+      });
+
   if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
     attachments.emplace_back(
         TextureVK::Cast(*depth->texture).GetRenderTargetView());
@@ -376,9 +383,14 @@ bool RenderPassVK::SetVertexBuffer(BufferView vertex_buffers[],
   vk::Buffer buffers[kMaxVertexBuffers];
   vk::DeviceSize vertex_buffer_offsets[kMaxVertexBuffers];
   for (size_t i = 0; i < vertex_buffer_count; i++) {
-    buffers[i] = DeviceBufferVK::Cast(*vertex_buffers[i].buffer).GetBuffer();
-    vertex_buffer_offsets[i] = vertex_buffers[i].range.offset;
-    command_buffer_->Track(vertex_buffers[i].buffer);
+    buffers[i] =
+        DeviceBufferVK::Cast(*vertex_buffers[i].GetBuffer()).GetBuffer();
+    vertex_buffer_offsets[i] = vertex_buffers[i].GetRange().offset;
+    std::shared_ptr<const DeviceBuffer> device_buffer =
+        vertex_buffers[i].TakeBuffer();
+    if (device_buffer) {
+      command_buffer_->Track(device_buffer);
+    }
   }
 
   // Bind the vertex buffers.
@@ -398,27 +410,27 @@ bool RenderPassVK::SetIndexBuffer(BufferView index_buffer,
   if (index_type != IndexType::kNone) {
     has_index_buffer_ = true;
 
-    const BufferView& index_buffer_view = index_buffer;
+    BufferView index_buffer_view = std::move(index_buffer);
     if (!index_buffer_view) {
       return false;
     }
 
-    const std::shared_ptr<const DeviceBuffer>& index_buffer =
-        index_buffer_view.buffer;
-    if (!index_buffer) {
+    if (!index_buffer_view.GetBuffer()) {
       VALIDATION_LOG << "Failed to acquire device buffer"
                      << " for index buffer view";
       return false;
     }
 
-    if (!command_buffer_->Track(index_buffer)) {
+    std::shared_ptr<const DeviceBuffer> index_buffer =
+        index_buffer_view.TakeBuffer();
+    if (index_buffer && !command_buffer_->Track(index_buffer)) {
       return false;
     }
 
     vk::Buffer index_buffer_handle =
-        DeviceBufferVK::Cast(*index_buffer).GetBuffer();
+        DeviceBufferVK::Cast(*index_buffer_view.GetBuffer()).GetBuffer();
     command_buffer_vk_.bindIndexBuffer(index_buffer_handle,
-                                       index_buffer_view.range.offset,
+                                       index_buffer_view.GetRange().offset,
                                        ToVKIndexType(index_type));
   } else {
     has_index_buffer_ = false;
@@ -538,43 +550,42 @@ fml::Status RenderPassVK::Draw() {
 bool RenderPassVK::BindResource(ShaderStage stage,
                                 DescriptorType type,
                                 const ShaderUniformSlot& slot,
-                                const ShaderMetadata& metadata,
+                                const ShaderMetadata* metadata,
                                 BufferView view) {
   return BindResource(slot.binding, type, view);
 }
 
-bool RenderPassVK::BindResource(
-    ShaderStage stage,
-    DescriptorType type,
-    const ShaderUniformSlot& slot,
-    const std::shared_ptr<const ShaderMetadata>& metadata,
-    BufferView view) {
+bool RenderPassVK::BindDynamicResource(ShaderStage stage,
+                                       DescriptorType type,
+                                       const ShaderUniformSlot& slot,
+                                       std::unique_ptr<ShaderMetadata> metadata,
+                                       BufferView view) {
   return BindResource(slot.binding, type, view);
 }
 
 bool RenderPassVK::BindResource(size_t binding,
                                 DescriptorType type,
-                                const BufferView& view) {
+                                BufferView view) {
   if (bound_buffer_offset_ >= kMaxBindings) {
     return false;
   }
 
-  const std::shared_ptr<const DeviceBuffer>& device_buffer = view.buffer;
-  auto buffer = DeviceBufferVK::Cast(*device_buffer).GetBuffer();
+  auto buffer = DeviceBufferVK::Cast(*view.GetBuffer()).GetBuffer();
   if (!buffer) {
     return false;
   }
 
-  if (!command_buffer_->Track(device_buffer)) {
+  std::shared_ptr<const DeviceBuffer> device_buffer = view.TakeBuffer();
+  if (device_buffer && !command_buffer_->Track(device_buffer)) {
     return false;
   }
 
-  uint32_t offset = view.range.offset;
+  uint32_t offset = view.GetRange().offset;
 
   vk::DescriptorBufferInfo buffer_info;
   buffer_info.buffer = buffer;
   buffer_info.offset = offset;
-  buffer_info.range = view.range.length;
+  buffer_info.range = view.GetRange().length;
   buffer_workspace_[bound_buffer_offset_++] = buffer_info;
 
   vk::WriteDescriptorSet write_set;
@@ -587,16 +598,26 @@ bool RenderPassVK::BindResource(size_t binding,
   return true;
 }
 
+bool RenderPassVK::BindDynamicResource(
+    ShaderStage stage,
+    DescriptorType type,
+    const SampledImageSlot& slot,
+    std::unique_ptr<ShaderMetadata> metadata,
+    std::shared_ptr<const Texture> texture,
+    const std::unique_ptr<const Sampler>& sampler) {
+  return BindResource(stage, type, slot, nullptr, texture, sampler);
+}
+
 bool RenderPassVK::BindResource(ShaderStage stage,
                                 DescriptorType type,
                                 const SampledImageSlot& slot,
-                                const ShaderMetadata& metadata,
+                                const ShaderMetadata* metadata,
                                 std::shared_ptr<const Texture> texture,
                                 const std::unique_ptr<const Sampler>& sampler) {
   if (bound_buffer_offset_ >= kMaxBindings) {
     return false;
   }
-  if (!texture->IsValid() || !sampler) {
+  if (!texture || !texture->IsValid() || !sampler) {
     return false;
   }
   const TextureVK& texture_vk = TextureVK::Cast(*texture);

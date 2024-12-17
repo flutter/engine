@@ -92,34 +92,38 @@ class RenderPassVK final : public RenderPass {
   // |RenderPass|
   fml::Status Draw() override;
 
-  // |RenderPass|
-  void ReserveCommands(size_t command_count) override {}
-
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
                     DescriptorType type,
                     const ShaderUniformSlot& slot,
-                    const ShaderMetadata& metadata,
-                    BufferView view) override;
-
-  // |RenderPass|
-  bool BindResource(ShaderStage stage,
-                    DescriptorType type,
-                    const ShaderUniformSlot& slot,
-                    const std::shared_ptr<const ShaderMetadata>& metadata,
+                    const ShaderMetadata* metadata,
                     BufferView view) override;
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
                     DescriptorType type,
                     const SampledImageSlot& slot,
-                    const ShaderMetadata& metadata,
+                    const ShaderMetadata* metadata,
                     std::shared_ptr<const Texture> texture,
                     const std::unique_ptr<const Sampler>& sampler) override;
 
-  bool BindResource(size_t binding,
-                    DescriptorType type,
-                    const BufferView& view);
+  // |RenderPass|
+  bool BindDynamicResource(ShaderStage stage,
+                           DescriptorType type,
+                           const ShaderUniformSlot& slot,
+                           std::unique_ptr<ShaderMetadata> metadata,
+                           BufferView view) override;
+
+  // |RenderPass|
+  bool BindDynamicResource(
+      ShaderStage stage,
+      DescriptorType type,
+      const SampledImageSlot& slot,
+      std::unique_ptr<ShaderMetadata> metadata,
+      std::shared_ptr<const Texture> texture,
+      const std::unique_ptr<const Sampler>& sampler) override;
+
+  bool BindResource(size_t binding, DescriptorType type, BufferView view);
 
   // |RenderPass|
   bool IsValid() const override;

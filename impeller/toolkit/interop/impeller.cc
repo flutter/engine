@@ -168,6 +168,12 @@ void ImpellerDisplayListBuilderSetTransform(ImpellerDisplayListBuilder builder,
 }
 
 IMPELLER_EXTERN_C
+void ImpellerDisplayListBuilderTransform(ImpellerDisplayListBuilder builder,
+                                         const ImpellerMatrix* transform) {
+  GetPeer(builder)->Transform(ToImpellerType(*transform));
+}
+
+IMPELLER_EXTERN_C
 void ImpellerDisplayListBuilderGetTransform(ImpellerDisplayListBuilder builder,
                                             ImpellerMatrix* out_transform) {
   FromImpellerType(GetPeer(builder)->GetTransform(), *out_transform);
@@ -488,8 +494,9 @@ ImpellerTexture ImpellerTextureCreateWithContentsNew(
     auto wrapped_contents = std::make_shared<fml::NonOwnedMapping>(
         contents->data,    // data ptr
         contents->length,  // data length
-        [contents, contents_on_release_user_data](auto, auto) {
-          contents->on_release(contents_on_release_user_data);
+        [on_release = contents->on_release, contents_on_release_user_data](
+            auto, auto) {
+          on_release(contents_on_release_user_data);
         }  // release callback
     );
     if (!texture->SetContents(std::move(wrapped_contents))) {
@@ -521,13 +528,6 @@ ImpellerTexture ImpellerTextureCreateWithOpenGLTextureHandleNew(
   const auto& impeller_context_gl = ContextGLES::Cast(*impeller_context);
   const auto& reactor = impeller_context_gl.GetReactor();
 
-  auto wrapped_external_gl_handle =
-      reactor->CreateHandle(HandleType::kTexture, external_gl_handle);
-  if (wrapped_external_gl_handle.IsDead()) {
-    VALIDATION_LOG << "Could not wrap external handle.";
-    return nullptr;
-  }
-
   TextureDescriptor desc;
   desc.storage_mode = StorageMode::kDevicePrivate;
   desc.type = TextureType::kTexture2D;
@@ -536,9 +536,11 @@ ImpellerTexture ImpellerTextureCreateWithOpenGLTextureHandleNew(
   desc.mip_count = std::min(descriptor->mip_count, 1u);
   desc.usage = TextureUsage::kShaderRead;
   desc.compression_type = CompressionType::kLossless;
-  auto texture = std::make_shared<TextureGLES>(reactor,                    //
-                                               desc,                       //
-                                               wrapped_external_gl_handle  //
+
+  auto texture = TextureGLES::WrapTexture(
+      reactor,                                                         //
+      desc,                                                            //
+      reactor->CreateHandle(HandleType::kTexture, external_gl_handle)  //
   );
   if (!texture || !texture->IsValid()) {
     VALIDATION_LOG << "Could not wrap external texture.";
@@ -1141,8 +1143,9 @@ bool ImpellerTypographyContextRegisterFont(ImpellerTypographyContext context,
   auto wrapped_contents = std::make_unique<fml::NonOwnedMapping>(
       contents->data,    // data ptr
       contents->length,  // data length
-      [contents, contents_on_release_user_data](auto, auto) {
-        contents->on_release(contents_on_release_user_data);
+      [on_release = contents->on_release, contents_on_release_user_data](auto,
+                                                                         auto) {
+        on_release(contents_on_release_user_data);
       }  // release callback
   );
   return GetPeer(context)->RegisterFont(std::move(wrapped_contents),

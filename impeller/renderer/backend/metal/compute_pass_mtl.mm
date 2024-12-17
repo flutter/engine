@@ -82,13 +82,13 @@ void ComputePassMTL::AddTextureMemoryBarrier() {
 bool ComputePassMTL::BindResource(ShaderStage stage,
                                   DescriptorType type,
                                   const ShaderUniformSlot& slot,
-                                  const ShaderMetadata& metadata,
+                                  const ShaderMetadata* metadata,
                                   BufferView view) {
-  if (!view.buffer) {
+  if (!view.GetBuffer()) {
     return false;
   }
 
-  const std::shared_ptr<const DeviceBuffer>& device_buffer = view.buffer;
+  const DeviceBuffer* device_buffer = view.GetBuffer();
   if (!device_buffer) {
     return false;
   }
@@ -99,7 +99,8 @@ bool ComputePassMTL::BindResource(ShaderStage stage,
     return false;
   }
 
-  pass_bindings_cache_.SetBuffer(slot.ext_res_0, view.range.offset, buffer);
+  pass_bindings_cache_.SetBuffer(slot.ext_res_0, view.GetRange().offset,
+                                 buffer);
   return true;
 }
 
@@ -108,7 +109,7 @@ bool ComputePassMTL::BindResource(
     ShaderStage stage,
     DescriptorType type,
     const SampledImageSlot& slot,
-    const ShaderMetadata& metadata,
+    const ShaderMetadata* metadata,
     std::shared_ptr<const Texture> texture,
     const std::unique_ptr<const Sampler>& sampler) {
   if (!sampler || !texture->IsValid()) {
