@@ -67,7 +67,7 @@
                         "--variant",
                         "ci/host_debug_unopt",
                         "--type",
-                        "dart,dart-host,engine",
+                        "impeller,dart,dart-host,engine",
                         "--engine-capture-core-dump",
                         "--use-sanitizer-suppressions"
                     ]
