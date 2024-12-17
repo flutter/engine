@@ -63,12 +63,6 @@ class StubFlutterWindowsApi {
   // Called for FlutterDesktopEngineRun.
   virtual bool EngineRun(const char* entry_point) { return true; }
 
-  // Called for FlutterDesktopEngineCreateViewController.
-  virtual FlutterDesktopViewControllerRef EngineCreateViewController(
-      const FlutterDesktopViewControllerProperties* properties) {
-    return nullptr;
-  }
-
   // Called for FlutterDesktopEngineProcessMessages.
   virtual uint64_t EngineProcessMessages() { return 0; }
 
@@ -121,12 +115,6 @@ class StubFlutterWindowsApi {
       LRESULT* result) {
     return false;
   }
-
-  // Called for FlutterDesktopGetDpiForMonitor.
-  virtual UINT GetDpiForMonitor(HMONITOR monitor) { return 96; }
-
-  // Called for FlutterDesktopGetDpiForHWND.
-  virtual UINT GetDpiForHWND(HWND hwnd) { return 96; }
 };
 
 // A test helper that owns a stub implementation, making it the test stub for
