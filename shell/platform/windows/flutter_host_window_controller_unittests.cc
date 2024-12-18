@@ -139,6 +139,345 @@ TEST_F(FlutterHostWindowControllerTest, CreateRegularWindow) {
   EXPECT_EQ(client_rect.bottom - client_rect.top, size.height);
 }
 
+TEST_F(FlutterHostWindowControllerTest, CreatePopup) {
+  // Create a top-level window first.
+  std::optional<WindowMetadata> const parent_result =
+      host_window_controller()->CreateHostWindow(L"parent", {800, 600},
+                                                 WindowArchetype::regular,
+                                                 std::nullopt, std::nullopt);
+  ASSERT_NE(parent_result, std::nullopt);
+
+  bool called_onWindowCreated = false;
+
+  // Test messenger with a handler for onWindowCreated.
+  TestBinaryMessenger messenger([&](const std::string& channel,
+                                    const uint8_t* message, size_t size,
+                                    BinaryReply reply) {
+    // Ensure the message is sent on the windowing channel.
+    ASSERT_EQ(channel, kChannelName);
+
+    // Ensure the decoded method call is valid.
+    auto const method = StandardMethodCodec::GetInstance().DecodeMethodCall(
+        std::vector<uint8_t>(message, message + size));
+    ASSERT_NE(method, nullptr);
+
+    // Handle the onWindowCreated method.
+    if (method->method_name() == kOnWindowCreatedMethod) {
+      called_onWindowCreated = true;
+
+      // Validate the method arguments.
+      auto const& args = *method->arguments();
+      ASSERT_TRUE(std::holds_alternative<EncodableMap>(args));
+      auto const& args_map = std::get<EncodableMap>(args);
+
+      // Ensure the viewId is present and valid.
+      auto const& it_viewId = args_map.find(EncodableValue(kViewIdKey));
+      ASSERT_NE(it_viewId, args_map.end());
+      auto const* value_viewId = std::get_if<FlutterViewId>(&it_viewId->second);
+      ASSERT_NE(value_viewId, nullptr);
+      EXPECT_GE(*value_viewId, 0);
+      EXPECT_NE(engine()->view(*value_viewId), nullptr);
+
+      // Ensure the parentViewId is present and valid.
+      auto const& it_parentViewId =
+          args_map.find(EncodableValue(kParentViewIdKey));
+      ASSERT_NE(it_parentViewId, args_map.end());
+      auto const* value_parentViewId =
+          std::get_if<FlutterViewId>(&it_parentViewId->second);
+      EXPECT_EQ(*value_parentViewId, parent_result->view_id);
+    }
+  });
+
+  // Define parameters for the popup to be created.
+  WindowSize const size = {200, 200};
+  wchar_t const* const title = L"popup";
+  WindowArchetype const archetype = WindowArchetype::popup;
+  WindowPositioner const positioner = WindowPositioner{
+      .anchor_rect = std::optional<WindowRectangle>(
+          {.top_left = {0, 0}, .size = {size.width, size.height}}),
+      .parent_anchor = WindowPositioner::Anchor::center,
+      .child_anchor = WindowPositioner::Anchor::center,
+      .offset = {0, 0},
+      .constraint_adjustment = WindowPositioner::ConstraintAdjustment::none};
+
+  // Create the windowing handler with the test messenger.
+  WindowingHandler windowing_handler(&messenger, host_window_controller());
+
+  // Create popup parented to top-level window.
+  std::optional<WindowMetadata> const result =
+      host_window_controller()->CreateHostWindow(
+          title, size, archetype, positioner, parent_result->view_id);
+
+  // Verify the onWindowCreated callback was invoked.
+  EXPECT_TRUE(called_onWindowCreated);
+
+  // Validate the returned metadata.
+  ASSERT_TRUE(result.has_value());
+  EXPECT_NE(engine()->view(result->view_id), nullptr);
+  EXPECT_EQ(result->archetype, archetype);
+  EXPECT_GE(result->size.width, size.width);
+  EXPECT_GE(result->size.height, size.height);
+  EXPECT_EQ(result->parent_id.value(), parent_result->view_id);
+
+  // Verify the popup exists and the view has the expected dimensions.
+  FlutterHostWindow* const window =
+      host_window_controller()->GetHostWindow(result->view_id);
+  ASSERT_NE(window, nullptr);
+  RECT client_rect;
+  GetClientRect(window->GetWindowHandle(), &client_rect);
+  EXPECT_EQ(client_rect.right - client_rect.left, size.width);
+  EXPECT_EQ(client_rect.bottom - client_rect.top, size.height);
+}
+
+TEST_F(FlutterHostWindowControllerTest, CreateModalDialog) {
+  // Create a top-level window first.
+  std::optional<WindowMetadata> const parent_result =
+      host_window_controller()->CreateHostWindow(L"parent", {800, 600},
+                                                 WindowArchetype::regular,
+                                                 std::nullopt, std::nullopt);
+  ASSERT_NE(parent_result, std::nullopt);
+
+  bool called_onWindowCreated = false;
+
+  // Test messenger with a handler for onWindowCreated.
+  TestBinaryMessenger messenger([&](const std::string& channel,
+                                    const uint8_t* message, size_t size,
+                                    BinaryReply reply) {
+    // Ensure the message is sent on the windowing channel.
+    ASSERT_EQ(channel, kChannelName);
+
+    // Ensure the decoded method call is valid.
+    auto const method = StandardMethodCodec::GetInstance().DecodeMethodCall(
+        std::vector<uint8_t>(message, message + size));
+    ASSERT_NE(method, nullptr);
+
+    // Handle the onWindowCreated method.
+    if (method->method_name() == kOnWindowCreatedMethod) {
+      called_onWindowCreated = true;
+
+      // Validate the method arguments.
+      auto const& args = *method->arguments();
+      ASSERT_TRUE(std::holds_alternative<EncodableMap>(args));
+      auto const& args_map = std::get<EncodableMap>(args);
+
+      // Ensure the viewId is present and valid.
+      auto const& it_viewId = args_map.find(EncodableValue(kViewIdKey));
+      ASSERT_NE(it_viewId, args_map.end());
+      auto const* value_viewId = std::get_if<FlutterViewId>(&it_viewId->second);
+      ASSERT_NE(value_viewId, nullptr);
+      EXPECT_GE(*value_viewId, 0);
+      EXPECT_NE(engine()->view(*value_viewId), nullptr);
+
+      // Ensure the parentViewId is present and valid.
+      auto const& it_parentViewId =
+          args_map.find(EncodableValue(kParentViewIdKey));
+      ASSERT_NE(it_parentViewId, args_map.end());
+      auto const* value_parentViewId =
+          std::get_if<FlutterViewId>(&it_parentViewId->second);
+      EXPECT_EQ(*value_parentViewId, parent_result->view_id);
+    }
+  });
+
+  // Define parameters for the popup to be created.
+  WindowSize const size = {400, 300};
+  wchar_t const* const title = L"modal_dialog";
+  WindowArchetype const archetype = WindowArchetype::dialog;
+
+  // Create the windowing handler with the test messenger.
+  WindowingHandler windowing_handler(&messenger, host_window_controller());
+
+  // Create dialog parented to top-level window.
+  std::optional<WindowMetadata> const result =
+      host_window_controller()->CreateHostWindow(
+          title, size, archetype, std::nullopt, parent_result->view_id);
+
+  // Verify the onWindowCreated callback was invoked.
+  EXPECT_TRUE(called_onWindowCreated);
+
+  // Validate the returned metadata.
+  ASSERT_TRUE(result.has_value());
+  EXPECT_NE(engine()->view(result->view_id), nullptr);
+  EXPECT_EQ(result->archetype, archetype);
+  EXPECT_GE(result->size.width, size.width);
+  EXPECT_GE(result->size.height, size.height);
+  EXPECT_EQ(result->parent_id.value(), parent_result->view_id);
+
+  // Verify the dialog exists and the view has the expected dimensions.
+  FlutterHostWindow* const window =
+      host_window_controller()->GetHostWindow(result->view_id);
+  ASSERT_NE(window, nullptr);
+  RECT client_rect;
+  GetClientRect(window->GetWindowHandle(), &client_rect);
+  EXPECT_EQ(client_rect.right - client_rect.left, size.width);
+  EXPECT_EQ(client_rect.bottom - client_rect.top, size.height);
+}
+
+TEST_F(FlutterHostWindowControllerTest, CreateModelessDialog) {
+  bool called_onWindowCreated = false;
+
+  // Test messenger with a handler for onWindowCreated.
+  TestBinaryMessenger messenger([&](const std::string& channel,
+                                    const uint8_t* message, size_t size,
+                                    BinaryReply reply) {
+    // Ensure the message is sent on the windowing channel.
+    ASSERT_EQ(channel, kChannelName);
+
+    // Ensure the decoded method call is valid.
+    auto const method = StandardMethodCodec::GetInstance().DecodeMethodCall(
+        std::vector<uint8_t>(message, message + size));
+    ASSERT_NE(method, nullptr);
+
+    // Handle the onWindowCreated method.
+    if (method->method_name() == kOnWindowCreatedMethod) {
+      called_onWindowCreated = true;
+
+      // Validate the method arguments.
+      auto const& args = *method->arguments();
+      ASSERT_TRUE(std::holds_alternative<EncodableMap>(args));
+      auto const& args_map = std::get<EncodableMap>(args);
+
+      // Ensure the viewId is present and valid.
+      auto const& it_viewId = args_map.find(EncodableValue(kViewIdKey));
+      ASSERT_NE(it_viewId, args_map.end());
+      auto const* value_viewId = std::get_if<FlutterViewId>(&it_viewId->second);
+      ASSERT_NE(value_viewId, nullptr);
+      EXPECT_GE(*value_viewId, 0);
+      EXPECT_NE(engine()->view(*value_viewId), nullptr);
+
+      // Ensure the parentViewId is a std::monostate (indicating no parent).
+      auto const& it_parentViewId =
+          args_map.find(EncodableValue(kParentViewIdKey));
+      ASSERT_NE(it_parentViewId, args_map.end());
+      auto const* value_parentViewId =
+          std::get_if<std::monostate>(&it_parentViewId->second);
+      EXPECT_NE(value_parentViewId, nullptr);
+    }
+  });
+
+  // Define parameters for the popup to be created.
+  WindowSize const size = {400, 300};
+  wchar_t const* const title = L"modeless_dialog";
+  WindowArchetype const archetype = WindowArchetype::dialog;
+
+  // Create the windowing handler with the test messenger.
+  WindowingHandler windowing_handler(&messenger, host_window_controller());
+
+  // Create dialog without a parent.
+  std::optional<WindowMetadata> const result =
+      host_window_controller()->CreateHostWindow(title, size, archetype,
+                                                 std::nullopt, std::nullopt);
+
+  // Verify the onWindowCreated callback was invoked.
+  EXPECT_TRUE(called_onWindowCreated);
+
+  // Validate the returned metadata.
+  ASSERT_TRUE(result.has_value());
+  EXPECT_NE(engine()->view(result->view_id), nullptr);
+  EXPECT_EQ(result->archetype, archetype);
+  EXPECT_GE(result->size.width, size.width);
+  EXPECT_GE(result->size.height, size.height);
+  EXPECT_FALSE(result->parent_id.has_value());
+
+  // Verify the dialog exists and the view has the expected dimensions.
+  FlutterHostWindow* const window =
+      host_window_controller()->GetHostWindow(result->view_id);
+  ASSERT_NE(window, nullptr);
+  RECT client_rect;
+  GetClientRect(window->GetWindowHandle(), &client_rect);
+  EXPECT_EQ(client_rect.right - client_rect.left, size.width);
+  EXPECT_EQ(client_rect.bottom - client_rect.top, size.height);
+}
+
+TEST_F(FlutterHostWindowControllerTest, CreateSatellite) {
+  // Create a top-level window first.
+  std::optional<WindowMetadata> const parent_result =
+      host_window_controller()->CreateHostWindow(L"parent", {800, 600},
+                                                 WindowArchetype::regular,
+                                                 std::nullopt, std::nullopt);
+  ASSERT_NE(parent_result, std::nullopt);
+
+  bool called_onWindowCreated = false;
+
+  // Test messenger with a handler for onWindowCreated.
+  TestBinaryMessenger messenger([&](const std::string& channel,
+                                    const uint8_t* message, size_t size,
+                                    BinaryReply reply) {
+    // Ensure the message is sent on the windowing channel.
+    ASSERT_EQ(channel, kChannelName);
+
+    // Ensure the decoded method call is valid.
+    auto const method = StandardMethodCodec::GetInstance().DecodeMethodCall(
+        std::vector<uint8_t>(message, message + size));
+    ASSERT_NE(method, nullptr);
+
+    // Handle the onWindowCreated method.
+    if (method->method_name() == kOnWindowCreatedMethod) {
+      called_onWindowCreated = true;
+
+      // Validate the method arguments.
+      auto const& args = *method->arguments();
+      ASSERT_TRUE(std::holds_alternative<EncodableMap>(args));
+      auto const& args_map = std::get<EncodableMap>(args);
+
+      // Ensure the viewId is present and valid.
+      auto const& it_viewId = args_map.find(EncodableValue(kViewIdKey));
+      ASSERT_NE(it_viewId, args_map.end());
+      auto const* value_viewId = std::get_if<FlutterViewId>(&it_viewId->second);
+      ASSERT_NE(value_viewId, nullptr);
+      EXPECT_GE(*value_viewId, 0);
+      EXPECT_NE(engine()->view(*value_viewId), nullptr);
+
+      // Ensure the parentViewId is present and valid.
+      auto const& it_parentViewId =
+          args_map.find(EncodableValue(kParentViewIdKey));
+      ASSERT_NE(it_parentViewId, args_map.end());
+      auto const* value_parentViewId =
+          std::get_if<FlutterViewId>(&it_parentViewId->second);
+      EXPECT_EQ(*value_parentViewId, parent_result->view_id);
+    }
+  });
+
+  // Define parameters for the satellite to be created.
+  WindowSize const size = {200, 300};
+  wchar_t const* const title = L"satellite";
+  WindowArchetype const archetype = WindowArchetype::satellite;
+  WindowPositioner const positioner = WindowPositioner{
+      .anchor_rect = std::optional<WindowRectangle>(
+          {.top_left = {0, 0}, .size = {size.width, size.height}}),
+      .parent_anchor = WindowPositioner::Anchor::center,
+      .child_anchor = WindowPositioner::Anchor::center,
+      .offset = {0, 0},
+      .constraint_adjustment = WindowPositioner::ConstraintAdjustment::none};
+
+  // Create the windowing handler with the test messenger.
+  WindowingHandler windowing_handler(&messenger, host_window_controller());
+
+  // Create popup parented to top-level window.
+  std::optional<WindowMetadata> const result =
+      host_window_controller()->CreateHostWindow(
+          title, size, archetype, positioner, parent_result->view_id);
+
+  // Verify the onWindowCreated callback was invoked.
+  EXPECT_TRUE(called_onWindowCreated);
+
+  // Validate the returned metadata.
+  ASSERT_TRUE(result.has_value());
+  EXPECT_NE(engine()->view(result->view_id), nullptr);
+  EXPECT_EQ(result->archetype, archetype);
+  EXPECT_GE(result->size.width, size.width);
+  EXPECT_GE(result->size.height, size.height);
+  EXPECT_EQ(result->parent_id.value(), parent_result->view_id);
+
+  // Verify the satellite exists and the view has the expected dimensions.
+  FlutterHostWindow* const window =
+      host_window_controller()->GetHostWindow(result->view_id);
+  ASSERT_NE(window, nullptr);
+  RECT client_rect;
+  GetClientRect(window->GetWindowHandle(), &client_rect);
+  EXPECT_EQ(client_rect.right - client_rect.left, size.width);
+  EXPECT_EQ(client_rect.bottom - client_rect.top, size.height);
+}
+
 TEST_F(FlutterHostWindowControllerTest, DestroyWindow) {
   bool done = false;
 

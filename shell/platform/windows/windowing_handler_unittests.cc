@@ -20,13 +20,27 @@ namespace {
 using ::testing::_;
 using ::testing::Eq;
 using ::testing::NiceMock;
+using ::testing::Optional;
 using ::testing::Return;
 using ::testing::StrEq;
 
-static constexpr char kChannelName[] = "flutter/windowing";
+constexpr char kChannelName[] = "flutter/windowing";
 
-static constexpr char kCreateWindowMethod[] = "createWindow";
-static constexpr char kDestroyWindowMethod[] = "destroyWindow";
+constexpr char kCreateWindowMethod[] = "createWindow";
+constexpr char kCreateDialogMethod[] = "createDialog";
+constexpr char kCreateSatelliteMethod[] = "createSatellite";
+constexpr char kCreatePopupMethod[] = "createPopup";
+constexpr char kDestroyWindowMethod[] = "destroyWindow";
+
+constexpr char kAnchorRectKey[] = "anchorRect";
+constexpr char kParentKey[] = "parent";
+constexpr char kPositionerChildAnchorKey[] = "positionerChildAnchor";
+constexpr char kPositionerConstraintAdjustmentKey[] =
+    "positionerConstraintAdjustment";
+constexpr char kPositionerOffsetKey[] = "positionerOffset";
+constexpr char kPositionerParentAnchorKey[] = "positionerParentAnchor";
+constexpr char kSizeKey[] = "size";
+constexpr char kViewIdKey[] = "viewId";
 
 void SimulateWindowingMessage(TestBinaryMessenger* messenger,
                               const std::string& method_name,
@@ -64,6 +78,20 @@ class MockFlutterHostWindowController : public FlutterHostWindowController {
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterHostWindowController);
 };
 
+bool operator==(WindowPositioner const& lhs, WindowPositioner const& rhs) {
+  return lhs.anchor_rect == rhs.anchor_rect &&
+         lhs.parent_anchor == rhs.parent_anchor &&
+         lhs.child_anchor == rhs.child_anchor && lhs.offset == rhs.offset &&
+         lhs.constraint_adjustment == rhs.constraint_adjustment;
+}
+
+MATCHER_P(WindowPositionerEq, expected, "WindowPositioner matches expected") {
+  return arg.anchor_rect == expected.anchor_rect &&
+         arg.parent_anchor == expected.parent_anchor &&
+         arg.child_anchor == expected.child_anchor &&
+         arg.offset == expected.offset &&
+         arg.constraint_adjustment == expected.constraint_adjustment;
+}
 }  // namespace
 
 class WindowingHandlerTest : public WindowsTest {
@@ -102,7 +130,7 @@ TEST_F(WindowingHandlerTest, HandleCreateRegularWindow) {
 
   WindowSize const size = {800, 600};
   EncodableMap const arguments = {
-      {EncodableValue("size"),
+      {EncodableValue(kSizeKey),
        EncodableValue(EncodableList{EncodableValue(size.width),
                                     EncodableValue(size.height)})},
   };
@@ -125,12 +153,176 @@ TEST_F(WindowingHandlerTest, HandleCreateRegularWindow) {
   EXPECT_TRUE(success);
 }
 
+TEST_F(WindowingHandlerTest, HandleCreatePopup) {
+  TestBinaryMessenger messenger;
+  WindowingHandler windowing_handler(&messenger, controller());
+
+  WindowSize const size = {200, 200};
+  std::optional<FlutterViewId> const parent_view_id = 0;
+  WindowPositioner const positioner = WindowPositioner{
+      .anchor_rect = std::optional<WindowRectangle>(
+          {.top_left = {0, 0}, .size = {size.width, size.height}}),
+      .parent_anchor = WindowPositioner::Anchor::center,
+      .child_anchor = WindowPositioner::Anchor::center,
+      .offset = {0, 0},
+      .constraint_adjustment = WindowPositioner::ConstraintAdjustment::none};
+  EncodableMap const arguments = {
+      {EncodableValue(kSizeKey),
+       EncodableValue(EncodableList{EncodableValue(size.width),
+                                    EncodableValue(size.height)})},
+      {EncodableValue(kAnchorRectKey),
+       EncodableValue(
+           EncodableList{EncodableValue(positioner.anchor_rect->top_left.x),
+                         EncodableValue(positioner.anchor_rect->top_left.y),
+                         EncodableValue(positioner.anchor_rect->size.width),
+                         EncodableValue(positioner.anchor_rect->size.height)})},
+      {EncodableValue(kPositionerParentAnchorKey),
+       EncodableValue(static_cast<int>(positioner.parent_anchor))},
+      {EncodableValue(kPositionerChildAnchorKey),
+       EncodableValue(static_cast<int>(positioner.child_anchor))},
+      {EncodableValue(kPositionerOffsetKey),
+       EncodableValue(EncodableList{EncodableValue(positioner.offset.x),
+                                    EncodableValue(positioner.offset.y)})},
+      {EncodableValue(kPositionerConstraintAdjustmentKey),
+       EncodableValue(static_cast<int>(positioner.constraint_adjustment))},
+      {EncodableValue(kParentKey),
+       EncodableValue(static_cast<int>(parent_view_id.value()))}};
+
+  bool success = false;
+  MethodResultFunctions<> result_handler(
+      [&success](const EncodableValue* result) { success = true; }, nullptr,
+      nullptr);
+
+  EXPECT_CALL(*controller(),
+              CreateHostWindow(StrEq(L"popup"), size, WindowArchetype::popup,
+                               Optional(WindowPositionerEq(positioner)),
+                               parent_view_id))
+      .Times(1);
+
+  SimulateWindowingMessage(&messenger, kCreatePopupMethod,
+                           std::make_unique<EncodableValue>(arguments),
+                           &result_handler);
+
+  EXPECT_TRUE(success);
+}
+
+TEST_F(WindowingHandlerTest, HandleCreateModalDialog) {
+  TestBinaryMessenger messenger;
+  WindowingHandler windowing_handler(&messenger, controller());
+
+  WindowSize const size = {400, 300};
+  std::optional<FlutterViewId> const parent_view_id = 0;
+  EncodableMap const arguments = {
+      {EncodableValue(kSizeKey),
+       EncodableValue(EncodableList{EncodableValue(size.width),
+                                    EncodableValue(size.height)})},
+      {EncodableValue(kParentKey),
+       EncodableValue(static_cast<int>(parent_view_id.value()))}};
+
+  bool success = false;
+  MethodResultFunctions<> result_handler(
+      [&success](const EncodableValue* result) { success = true; }, nullptr,
+      nullptr);
+
+  EXPECT_CALL(*controller(),
+              CreateHostWindow(StrEq(L"dialog"), size, WindowArchetype::dialog,
+                               Eq(std::nullopt), parent_view_id))
+      .Times(1);
+
+  SimulateWindowingMessage(&messenger, kCreateDialogMethod,
+                           std::make_unique<EncodableValue>(arguments),
+                           &result_handler);
+
+  EXPECT_TRUE(success);
+}
+
+TEST_F(WindowingHandlerTest, HandleCreateModelessDialog) {
+  TestBinaryMessenger messenger;
+  WindowingHandler windowing_handler(&messenger, controller());
+
+  WindowSize const size = {400, 300};
+  EncodableMap const arguments = {
+      {EncodableValue(kSizeKey),
+       EncodableValue(EncodableList{EncodableValue(size.width),
+                                    EncodableValue(size.height)})},
+      {EncodableValue(kParentKey), EncodableValue()}};
+
+  bool success = false;
+  MethodResultFunctions<> result_handler(
+      [&success](const EncodableValue* result) { success = true; }, nullptr,
+      nullptr);
+
+  EXPECT_CALL(*controller(),
+              CreateHostWindow(StrEq(L"dialog"), size, WindowArchetype::dialog,
+                               Eq(std::nullopt), Eq(std::nullopt)))
+      .Times(1);
+
+  SimulateWindowingMessage(&messenger, kCreateDialogMethod,
+                           std::make_unique<EncodableValue>(arguments),
+                           &result_handler);
+
+  EXPECT_TRUE(success);
+}
+
+TEST_F(WindowingHandlerTest, HandleCreateSatellite) {
+  TestBinaryMessenger messenger;
+  WindowingHandler windowing_handler(&messenger, controller());
+
+  WindowSize const size = {200, 300};
+  std::optional<FlutterViewId> const parent_view_id = 0;
+  WindowPositioner const positioner = WindowPositioner{
+      .anchor_rect = std::optional<WindowRectangle>(
+          {.top_left = {0, 0}, .size = {size.width, size.height}}),
+      .parent_anchor = WindowPositioner::Anchor::center,
+      .child_anchor = WindowPositioner::Anchor::center,
+      .offset = {0, 0},
+      .constraint_adjustment = WindowPositioner::ConstraintAdjustment::none};
+  EncodableMap const arguments = {
+      {EncodableValue(kSizeKey),
+       EncodableValue(EncodableList{EncodableValue(size.width),
+                                    EncodableValue(size.height)})},
+      {EncodableValue(kAnchorRectKey),
+       EncodableValue(
+           EncodableList{EncodableValue(positioner.anchor_rect->top_left.x),
+                         EncodableValue(positioner.anchor_rect->top_left.y),
+                         EncodableValue(positioner.anchor_rect->size.width),
+                         EncodableValue(positioner.anchor_rect->size.height)})},
+      {EncodableValue(kPositionerParentAnchorKey),
+       EncodableValue(static_cast<int>(positioner.parent_anchor))},
+      {EncodableValue(kPositionerChildAnchorKey),
+       EncodableValue(static_cast<int>(positioner.child_anchor))},
+      {EncodableValue(kPositionerOffsetKey),
+       EncodableValue(EncodableList{EncodableValue(positioner.offset.x),
+                                    EncodableValue(positioner.offset.y)})},
+      {EncodableValue(kPositionerConstraintAdjustmentKey),
+       EncodableValue(static_cast<int>(positioner.constraint_adjustment))},
+      {EncodableValue(kParentKey),
+       EncodableValue(static_cast<int>(parent_view_id.value()))}};
+
+  bool success = false;
+  MethodResultFunctions<> result_handler(
+      [&success](const EncodableValue* result) { success = true; }, nullptr,
+      nullptr);
+
+  EXPECT_CALL(*controller(),
+              CreateHostWindow(
+                  StrEq(L"satellite"), size, WindowArchetype::satellite,
+                  Optional(WindowPositionerEq(positioner)), parent_view_id))
+      .Times(1);
+
+  SimulateWindowingMessage(&messenger, kCreateSatelliteMethod,
+                           std::make_unique<EncodableValue>(arguments),
+                           &result_handler);
+
+  EXPECT_TRUE(success);
+}
+
 TEST_F(WindowingHandlerTest, HandleDestroyWindow) {
   TestBinaryMessenger messenger;
   WindowingHandler windowing_handler(&messenger, controller());
 
   EncodableMap const arguments = {
-      {EncodableValue("viewId"), EncodableValue(1)},
+      {EncodableValue(kViewIdKey), EncodableValue(1)},
   };
 
   bool success = false;
