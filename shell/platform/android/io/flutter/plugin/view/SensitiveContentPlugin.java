@@ -48,32 +48,19 @@ public class SensitiveContentPlugin
       @NonNull int contentSensitivity,
       @NonNull MethodChannel.Result result) {
     final View flutterView = mflutterActivity.findViewById(flutterViewId);
-    // final Window flutterViewWindow = flutterView.getWindow();
-    WindowId flutterWindowId = flutterView.getWindowId();
-    IBinder windowId = flutterView.getWindowToken();
-
-    Log.e("CAMILLE", Integer.toString(i) + ": flutter view ID: " + Integer.toString(flutterViewId));
-    Log.e("CAMILLE", Integer.toString(i) + ": flutter view: " + flutterView.toString());
-    Log.e("CAMILLE", Integer.toString(i) + ": flutter view is visible: " + Integer.toString(flutterView.getVisibility()));
-    Log.e("CAMILLE", Integer.toString(i) + ": flutter window ID : " + flutterWindowId);
-    Log.e("CAMILLE", Integer.toString(i) + ": flutter view window token: " + windowId);
-
-
     if (flutterView == null) {
       result.error("error", "Requested Flutter View to set content sensitivty of not found.", null);
     }
-    
-    int currentSensitivity = flutterView.getContentSensitivity();
-    Log.e("CAMILLE", Integer.toString(i) + ": current content sensitivity is: " + Integer.toString(currentSensitivity));
 
-
+    final int currentContentSensitivity = flutterView.getContentSensitivity();
     flutterView.setContentSensitivity(contentSensitivity);
-    int newSensitivity = flutterView.getContentSensitivity();
 
-    Log.e("CAMILLE", Integer.toString(i) + ": set content sensitivity to: " + Integer.toString(contentSensitivity));
-    Log.e("CAMILLE", Integer.toString(i) + ": acutal new content sensitivity is: " + Integer.toString(newSensitivity));
+    final boolean shouldInvalidateView = currentContentSensitivity == View...sensitive && contentSensitivity != View...sensitive;
+    if (shouldInvalidateView) {
+      flutterView.invalidate();
+    }
+
     result.success(null);
-    i++;
   }
 
   /**
