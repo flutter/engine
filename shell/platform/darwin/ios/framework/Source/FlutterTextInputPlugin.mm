@@ -1291,8 +1291,9 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
            @"Expected a FlutterTextRange for range (got %@).", [range class]);
   NSRange textRange = ((FlutterTextRange*)range).range;
   if (textRange.location == NSNotFound) {
-    /// Avoids [crashes](https://github.com/flutter/flutter/issues/138464) from an assertion
-    /// against NSNotFound.
+    // Avoids [crashes](https://github.com/flutter/flutter/issues/138464) from an assertion
+    // against NSNotFound.
+    // TODO(hellohuanlin): root cause https://github.com/flutter/flutter/issues/160100
     return nil;
   }
   // Sanitize the range to prevent going out of bounds.
