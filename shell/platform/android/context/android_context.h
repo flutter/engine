@@ -53,8 +53,6 @@ class AndroidContext {
   ///             AndroidContext to share via SetMainSkiaContext.
   /// @returns    `nullptr` when no Skia context has been set yet by its
   ///             AndroidSurface via SetMainSkiaContext.
-  /// @attention  The software context doesn't have a Skia context, so this
-  ///             value will be nullptr.
   ///
   sk_sp<GrDirectContext> GetMainSkiaContext() const;
 

@@ -1041,14 +1041,8 @@ public class FlutterView extends FrameLayout
     return null;
   }
 
-  // TODO(mattcarroll): Confer with Ian as to why we need this method. Delete if possible, otherwise
-  // add comments.
   private void resetWillNotDraw(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
-    if (!flutterEngine.getRenderer().isSoftwareRenderingEnabled()) {
-      setWillNotDraw(!(isAccessibilityEnabled || isTouchExplorationEnabled));
-    } else {
-      setWillNotDraw(false);
-    }
+    setWillNotDraw(!(isAccessibilityEnabled || isTouchExplorationEnabled));
   }
   // -------- End: Accessibility ---------
 
