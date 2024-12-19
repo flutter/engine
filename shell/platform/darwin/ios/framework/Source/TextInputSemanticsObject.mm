@@ -45,7 +45,7 @@ static const UIAccessibilityTraits kUIAccessibilityTraitUndocumentedEmptyLine = 
   if (textRange.location == NSNotFound) {
     // Avoids [crashes](https://github.com/flutter/flutter/issues/138464) from an assertion
     // against NSNotFound.
-    // TODO(hellohuanlin): root cause https://github.com/flutter/flutter/issues/160100
+    // TODO(hellohuanlin): https://github.com/flutter/flutter/issues/160100
     return nil;
   }
   return [self.text substringWithRange:textRange];
