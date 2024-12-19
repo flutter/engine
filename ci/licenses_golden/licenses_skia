@@ -1,4 +1,4 @@
-Signature: d7670af6cbef9d04a3bfe4d89e3f3b51
+Signature: 355ef4d7a2fb176e1d98d5d4963e699f
 
 ====================================================================================================
 LIBRARY: etc1
@@ -3129,8 +3129,6 @@ ORIGIN: ../../../flutter/third_party/skia/include/private/base/SkThreadID.h + ..
 ORIGIN: ../../../flutter/third_party/skia/include/svg/SkSVGCanvas.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/utils/SkPaintFilterCanvas.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkSemaphore.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/base/SkSharedMutex.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/base/SkSharedMutex.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkSpinlock.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkSpinlock.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkTDPQueue.h + ../../../flutter/third_party/skia/LICENSE
@@ -3404,8 +3402,6 @@ FILE: ../../../flutter/third_party/skia/include/private/base/SkThreadID.h
 FILE: ../../../flutter/third_party/skia/include/svg/SkSVGCanvas.h
 FILE: ../../../flutter/third_party/skia/include/utils/SkPaintFilterCanvas.h
 FILE: ../../../flutter/third_party/skia/src/base/SkSemaphore.cpp
-FILE: ../../../flutter/third_party/skia/src/base/SkSharedMutex.cpp
-FILE: ../../../flutter/third_party/skia/src/base/SkSharedMutex.h
 FILE: ../../../flutter/third_party/skia/src/base/SkSpinlock.cpp
 FILE: ../../../flutter/third_party/skia/src/base/SkSpinlock.h
 FILE: ../../../flutter/third_party/skia/src/base/SkTDPQueue.h
