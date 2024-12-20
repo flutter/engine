@@ -18,10 +18,7 @@ declare_args() {
 
 config("public_config") {
   defines = [ "SK_ENABLE_PARAGRAPH" ]
-  include_dirs = [
-    "$_skia_root/modules/skparagraph/include",
-    "$_skia_root/modules/skparagraph/utils",
-  ]
+  include_dirs = [ "$_skia_root/modules/skparagraph/include" ]
 }
 
 skia_component("skparagraph") {
@@ -37,4 +34,17 @@ skia_component("skparagraph") {
     "../skunicode",
   ]
   deps = [ "../skshaper" ]
+}
+
+skia_component("utils") {
+  import("$_skia_root/modules/skparagraph/skparagraph.gni")
+
+  # Opted out of check_includes, due to this being test only.
+  check_includes = false
+  include_dirs = [ "$_skia_root/modules/skparagraph/utils" ]
+  sources = skparagraph_utils
+  deps = [
+    ":skparagraph",
+    "../skshaper",
+  ]
 }
