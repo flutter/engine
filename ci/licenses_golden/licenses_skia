@@ -1,4 +1,4 @@
-Signature: d7670af6cbef9d04a3bfe4d89e3f3b51
+Signature: 77468807f9d1503c48052e9ad3137b78
 
 ====================================================================================================
 LIBRARY: etc1
@@ -321,7 +321,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
-LIBRARY: libmicrohttpd
 LIBRARY: skia
 ORIGIN: ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
@@ -401,6 +400,7 @@ FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/GpuStats.md
 FILE: ../../../flutter/third_party/skia/relnotes/GraphiteLogPriority.md
+FILE: ../../../flutter/third_party/skia/relnotes/SkCanvas_mc.md
 FILE: ../../../flutter/third_party/skia/relnotes/SkColorSpaceMakeCICP.md
 FILE: ../../../flutter/third_party/skia/relnotes/debugtrace.md
 FILE: ../../../flutter/third_party/skia/relnotes/precompilecontext.md
@@ -442,7 +442,6 @@ FILE: ../../../flutter/third_party/skia/src/sksl/sksl_rt_shader.sksl
 FILE: ../../../flutter/third_party/skia/src/sksl/sksl_shared.sksl
 FILE: ../../../flutter/third_party/skia/src/sksl/sksl_vert.sksl
 FILE: ../../../flutter/third_party/skia/third_party/go.mod
-FILE: ../../../flutter/third_party/skia/third_party/libmicrohttpd/MHD_config.h
 FILE: ../../../flutter/third_party/skia/toolchain/linux_trampolines/IWYU_mapping.imp
 FILE: ../../../flutter/third_party/skia/toolchain/ndk.BUILD
 FILE: ../../../flutter/third_party/skia/whitespace.txt
@@ -3129,8 +3128,6 @@ ORIGIN: ../../../flutter/third_party/skia/include/private/base/SkThreadID.h + ..
 ORIGIN: ../../../flutter/third_party/skia/include/svg/SkSVGCanvas.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/utils/SkPaintFilterCanvas.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkSemaphore.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/base/SkSharedMutex.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/base/SkSharedMutex.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkSpinlock.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkSpinlock.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkTDPQueue.h + ../../../flutter/third_party/skia/LICENSE
@@ -3404,8 +3401,6 @@ FILE: ../../../flutter/third_party/skia/include/private/base/SkThreadID.h
 FILE: ../../../flutter/third_party/skia/include/svg/SkSVGCanvas.h
 FILE: ../../../flutter/third_party/skia/include/utils/SkPaintFilterCanvas.h
 FILE: ../../../flutter/third_party/skia/src/base/SkSemaphore.cpp
-FILE: ../../../flutter/third_party/skia/src/base/SkSharedMutex.cpp
-FILE: ../../../flutter/third_party/skia/src/base/SkSharedMutex.h
 FILE: ../../../flutter/third_party/skia/src/base/SkSpinlock.cpp
 FILE: ../../../flutter/third_party/skia/src/base/SkSpinlock.h
 FILE: ../../../flutter/third_party/skia/src/base/SkTDPQueue.h
