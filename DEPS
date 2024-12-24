@@ -708,7 +708,7 @@ deps = {
     'packages': [
       {
         'package': 'gn/gn/${{platform}}',
-        'version': 'git_revision:b79031308cc878488202beb99883ec1f2efd9a6d'
+        'version': 'git_revision:468c6128db7fabe32a29d4753460ef53594406fc'
       },
     ],
     'dep_type': 'cipd',
