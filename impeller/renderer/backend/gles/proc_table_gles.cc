@@ -6,7 +6,6 @@
 
 #include <sstream>
 
-#include "fml/closure.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/comparable.h"
 #include "impeller/base/strings.h"
@@ -121,7 +120,11 @@ ProcTableGLES::ProcTableGLES(  // NOLINT(google-readability-function-size)
         reinterpret_cast<decltype(proc_ivar.function)>(fn_ptr); \
     proc_ivar.error_fn = error_fn;                              \
   }
-  FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
+
+  if (description_->GetGlVersion().IsAtLeast(Version(3))) {
+    FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
+  }
+
   FOR_EACH_IMPELLER_EXT_PROC(IMPELLER_PROC);
 
 #undef IMPELLER_PROC
@@ -176,12 +179,12 @@ void ProcTableGLES::ShaderSourceMapping(
 std::optional<std::string> ProcTableGLES::ComputeShaderWithDefines(
     const fml::Mapping& mapping,
     const std::vector<Scalar>& defines) const {
-  auto shader_source = std::string{
+  std::string shader_source = std::string{
       reinterpret_cast<const char*>(mapping.GetMapping()), mapping.GetSize()};
 
   // Look for the first newline after the '#version' header, which impellerc
   // will always emit as the first line of a compiled shader.
-  auto index = shader_source.find('\n');
+  size_t index = shader_source.find('\n');
   if (index == std::string::npos) {
     VALIDATION_LOG << "Failed to append constant data to shader";
     return std::nullopt;
@@ -326,6 +329,8 @@ static std::optional<GLenum> ToDebugIdentifier(DebugResourceType type) {
       return GL_RENDERBUFFER;
     case DebugResourceType::kFrameBuffer:
       return GL_FRAMEBUFFER;
+    case DebugResourceType::kFence:
+      return GL_SYNC_FENCE;
   }
   FML_UNREACHABLE();
 }
@@ -346,17 +351,26 @@ static bool ResourceIsLive(const ProcTableGLES& gl,
       return gl.IsRenderbuffer(name);
     case DebugResourceType::kFrameBuffer:
       return gl.IsFramebuffer(name);
+    case DebugResourceType::kFence:
+      return true;
   }
   FML_UNREACHABLE();
 }
 
-bool ProcTableGLES::SetDebugLabel(DebugResourceType type,
-                                  GLint name,
-                                  const std::string& label) const {
+bool ProcTableGLES::SupportsDebugLabels() const {
   if (debug_label_max_length_ <= 0) {
-    return true;
+    return false;
   }
   if (!ObjectLabelKHR.IsAvailable()) {
+    return false;
+  }
+  return true;
+}
+
+bool ProcTableGLES::SetDebugLabel(DebugResourceType type,
+                                  GLint name,
+                                  std::string_view label) const {
+  if (!SupportsDebugLabels()) {
     return true;
   }
   if (!ResourceIsLive(*this, type, name)) {

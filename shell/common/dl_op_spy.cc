@@ -11,6 +11,7 @@ bool DlOpSpy::did_draw() {
 }
 
 void DlOpSpy::setColor(DlColor color) {
+  color_ = color;
   if (color.isTransparent()) {
     will_draw_ = false;
   } else {
@@ -19,11 +20,8 @@ void DlOpSpy::setColor(DlColor color) {
 }
 void DlOpSpy::setColorSource(const DlColorSource* source) {
   if (!source) {
-    return;
-  }
-  const DlColorColorSource* color_source = source->asColor();
-  if (color_source && color_source->color().isTransparent()) {
-    will_draw_ = false;
+    // Restore settings based on previously set color
+    setColor(color_);
     return;
   }
   will_draw_ = true;

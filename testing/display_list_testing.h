@@ -11,8 +11,7 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_op_receiver.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 [[nodiscard]] bool DisplayListsEQ_Verbose(const DisplayList* a,
                                           const DisplayList* b);
@@ -37,8 +36,7 @@ namespace testing {
   return DisplayListsNE_Verbose(a.get(), b.get());
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 namespace std {
 
@@ -81,11 +79,14 @@ extern std::ostream& operator<<(std::ostream& os,
 extern std::ostream& operator<<(std::ostream& os,
                                 const flutter::DisplayListOpCategory& category);
 extern std::ostream& operator<<(std::ostream& os, const flutter::DlPath& path);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlImageFilter& type);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlColorFilter& type);
 
 }  // namespace std
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 class DisplayListStreamDispatcher final : public DlOpReceiver {
  public:
@@ -198,6 +199,11 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
                   bool transparent_occluder,
                   DlScalar dpr) override;
 
+  void out(const DlColorFilter& filter);
+  void out(const DlColorFilter* filter);
+  void out(const DlImageFilter& filter);
+  void out(const DlImageFilter* filter);
+
  private:
   std::ostream& os_;
   int cur_indent_;
@@ -212,11 +218,6 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   std::ostream& out_array(std::string name, int count, const T array[]);
 
   std::ostream& startl();
-
-  void out(const DlColorFilter& filter);
-  void out(const DlColorFilter* filter);
-  void out(const DlImageFilter& filter);
-  void out(const DlImageFilter* filter);
 };
 
 class DisplayListGeneralReceiver : public DlOpReceiver {
@@ -262,7 +263,6 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
         case DlColorSourceType::kRuntimeEffect:
           RecordByType(DisplayListOpType::kSetRuntimeEffectColorSource);
           break;
-        case DlColorSourceType::kColor:
         case DlColorSourceType::kLinearGradient:
         case DlColorSourceType::kRadialGradient:
         case DlColorSourceType::kConicalGradient:
@@ -609,7 +609,6 @@ class DisplayListGeneralReceiver : public DlOpReceiver {
   uint32_t op_count_ = 0u;
 };
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing
 
 #endif  // FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_

@@ -54,6 +54,9 @@ struct _FlEngine {
   // Implements the flutter/platform channel.
   FlPlatformHandler* platform_handler;
 
+  // Implements the flutter/mousecursor channel.
+  FlMouseCursorHandler* mouse_cursor_handler;
+
   // Manages textures rendered by native code.
   FlTextureRegistrar* texture_registrar;
 
@@ -89,9 +92,9 @@ G_DEFINE_QUARK(fl_engine_error_quark, fl_engine_error)
 static void fl_engine_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface);
 
-enum { kSignalOnPreEngineRestart, kSignalLastSignal };
+enum { SIGNAL_ON_PRE_ENGINE_RESTART, LAST_SIGNAL };
 
-static guint fl_engine_signals[kSignalLastSignal];
+static guint fl_engine_signals[LAST_SIGNAL];
 
 G_DEFINE_TYPE_WITH_CODE(
     FlEngine,
@@ -100,7 +103,7 @@ G_DEFINE_TYPE_WITH_CODE(
     G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
                           fl_engine_plugin_registry_iface_init))
 
-enum { kProp0, kPropBinaryMessenger, kPropLast };
+enum { PROP_0, PROP_BINARY_MESSENGER, PROP_LAST };
 
 // Parse a locale into its components.
 static void parse_locale(const gchar* locale,
@@ -383,7 +386,7 @@ static void fl_engine_update_semantics_cb(const FlutterSemanticsUpdate2* update,
 static void fl_engine_on_pre_engine_restart_cb(void* user_data) {
   FlEngine* self = FL_ENGINE(user_data);
 
-  g_signal_emit(self, fl_engine_signals[kSignalOnPreEngineRestart], 0);
+  g_signal_emit(self, fl_engine_signals[SIGNAL_ON_PRE_ENGINE_RESTART], 0);
 }
 
 // Called when a response to a sent platform message is received from the
@@ -417,7 +420,7 @@ static void fl_engine_set_property(GObject* object,
                                    GParamSpec* pspec) {
   FlEngine* self = FL_ENGINE(object);
   switch (prop_id) {
-    case kPropBinaryMessenger:
+    case PROP_BINARY_MESSENGER:
       g_set_object(&self->binary_messenger,
                    FL_BINARY_MESSENGER(g_value_get_object(value)));
       break;
@@ -449,6 +452,7 @@ static void fl_engine_dispose(GObject* object) {
   g_clear_object(&self->binary_messenger);
   g_clear_object(&self->settings_handler);
   g_clear_object(&self->platform_handler);
+  g_clear_object(&self->mouse_cursor_handler);
   g_clear_object(&self->task_runner);
 
   if (self->platform_message_handler_destroy_notify) {
@@ -473,14 +477,14 @@ static void fl_engine_class_init(FlEngineClass* klass) {
   G_OBJECT_CLASS(klass)->set_property = fl_engine_set_property;
 
   g_object_class_install_property(
-      G_OBJECT_CLASS(klass), kPropBinaryMessenger,
+      G_OBJECT_CLASS(klass), PROP_BINARY_MESSENGER,
       g_param_spec_object(
           "binary-messenger", "messenger", "Binary messenger",
           fl_binary_messenger_get_type(),
           static_cast<GParamFlags>(G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
                                    G_PARAM_STATIC_STRINGS)));
 
-  fl_engine_signals[kSignalOnPreEngineRestart] = g_signal_new(
+  fl_engine_signals[SIGNAL_ON_PRE_ENGINE_RESTART] = g_signal_new(
       "on-pre-engine-restart", fl_engine_get_type(), G_SIGNAL_RUN_LAST, 0,
       nullptr, nullptr, nullptr, G_TYPE_NONE, 0);
 }
@@ -629,6 +633,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   fl_settings_handler_start(self->settings_handler, settings);
 
   self->platform_handler = fl_platform_handler_new(self->binary_messenger);
+  self->mouse_cursor_handler =
+      fl_mouse_cursor_handler_new(self->binary_messenger);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess) {
@@ -927,6 +933,136 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 
+void fl_engine_send_touch_up_event(FlEngine* self,
+                                   FlutterViewId view_id,
+                                   size_t timestamp,
+                                   double x,
+                                   double y,
+                                   int32_t device) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  FlutterPointerEvent event;
+  event.timestamp = timestamp;
+  event.x = x;
+  event.y = y;
+  event.device_kind = kFlutterPointerDeviceKindTouch;
+  event.device = device;
+  event.buttons = 0;
+  event.view_id = view_id;
+  event.phase = FlutterPointerPhase::kUp;
+  event.struct_size = sizeof(event);
+
+  self->embedder_api.SendPointerEvent(self->engine, &event, 1);
+}
+
+void fl_engine_send_touch_down_event(FlEngine* self,
+                                     FlutterViewId view_id,
+                                     size_t timestamp,
+                                     double x,
+                                     double y,
+                                     int32_t device) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  FlutterPointerEvent event;
+  event.timestamp = timestamp;
+  event.x = x;
+  event.y = y;
+  event.device_kind = kFlutterPointerDeviceKindTouch;
+  event.device = device;
+  event.buttons = FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary;
+  event.view_id = view_id;
+  event.phase = FlutterPointerPhase::kDown;
+  event.struct_size = sizeof(event);
+
+  self->embedder_api.SendPointerEvent(self->engine, &event, 1);
+}
+
+void fl_engine_send_touch_move_event(FlEngine* self,
+                                     FlutterViewId view_id,
+                                     size_t timestamp,
+                                     double x,
+                                     double y,
+                                     int32_t device) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  FlutterPointerEvent event;
+  event.timestamp = timestamp;
+  event.x = x;
+  event.y = y;
+  event.device_kind = kFlutterPointerDeviceKindTouch;
+  event.device = device;
+  event.buttons = FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary;
+  event.view_id = view_id;
+  event.phase = FlutterPointerPhase::kMove;
+  event.struct_size = sizeof(event);
+
+  self->embedder_api.SendPointerEvent(self->engine, &event, 1);
+}
+
+void fl_engine_send_touch_add_event(FlEngine* self,
+                                    FlutterViewId view_id,
+                                    size_t timestamp,
+                                    double x,
+                                    double y,
+                                    int32_t device) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  FlutterPointerEvent event;
+  event.timestamp = timestamp;
+  event.x = x;
+  event.y = y;
+  event.device_kind = kFlutterPointerDeviceKindTouch;
+  event.device = device;
+  event.buttons = 0;
+  event.view_id = view_id;
+  event.phase = FlutterPointerPhase::kAdd;
+  event.struct_size = sizeof(event);
+
+  self->embedder_api.SendPointerEvent(self->engine, &event, 1);
+}
+
+void fl_engine_send_touch_remove_event(FlEngine* self,
+                                       FlutterViewId view_id,
+                                       size_t timestamp,
+                                       double x,
+                                       double y,
+                                       int32_t device) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  FlutterPointerEvent event;
+  event.timestamp = timestamp;
+  event.x = x;
+  event.y = y;
+  event.device_kind = kFlutterPointerDeviceKindTouch;
+  event.device = device;
+  event.buttons = 0;
+  event.view_id = view_id;
+  event.phase = FlutterPointerPhase::kRemove;
+  event.struct_size = sizeof(event);
+
+  self->embedder_api.SendPointerEvent(self->engine, &event, 1);
+}
+
 void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
                                            FlutterViewId view_id,
                                            size_t timestamp,
@@ -959,17 +1095,51 @@ void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 
+static void send_key_event_cb(bool handled, void* user_data) {
+  g_autoptr(GTask) task = G_TASK(user_data);
+  gboolean* return_value = g_new0(gboolean, 1);
+  *return_value = handled;
+  g_task_return_pointer(task, return_value, g_free);
+}
+
 void fl_engine_send_key_event(FlEngine* self,
                               const FlutterKeyEvent* event,
-                              FlutterKeyEventCallback callback,
-                              void* user_data) {
+                              GCancellable* cancellable,
+                              GAsyncReadyCallback callback,
+                              gpointer user_data) {
   g_return_if_fail(FL_IS_ENGINE(self));
 
+  g_autoptr(GTask) task = g_task_new(self, cancellable, callback, user_data);
+
   if (self->engine == nullptr) {
+    g_task_return_new_error(task, fl_engine_error_quark(),
+                            FL_ENGINE_ERROR_FAILED, "No engine");
     return;
   }
 
-  self->embedder_api.SendKeyEvent(self->engine, event, callback, user_data);
+  if (self->embedder_api.SendKeyEvent(self->engine, event, send_key_event_cb,
+                                      g_object_ref(task)) != kSuccess) {
+    g_task_return_new_error(task, fl_engine_error_quark(),
+                            FL_ENGINE_ERROR_FAILED, "Failed to send key event");
+    g_object_unref(task);
+  }
+}
+
+gboolean fl_engine_send_key_event_finish(FlEngine* self,
+                                         GAsyncResult* result,
+                                         gboolean* handled,
+                                         GError** error) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
+  g_return_val_if_fail(g_task_is_valid(result, self), FALSE);
+
+  g_autofree gboolean* return_value =
+      static_cast<gboolean*>(g_task_propagate_pointer(G_TASK(result), error));
+  if (return_value == nullptr) {
+    return FALSE;
+  }
+
+  *handled = *return_value;
+  return TRUE;
 }
 
 void fl_engine_dispatch_semantics_action(FlEngine* self,
@@ -1050,4 +1220,9 @@ void fl_engine_update_accessibility_features(FlEngine* self, int32_t flags) {
 void fl_engine_request_app_exit(FlEngine* self) {
   g_return_if_fail(FL_IS_ENGINE(self));
   fl_platform_handler_request_app_exit(self->platform_handler);
+}
+
+FlMouseCursorHandler* fl_engine_get_mouse_cursor_handler(FlEngine* self) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
+  return self->mouse_cursor_handler;
 }

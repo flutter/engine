@@ -29,17 +29,21 @@ class DisplayListBuilder final : public virtual DlCanvas,
                                  virtual DlOpReceiver,
                                  DisplayListOpFlags {
  public:
-  static constexpr SkRect kMaxCullRect =
-      SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
+  static constexpr DlRect kMaxCullRect =
+      DlRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
   explicit DisplayListBuilder(bool prepare_rtree)
       : DisplayListBuilder(kMaxCullRect, prepare_rtree) {}
 
-  explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect,
+  explicit DisplayListBuilder(const DlRect& cull_rect = kMaxCullRect,
                               bool prepare_rtree = false);
 
   DisplayListBuilder(DlScalar width, DlScalar height)
-      : DisplayListBuilder(SkRect::MakeWH(width, height)) {}
+      : DisplayListBuilder(DlRect::MakeWH(width, height)) {}
+
+  explicit DisplayListBuilder(const SkRect& cull_rect,
+                              bool prepare_rtree = false)
+      : DisplayListBuilder(ToDlRect(cull_rect), prepare_rtree) {}
 
   ~DisplayListBuilder();
 
@@ -52,7 +56,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void Save() override;
 
   // |DlCanvas|
-  void SaveLayer(std::optional<const DlRect>& bounds,
+  void SaveLayer(const std::optional<DlRect>& bounds,
                  const DlPaint* paint = nullptr,
                  const DlImageFilter* backdrop = nullptr,
                  std::optional<int64_t> backdrop_id = std::nullopt) override;
@@ -515,19 +519,19 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void* Push(size_t extra, Args&&... args);
 
   struct RTreeData {
-    std::vector<SkRect> rects;
+    std::vector<DlRect> rects;
     std::vector<int> indices;
   };
 
   struct LayerInfo {
-    LayerInfo(const std::shared_ptr<const DlImageFilter>& filter,
+    LayerInfo(const std::shared_ptr<DlImageFilter>& filter,
               size_t rtree_rects_start_index)
         : filter(filter),
           rtree_rects_start_index(rtree_rects_start_index) {}
 
     // The filter that will be applied to the contents of the saveLayer
     // when it is restored into the parent layer.
-    const std::shared_ptr<const DlImageFilter> filter;
+    const std::shared_ptr<DlImageFilter> filter;
 
     // The index of the rtree rects when the saveLayer was called, used
     // only in the case that the saveLayer has a filter so that the
@@ -590,7 +594,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
     // For saveLayer calls:
     explicit SaveInfo(const SaveInfo* parent_info,
-                      const std::shared_ptr<const DlImageFilter>& filter,
+                      const std::shared_ptr<DlImageFilter>& filter,
                       int rtree_rect_index)
         : is_save_layer(true),
           has_valid_clip(false),
@@ -624,7 +628,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
     // Records the given bounds after transforming by the global and
     // layer matrices.
-    bool AccumulateBoundsLocal(const SkRect& bounds);
+    bool AccumulateBoundsLocal(const DlRect& bounds);
 
     // Simply transfers the local bounds to the parent
     void TransferBoundsToParent(const SaveInfo& parent);
@@ -694,11 +698,11 @@ class DisplayListBuilder final : public virtual DlCanvas,
   }
 
   void RestoreLayer();
-  void TransferLayerBounds(const SkRect& content_bounds);
+  void TransferLayerBounds(const DlRect& content_bounds);
   bool AdjustRTreeRects(RTreeData& data,
                         const DlImageFilter& filter,
-                        const SkMatrix& matrix,
-                        const SkRect& clip,
+                        const DlMatrix& matrix,
+                        const DlRect& clip,
                         size_t rect_index);
 
   // This flag indicates whether or not the current rendering attributes
@@ -719,6 +723,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     current_opacity_compatibility_ =             //
         current_.getColorFilter() == nullptr &&  //
         !current_.isInvertColors() &&            //
+        !current_.usesRuntimeEffect() &&         //
         IsOpacityCompatible(current_.getBlendMode());
   }
 
@@ -806,7 +811,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   // Adjusts the indicated bounds for the given flags and returns true if
   // the calculation was possible, or false if it could not be estimated.
-  bool AdjustBoundsForPaint(SkRect& bounds, DisplayListAttributeFlags flags);
+  bool AdjustBoundsForPaint(DlRect& bounds, DisplayListAttributeFlags flags);
 
   // Records the fact that we encountered an op that either could not
   // estimate its bounds or that fills all of the destination space.
@@ -817,21 +822,21 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   // Records the bounds for an op after modifying them according to the
   // supplied attribute flags and transforming by the current matrix.
-  bool AccumulateOpBounds(const SkRect& bounds,
+  bool AccumulateOpBounds(const DlRect& bounds,
                           DisplayListAttributeFlags flags) {
-    SkRect safe_bounds = bounds;
+    DlRect safe_bounds = bounds;
     return AccumulateOpBounds(safe_bounds, flags);
   }
 
   // Records the bounds for an op after modifying them according to the
   // supplied attribute flags and transforming by the current matrix
   // and clipping against the current clip.
-  bool AccumulateOpBounds(SkRect& bounds, DisplayListAttributeFlags flags);
+  bool AccumulateOpBounds(DlRect& bounds, DisplayListAttributeFlags flags);
 
   // Records the given bounds after transforming by the current matrix
   // and clipping against the current clip.
-  bool AccumulateBounds(const SkRect& bounds, SaveInfo& layer, int id);
-  bool AccumulateBounds(const SkRect& bounds) {
+  bool AccumulateBounds(const DlRect& bounds, SaveInfo& layer, int id);
+  bool AccumulateBounds(const DlRect& bounds) {
     return AccumulateBounds(bounds, current_info(), op_index_);
   }
 };

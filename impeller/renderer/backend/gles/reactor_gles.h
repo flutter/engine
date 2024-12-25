@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/third_party/abseil-cpp/absl/container/flat_hash_map.h"
 #include "fml/closure.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
@@ -84,8 +85,6 @@ class ReactorGLES {
         const ReactorGLES& reactor) const = 0;
   };
 
-  using Ref = std::shared_ptr<ReactorGLES>;
-
   //----------------------------------------------------------------------------
   /// @brief      Create a new reactor. There are expensive and only one per
   ///             application instance is necessary.
@@ -158,6 +157,8 @@ class ReactorGLES {
   ///
   std::optional<GLuint> GetGLHandle(const HandleGLES& handle) const;
 
+  std::optional<GLsync> GetGLFence(const HandleGLES& handle) const;
+
   //----------------------------------------------------------------------------
   /// @brief      Create a reactor handle.
   ///
@@ -170,6 +171,16 @@ class ReactorGLES {
   /// @return     The reactor handle.
   ///
   HandleGLES CreateHandle(HandleType type, GLuint external_handle = GL_NONE);
+
+  /// @brief Create a handle that is not managed by `ReactorGLES`.
+  /// @details This behaves just like `CreateHandle` but it doesn't add the
+  /// handle to ReactorGLES::handles_ and the creation is executed
+  /// synchronously, so it must be called from a proper thread. The benefit of
+  /// this is that it avoid synchronization and hash table lookups when
+  /// creating/accessing the handle.
+  /// @param type The type of handle to create.
+  /// @return The reactor handle.
+  HandleGLES CreateUntrackedHandle(HandleType type);
 
   //----------------------------------------------------------------------------
   /// @brief      Collect a reactor handle.
@@ -212,10 +223,12 @@ class ReactorGLES {
   ///             torn down.
   ///
   /// @param[in]  operation  The operation
+  /// @param[in]  defer      If false, the reactor attempts to React after
+  ///                        adding this operation.
   ///
   /// @return     If the operation was successfully queued for completion.
   ///
-  [[nodiscard]] bool AddOperation(Operation operation);
+  [[nodiscard]] bool AddOperation(Operation operation, bool defer = false);
 
   //----------------------------------------------------------------------------
   /// @brief      Register a cleanup callback that will be invokved with the
@@ -245,33 +258,42 @@ class ReactorGLES {
   [[nodiscard]] bool React();
 
  private:
+  /// @brief Storage for either a GL handle or sync fence.
+  struct GLStorage {
+    union {
+      GLuint handle;
+      GLsync sync;
+      uint64_t integer;
+    };
+  };
+  static_assert(sizeof(GLStorage) == sizeof(uint64_t));
+
   struct LiveHandle {
-    std::optional<GLuint> name;
+    std::optional<GLStorage> name;
     std::optional<std::string> pending_debug_label;
     bool pending_collection = false;
     fml::ScopedCleanupClosure callback = {};
 
     LiveHandle() = default;
 
-    explicit LiveHandle(std::optional<GLuint> p_name) : name(p_name) {}
+    explicit LiveHandle(std::optional<GLStorage> p_name) : name(p_name) {}
 
     constexpr bool IsLive() const { return name.has_value(); }
   };
 
   std::unique_ptr<ProcTableGLES> proc_table_;
 
-  Mutex ops_execution_mutex_;
   mutable Mutex ops_mutex_;
-  std::vector<Operation> ops_ IPLR_GUARDED_BY(ops_mutex_);
+  std::map<std::thread::id, std::vector<Operation>> ops_ IPLR_GUARDED_BY(
+      ops_mutex_);
 
-  // Make sure the container is one where erasing items during iteration doesn't
-  // invalidate other iterators.
-  using LiveHandles = std::unordered_map<HandleGLES,
-                                         LiveHandle,
-                                         HandleGLES::Hash,
-                                         HandleGLES::Equal>;
+  using LiveHandles = absl::flat_hash_map<const HandleGLES,
+                                          LiveHandle,
+                                          HandleGLES::Hash,
+                                          HandleGLES::Equal>;
   mutable RWMutex handles_mutex_;
   LiveHandles handles_ IPLR_GUARDED_BY(handles_mutex_);
+  int32_t handles_to_collect_count_ IPLR_GUARDED_BY(handles_mutex_) = 0;
 
   mutable Mutex workers_mutex_;
   mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_ IPLR_GUARDED_BY(
@@ -280,7 +302,7 @@ class ReactorGLES {
   bool can_set_debug_labels_ = false;
   bool is_valid_ = false;
 
-  bool ReactOnce() IPLR_REQUIRES(ops_execution_mutex_);
+  bool ReactOnce();
 
   bool HasPendingOperations() const;
 
@@ -291,6 +313,15 @@ class ReactorGLES {
   bool FlushOps();
 
   void SetupDebugGroups();
+
+  std::optional<GLStorage> GetHandle(const HandleGLES& handle) const;
+
+  static std::optional<GLStorage> CreateGLHandle(const ProcTableGLES& gl,
+                                                 HandleType type);
+
+  static bool CollectGLHandle(const ProcTableGLES& gl,
+                              HandleType type,
+                              GLStorage handle);
 
   ReactorGLES(const ReactorGLES&) = delete;
 

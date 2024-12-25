@@ -84,6 +84,8 @@ bool RenderPass::Begin(flutter::gpu::CommandBuffer& command_buffer) {
 }
 
 void RenderPass::SetPipeline(fml::RefPtr<RenderPipeline> pipeline) {
+  // On debug this makes a difference, but not on release builds.
+  // NOLINTNEXTLINE(performance-move-const-arg)
   render_pipeline_ = std::move(pipeline);
 }
 
@@ -105,10 +107,13 @@ RenderPass::GetOrCreatePipeline() {
 
   pipeline_desc.SetSampleCount(render_target_.GetSampleCount());
 
-  for (const auto& it : render_target_.GetColorAttachments()) {
-    auto& color = GetColorAttachmentDescriptor(it.first);
-    color.format = render_target_.GetRenderTargetPixelFormat();
-  }
+  render_target_.IterateAllColorAttachments(
+      [&](size_t index, const impeller::ColorAttachment& attachment) -> bool {
+        auto& color = GetColorAttachmentDescriptor(index);
+        color.format = render_target_.GetRenderTargetPixelFormat();
+        return true;
+      });
+
   pipeline_desc.SetColorAttachmentDescriptors(color_descriptors_);
 
   {
@@ -174,31 +179,37 @@ RenderPass::GetOrCreatePipeline() {
 }
 
 bool RenderPass::Draw() {
-  render_pass_->SetPipeline(GetOrCreatePipeline());
+  render_pass_->SetPipeline(impeller::PipelineRef(GetOrCreatePipeline()));
 
   for (const auto& [_, buffer] : vertex_uniform_bindings) {
-    render_pass_->BindResource(impeller::ShaderStage::kVertex,
-                               impeller::DescriptorType::kUniformBuffer,
-                               buffer.slot, *buffer.view.GetMetadata(),
-                               buffer.view.resource);
+    render_pass_->BindDynamicResource(
+        impeller::ShaderStage::kVertex,
+        impeller::DescriptorType::kUniformBuffer, buffer.slot,
+        std::make_unique<impeller::ShaderMetadata>(*buffer.view.GetMetadata()),
+        buffer.view.resource);
   }
   for (const auto& [_, texture] : vertex_texture_bindings) {
-    render_pass_->BindResource(impeller::ShaderStage::kVertex,
-                               impeller::DescriptorType::kSampledImage,
-                               texture.slot, *texture.texture.GetMetadata(),
-                               texture.texture.resource, *texture.sampler);
+    render_pass_->BindDynamicResource(
+        impeller::ShaderStage::kVertex, impeller::DescriptorType::kSampledImage,
+        texture.slot,
+        std::make_unique<impeller::ShaderMetadata>(
+            *texture.texture.GetMetadata()),
+        texture.texture.resource, texture.sampler);
   }
   for (const auto& [_, buffer] : fragment_uniform_bindings) {
-    render_pass_->BindResource(impeller::ShaderStage::kFragment,
-                               impeller::DescriptorType::kUniformBuffer,
-                               buffer.slot, *buffer.view.GetMetadata(),
-                               buffer.view.resource);
+    render_pass_->BindDynamicResource(
+        impeller::ShaderStage::kFragment,
+        impeller::DescriptorType::kUniformBuffer, buffer.slot,
+        std::make_unique<impeller::ShaderMetadata>(*buffer.view.GetMetadata()),
+        buffer.view.resource);
   }
   for (const auto& [_, texture] : fragment_texture_bindings) {
-    render_pass_->BindResource(impeller::ShaderStage::kFragment,
-                               impeller::DescriptorType::kSampledImage,
-                               texture.slot, *texture.texture.GetMetadata(),
-                               texture.texture.resource, *texture.sampler);
+    render_pass_->BindDynamicResource(
+        impeller::ShaderStage::kFragment,
+        impeller::DescriptorType::kSampledImage, texture.slot,
+        std::make_unique<impeller::ShaderMetadata>(
+            *texture.texture.GetMetadata()),
+        texture.texture.resource, texture.sampler);
   }
 
   render_pass_->SetVertexBuffer(vertex_buffer);
@@ -412,7 +423,7 @@ static bool BindUniform(
 
   uniform_map->insert_or_assign(
       uniform_struct,
-      impeller::BufferAndUniformSlot{
+      flutter::gpu::RenderPass::BufferAndUniformSlot{
           .slot = uniform_struct->slot,
           .view = impeller::BufferResource{
               &uniform_struct->metadata,
@@ -461,7 +472,7 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
       flutter::gpu::ToImpellerSamplerAddressMode(width_address_mode);
   sampler_desc.height_address_mode =
       flutter::gpu::ToImpellerSamplerAddressMode(height_address_mode);
-  const std::unique_ptr<const impeller::Sampler>& sampler =
+  auto sampler =
       wrapper->GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc);
 
   flutter::gpu::RenderPass::TextureUniformMap* uniform_map = nullptr;
@@ -481,7 +492,7 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
       impeller::TextureAndSampler{
           .slot = texture_binding->slot,
           .texture = {&texture_binding->metadata, texture->GetTexture()},
-          .sampler = &sampler,
+          .sampler = sampler,
       });
   return true;
 }

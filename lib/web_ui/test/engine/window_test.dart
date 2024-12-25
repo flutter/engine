@@ -239,7 +239,8 @@ Future<void> testMain() async {
       expect(ui.PlatformDispatcher.instance.onSemanticsActionEvent, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(0, ui.SemanticsAction.tap, null);
+    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+        myWindow.viewId, 0, ui.SemanticsAction.tap, null);
   });
 
   test('onAccessibilityFeaturesChanged preserves the zone', () {
@@ -465,7 +466,7 @@ Future<void> testMain() async {
     final DomElement host = createDomHTMLDivElement();
     final EngineFlutterView view = EngineFlutterView(dispatcher, host);
 
-    expect(host.getAttribute('flt-renderer'), 'html (requested explicitly)');
+    expect(host.getAttribute('flt-renderer'), 'canvaskit (requested explicitly)');
     expect(host.getAttribute('flt-build-mode'), 'debug');
 
     view.dispose();

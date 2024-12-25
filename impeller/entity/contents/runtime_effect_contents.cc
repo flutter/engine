@@ -24,6 +24,38 @@
 
 namespace impeller {
 
+namespace {
+constexpr char kPaddingType = 0;
+constexpr char kFloatType = 1;
+}  // namespace
+
+// static
+BufferView RuntimeEffectContents::EmplaceVulkanUniform(
+    const std::shared_ptr<const std::vector<uint8_t>>& input_data,
+    HostBuffer& host_buffer,
+    const RuntimeUniformDescription& uniform) {
+  // TODO(jonahwilliams): rewrite this to emplace directly into
+  // HostBuffer.
+  std::vector<float> uniform_buffer;
+  uniform_buffer.reserve(uniform.struct_layout.size());
+  size_t uniform_byte_index = 0u;
+  for (char byte_type : uniform.struct_layout) {
+    if (byte_type == kPaddingType) {
+      uniform_buffer.push_back(0.f);
+    } else {
+      FML_DCHECK(byte_type == kFloatType);
+      uniform_buffer.push_back(reinterpret_cast<const float*>(
+          input_data->data())[uniform_byte_index++]);
+    }
+  }
+  size_t alignment = std::max(sizeof(float) * uniform_buffer.size(),
+                              DefaultUniformAlignment());
+
+  return host_buffer.Emplace(
+      reinterpret_cast<const void*>(uniform_buffer.data()),
+      sizeof(float) * uniform_buffer.size(), alignment);
+}
+
 void RuntimeEffectContents::SetRuntimeStage(
     std::shared_ptr<RuntimeStage> runtime_stage) {
   runtime_stage_ = std::move(runtime_stage);
@@ -50,9 +82,9 @@ static ShaderType GetShaderType(RuntimeUniformType type) {
   }
 }
 
-static std::shared_ptr<ShaderMetadata> MakeShaderMetadata(
+static std::unique_ptr<ShaderMetadata> MakeShaderMetadata(
     const RuntimeUniformDescription& uniform) {
-  auto metadata = std::make_shared<ShaderMetadata>();
+  std::unique_ptr<ShaderMetadata> metadata = std::make_unique<ShaderMetadata>();
   metadata->name = uniform.name;
   metadata->members.emplace_back(ShaderStructMemberMetadata{
       .type = GetShaderType(uniform.type),
@@ -206,7 +238,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     size_t buffer_offset = 0;
 
     for (const auto& uniform : runtime_stage_->GetUniforms()) {
-      std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
+      std::unique_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
       switch (uniform.type) {
         case kSampledImage: {
           // Sampler uniforms are ordered in the IPLR according to their
@@ -237,9 +269,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
           ShaderUniformSlot uniform_slot;
           uniform_slot.name = uniform.name.c_str();
           uniform_slot.ext_res_0 = uniform.location;
-          pass.BindResource(ShaderStage::kFragment,
-                            DescriptorType::kUniformBuffer, uniform_slot,
-                            metadata, std::move(buffer_view));
+          pass.BindDynamicResource(ShaderStage::kFragment,
+                                   DescriptorType::kUniformBuffer, uniform_slot,
+                                   std::move(metadata), std::move(buffer_view));
           buffer_index++;
           buffer_offset += uniform.GetSize();
           break;
@@ -251,44 +283,25 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
           uniform_slot.binding = uniform.location;
           uniform_slot.name = uniform.name.c_str();
 
-          // TODO(jonahwilliams): rewrite this to emplace directly into
-          // HostBuffer.
-          std::vector<float> uniform_buffer;
-          uniform_buffer.reserve(uniform.struct_layout.size());
-          size_t uniform_byte_index = 0u;
-          for (const auto& byte_type : uniform.struct_layout) {
-            if (byte_type == 0) {
-              uniform_buffer.push_back(0.f);
-            } else if (byte_type == 1) {
-              uniform_buffer.push_back(reinterpret_cast<float*>(
-                  uniform_data_->data())[uniform_byte_index++]);
-            } else {
-              FML_UNREACHABLE();
-            }
-          }
-          size_t alignment = std::max(sizeof(float) * uniform_buffer.size(),
-                                      DefaultUniformAlignment());
-
-          BufferView buffer_view = renderer.GetTransientsBuffer().Emplace(
-              reinterpret_cast<const void*>(uniform_buffer.data()),
-              sizeof(float) * uniform_buffer.size(), alignment);
-          pass.BindResource(ShaderStage::kFragment,
-                            DescriptorType::kUniformBuffer, uniform_slot,
-                            ShaderMetadata{}, std::move(buffer_view));
+          pass.BindResource(
+              ShaderStage::kFragment, DescriptorType::kUniformBuffer,
+              uniform_slot, nullptr,
+              EmplaceVulkanUniform(uniform_data_,
+                                   renderer.GetTransientsBuffer(), uniform));
         }
       }
     }
 
     size_t sampler_index = 0;
     for (const auto& uniform : runtime_stage_->GetUniforms()) {
-      std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
+      std::unique_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
 
       switch (uniform.type) {
         case kSampledImage: {
           FML_DCHECK(sampler_index < texture_inputs_.size());
           auto& input = texture_inputs_[sampler_index];
 
-          const std::unique_ptr<const Sampler>& sampler =
+          raw_ptr<const Sampler> sampler =
               context->GetSamplerLibrary()->GetSampler(
                   input.sampler_descriptor);
 
@@ -296,9 +309,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
           image_slot.name = uniform.name.c_str();
           image_slot.binding = uniform.binding;
           image_slot.texture_index = uniform.location - minimum_sampler_index;
-          pass.BindResource(ShaderStage::kFragment,
-                            DescriptorType::kSampledImage, image_slot,
-                            *metadata, input.texture, sampler);
+          pass.BindDynamicResource(ShaderStage::kFragment,
+                                   DescriptorType::kSampledImage, image_slot,
+                                   std::move(metadata), input.texture, sampler);
 
           sampler_index++;
           break;

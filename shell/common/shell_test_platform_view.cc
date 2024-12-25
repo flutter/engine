@@ -4,58 +4,78 @@
 
 #include "flutter/shell/common/shell_test_platform_view.h"
 
-#ifdef SHELL_ENABLE_GL
-#include "flutter/shell/common/shell_test_platform_view_gl.h"
-#endif  // SHELL_ENABLE_GL
-#ifdef SHELL_ENABLE_VULKAN
-#include "flutter/shell/common/shell_test_platform_view_vulkan.h"
-#endif  // SHELL_ENABLE_VULKAN
-#ifdef SHELL_ENABLE_METAL
-#include "flutter/shell/common/shell_test_platform_view_metal.h"
-#endif  // SHELL_ENABLE_METAL
+#include <memory>
 
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 
-namespace flutter {
-namespace testing {
+namespace flutter::testing {
 
 std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::Create(
+    BackendType backend,
     PlatformView::Delegate& delegate,
     const TaskRunners& task_runners,
     const std::shared_ptr<ShellTestVsyncClock>& vsync_clock,
     const CreateVsyncWaiter& create_vsync_waiter,
-    BackendType backend,
     const std::shared_ptr<ShellTestExternalViewEmbedder>&
         shell_test_external_view_embedder,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
   // TODO(gw280): https://github.com/flutter/flutter/issues/50298
   // Make this fully runtime configurable
   switch (backend) {
-    case BackendType::kDefaultBackend:
-#ifdef SHELL_ENABLE_GL
     case BackendType::kGLBackend:
-      return std::make_unique<ShellTestPlatformViewGL>(
-          delegate, task_runners, vsync_clock, create_vsync_waiter,
-          shell_test_external_view_embedder);
-#endif  // SHELL_ENABLE_GL
-#ifdef SHELL_ENABLE_VULKAN
-    case BackendType::kVulkanBackend:
-      return std::make_unique<ShellTestPlatformViewVulkan>(
-          delegate, task_runners, vsync_clock, create_vsync_waiter,
-          shell_test_external_view_embedder);
-#endif  // SHELL_ENABLE_VULKAN
-#ifdef SHELL_ENABLE_METAL
+      return CreateGL(delegate, task_runners, vsync_clock, create_vsync_waiter,
+                      shell_test_external_view_embedder,
+                      is_gpu_disabled_sync_switch);
     case BackendType::kMetalBackend:
-      return std::make_unique<ShellTestPlatformViewMetal>(
+      return CreateMetal(delegate, task_runners, vsync_clock,
+                         create_vsync_waiter, shell_test_external_view_embedder,
+                         is_gpu_disabled_sync_switch);
+    case BackendType::kVulkanBackend:
+      return CreateVulkan(
           delegate, task_runners, vsync_clock, create_vsync_waiter,
           shell_test_external_view_embedder, is_gpu_disabled_sync_switch);
-#endif  // SHELL_ENABLE_METAL
-
-    default:
-      FML_LOG(FATAL) << "No backends supported for ShellTestPlatformView";
-      return nullptr;
   }
 }
+
+#ifndef SHELL_ENABLE_GL
+std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::CreateGL(
+    PlatformView::Delegate& delegate,
+    const TaskRunners& task_runners,
+    const std::shared_ptr<ShellTestVsyncClock>& vsync_clock,
+    const CreateVsyncWaiter& create_vsync_waiter,
+    const std::shared_ptr<ShellTestExternalViewEmbedder>&
+        shell_test_external_view_embedder,
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
+  FML_LOG(FATAL) << "OpenGL backend not enabled in this build";
+  return nullptr;
+}
+#endif  // SHELL_ENABLE_GL
+#ifndef SHELL_ENABLE_METAL
+std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::CreateMetal(
+    PlatformView::Delegate& delegate,
+    const TaskRunners& task_runners,
+    const std::shared_ptr<ShellTestVsyncClock>& vsync_clock,
+    const CreateVsyncWaiter& create_vsync_waiter,
+    const std::shared_ptr<ShellTestExternalViewEmbedder>&
+        shell_test_external_view_embedder,
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
+  FML_LOG(FATAL) << "Metal backend not enabled in this build";
+  return nullptr;
+}
+#endif  // SHELL_ENABLE_METAL
+#ifndef SHELL_ENABLE_VULKAN
+std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::CreateVulkan(
+    PlatformView::Delegate& delegate,
+    const TaskRunners& task_runners,
+    const std::shared_ptr<ShellTestVsyncClock>& vsync_clock,
+    const CreateVsyncWaiter& create_vsync_waiter,
+    const std::shared_ptr<ShellTestExternalViewEmbedder>&
+        shell_test_external_view_embedder,
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
+  FML_LOG(FATAL) << "Vulkan backend not enabled in this build";
+  return nullptr;
+}
+#endif  // SHELL_ENABLE_VULKAN
 
 ShellTestPlatformViewBuilder::ShellTestPlatformViewBuilder(Config config)
     : config_(std::move(config)) {}
@@ -76,15 +96,14 @@ std::unique_ptr<PlatformView> ShellTestPlatformViewBuilder::operator()(
     }
   };
   return ShellTestPlatformView::Create(
+      config_.rendering_backend,                  //
       shell,                                      //
       task_runners,                               //
       vsync_clock,                                //
       create_vsync_waiter,                        //
-      config_.rendering_backend,                  //
       config_.shell_test_external_view_embedder,  //
       shell.GetIsGpuDisabledSyncSwitch()          //
   );
 }
 
-}  // namespace testing
-}  // namespace flutter
+}  // namespace flutter::testing

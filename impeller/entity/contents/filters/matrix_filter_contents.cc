@@ -20,8 +20,8 @@ void MatrixFilterContents::SetRenderingMode(
   FilterContents::SetRenderingMode(rendering_mode);
 }
 
-void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {
-  sampler_descriptor_ = std::move(desc);
+void MatrixFilterContents::SetSamplerDescriptor(const SamplerDescriptor& desc) {
+  sampler_descriptor_ = desc;
 }
 
 namespace {
@@ -110,7 +110,7 @@ std::optional<Rect> MatrixFilterContents::GetFilterSourceCoverage(
   auto transform = effect_transform *          //
                    matrix_ *                   //
                    effect_transform.Invert();  //
-  if (transform.GetDeterminant() == 0.0) {
+  if (!transform.IsInvertible()) {
     return std::nullopt;
   }
   auto inverse = transform.Invert();

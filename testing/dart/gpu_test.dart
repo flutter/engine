@@ -783,7 +783,7 @@ void main() async {
         image, 'flutter_gpu_test_scissor.png');
   }, skip: !impellerEnabled);
 
-  test('RenderPass.setScissor doesnt throw for valid values',
+    test('RenderPass.setScissor doesnt throw for valid values',
       () async {
     final state = createSimpleRenderPass();
 

@@ -140,9 +140,10 @@ HandleType ToHandleType(TextureGLES::Type type) {
   FML_UNREACHABLE();
 }
 
-std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
-                                                  TextureDescriptor desc,
-                                                  GLuint fbo) {
+std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(
+    std::shared_ptr<ReactorGLES> reactor,
+    TextureDescriptor desc,
+    GLuint fbo) {
   auto texture = std::shared_ptr<TextureGLES>(
       new TextureGLES(std::move(reactor), desc, fbo, std::nullopt));
   if (!texture->IsValid()) {
@@ -152,14 +153,14 @@ std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
 }
 
 std::shared_ptr<TextureGLES> TextureGLES::WrapTexture(
-    ReactorGLES::Ref reactor,
+    std::shared_ptr<ReactorGLES> reactor,
     TextureDescriptor desc,
     HandleGLES external_handle) {
   if (external_handle.IsDead()) {
     VALIDATION_LOG << "Cannot wrap a dead handle.";
     return nullptr;
   }
-  if (external_handle.type != HandleType::kTexture) {
+  if (external_handle.GetType() != HandleType::kTexture) {
     VALIDATION_LOG << "Cannot wrap a non-texture handle.";
     return nullptr;
   }
@@ -172,12 +173,13 @@ std::shared_ptr<TextureGLES> TextureGLES::WrapTexture(
 }
 
 std::shared_ptr<TextureGLES> TextureGLES::CreatePlaceholder(
-    ReactorGLES::Ref reactor,
+    std::shared_ptr<ReactorGLES> reactor,
     TextureDescriptor desc) {
   return TextureGLES::WrapFBO(std::move(reactor), desc, 0u);
 }
 
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
+TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
+                         TextureDescriptor desc)
     : TextureGLES(std::move(reactor),  //
                   desc,                //
                   std::nullopt,        //
@@ -193,7 +195,7 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
       handle_(external_handle.has_value()
                   ? external_handle.value()
-                  : reactor_->CreateHandle(ToHandleType(type_))),
+                  : reactor_->CreateUntrackedHandle(ToHandleType(type_))),
       is_wrapped_(fbo.has_value() || external_handle.has_value()),
       wrapped_fbo_(fbo) {
   // Ensure the texture descriptor itself is valid.
@@ -217,6 +219,9 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
 // |Texture|
 TextureGLES::~TextureGLES() {
   reactor_->CollectHandle(handle_);
+  if (cached_fbo_ != GL_NONE) {
+    reactor_->GetProcTable().DeleteFramebuffers(1, &cached_fbo_);
+  }
 }
 
 // |Texture|
@@ -404,7 +409,7 @@ void TextureGLES::InitializeContentsIfNecessary() const {
   }
 
   const auto& gl = reactor_->GetProcTable();
-  auto handle = reactor_->GetGLHandle(handle_);
+  std::optional<GLuint> handle = reactor_->GetGLHandle(handle_);
   if (!handle.has_value()) {
     VALIDATION_LOG << "Could not initialize the contents of texture.";
     return;
@@ -478,6 +483,16 @@ bool TextureGLES::Bind() const {
     return false;
   }
   const auto& gl = reactor_->GetProcTable();
+
+  if (fence_.has_value()) {
+    std::optional<GLsync> fence = reactor_->GetGLFence(fence_.value());
+    if (fence.has_value()) {
+      gl.WaitSync(fence.value(), 0, GL_TIMEOUT_IGNORED);
+    }
+    reactor_->CollectHandle(fence_.value());
+    fence_ = std::nullopt;
+  }
+
   switch (type_) {
     case Type::kTexture:
     case Type::kTextureMultisampled: {
@@ -623,6 +638,24 @@ bool TextureGLES::IsWrapped() const {
 
 std::optional<GLuint> TextureGLES::GetFBO() const {
   return wrapped_fbo_;
+}
+
+void TextureGLES::SetFence(HandleGLES fence) {
+  FML_DCHECK(!fence_.has_value());
+  fence_ = fence;
+}
+
+// Visible for testing.
+std::optional<HandleGLES> TextureGLES::GetSyncFence() const {
+  return fence_;
+}
+
+void TextureGLES::SetCachedFBO(GLuint fbo) {
+  cached_fbo_ = fbo;
+}
+
+GLuint TextureGLES::GetCachedFBO() const {
+  return cached_fbo_;
 }
 
 }  // namespace impeller

@@ -16,7 +16,6 @@
 #include "flutter/shell/platform/linux/fl_keyboard_handler.h"
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
-#include "flutter/shell/platform/linux/fl_mouse_cursor_handler.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_pointer_manager.h"
 #include "flutter/shell/platform/linux/fl_renderer_gdk.h"
@@ -24,6 +23,7 @@
 #include "flutter/shell/platform/linux/fl_socket_accessible.h"
 #include "flutter/shell/platform/linux/fl_text_input_handler.h"
 #include "flutter/shell/platform/linux/fl_text_input_view_delegate.h"
+#include "flutter/shell/platform/linux/fl_touch_manager.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
 #include "flutter/shell/platform/linux/fl_window_state_monitor.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
@@ -62,23 +62,28 @@ struct _FlView {
   // Manages pointer events.
   FlPointerManager* pointer_manager;
 
+  // Manages touch events.
+  FlTouchManager* touch_manager;
+
   // Manages keyboard events.
   FlKeyboardManager* keyboard_manager;
 
   // Flutter system channel handlers.
   FlKeyboardHandler* keyboard_handler;
   FlTextInputHandler* text_input_handler;
-  FlMouseCursorHandler* mouse_cursor_handler;
 
   // Accessible tree from Flutter, exposed as an AtkPlug.
   FlViewAccessible* view_accessible;
 
+  // Signal subscripton for cursor changes.
+  guint cursor_changed_cb_id;
+
   GCancellable* cancellable;
 };
 
-enum { kSignalFirstFrame, kSignalLastSignal };
+enum { SIGNAL_FIRST_FRAME, LAST_SIGNAL };
 
-static guint fl_view_signals[kSignalLastSignal];
+static guint fl_view_signals[LAST_SIGNAL];
 
 static void fl_renderable_iface_init(FlRenderableInterface* iface);
 
@@ -107,7 +112,7 @@ G_DEFINE_TYPE_WITH_CODE(
 static gboolean first_frame_idle_cb(gpointer user_data) {
   FlView* self = FL_VIEW(user_data);
 
-  g_signal_emit(self, fl_view_signals[kSignalFirstFrame], 0);
+  g_signal_emit(self, fl_view_signals[SIGNAL_FIRST_FRAME], 0);
 
   return FALSE;
 }
@@ -146,6 +151,11 @@ static void init_scrolling(FlView* self) {
       fl_scrolling_manager_new(self->engine, self->view_id);
 }
 
+static void init_touch(FlView* self) {
+  g_clear_object(&self->touch_manager);
+  self->touch_manager = fl_touch_manager_new(self->engine, self->view_id);
+}
+
 static FlutterPointerDeviceKind get_device_kind(GdkEvent* event) {
   GdkDevice* device = gdk_event_get_source_device(event);
   GdkInputSource source = gdk_device_get_source(device);
@@ -182,6 +192,28 @@ static gboolean get_mouse_button(GdkEvent* event, int64_t* button) {
     default:
       return FALSE;
   }
+}
+
+// Called when the mouse cursor changes.
+static void cursor_changed_cb(FlView* self) {
+  FlMouseCursorHandler* handler =
+      fl_engine_get_mouse_cursor_handler(self->engine);
+  const gchar* cursor_name = fl_mouse_cursor_handler_get_cursor_name(handler);
+  GdkWindow* window =
+      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self)));
+  g_autoptr(GdkCursor) cursor =
+      gdk_cursor_new_from_name(gdk_window_get_display(window), cursor_name);
+  gdk_window_set_cursor(window, cursor);
+}
+
+// Set the mouse cursor.
+static void setup_cursor(FlView* self) {
+  FlMouseCursorHandler* handler =
+      fl_engine_get_mouse_cursor_handler(self->engine);
+
+  self->cursor_changed_cb_id = g_signal_connect_swapped(
+      handler, "cursor-changed", G_CALLBACK(cursor_changed_cb), self);
+  cursor_changed_cb(self);
 }
 
 // Updates the engine with the current window metrics.
@@ -243,6 +275,7 @@ static void update_semantics_cb(FlEngine* engine,
 static void on_pre_engine_restart_cb(FlView* self) {
   init_keyboard(self);
   init_scrolling(self);
+  init_touch(self);
 }
 
 // Implements FlRenderable::redraw
@@ -384,11 +417,25 @@ static gboolean scroll_event_cb(FlView* self, GdkEventScroll* event) {
   return TRUE;
 }
 
+static gboolean touch_event_cb(FlView* self, GdkEventTouch* event) {
+  fl_touch_manager_handle_touch_event(
+      self->touch_manager, event,
+      gtk_widget_get_scale_factor(GTK_WIDGET(self)));
+  return TRUE;
+}
+
 // Signal handler for GtkWidget::motion-notify-event
 static gboolean motion_notify_event_cb(FlView* self,
                                        GdkEventMotion* motion_event) {
   GdkEvent* event = reinterpret_cast<GdkEvent*>(motion_event);
   sync_modifier_if_needed(self, event);
+
+  // return if touch event
+  auto event_type = gdk_event_get_event_type(event);
+  if (event_type == GDK_TOUCH_BEGIN || event_type == GDK_TOUCH_UPDATE ||
+      event_type == GDK_TOUCH_END || event_type == GDK_TOUCH_CANCEL) {
+    return FALSE;
+  }
 
   gdouble x = 0.0, y = 0.0;
   gdk_event_get_coords(event, &x, &y);
@@ -457,10 +504,8 @@ static GdkGLContext* create_context_cb(FlView* self) {
   fl_renderer_gdk_set_window(self->renderer,
                              gtk_widget_get_parent_window(GTK_WIDGET(self)));
 
-  // Create system channel handlers.
-  FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   init_scrolling(self);
-  self->mouse_cursor_handler = fl_mouse_cursor_handler_new(messenger, self);
+  init_touch(self);
 
   g_autoptr(GError) error = nullptr;
   if (!fl_renderer_gdk_create_contexts(self->renderer, &error)) {
@@ -504,6 +549,8 @@ static void realize_cb(FlView* self) {
     g_warning("Failed to start Flutter engine: %s", error->message);
     return;
   }
+
+  setup_cursor(self);
 
   handle_geometry_changed(self);
 
@@ -567,6 +614,13 @@ static void fl_view_dispose(GObject* object) {
     fl_engine_set_update_semantics_handler(self->engine, nullptr, nullptr,
                                            nullptr);
 
+    FlMouseCursorHandler* handler =
+        fl_engine_get_mouse_cursor_handler(self->engine);
+    if (self->cursor_changed_cb_id != 0) {
+      g_signal_handler_disconnect(handler, self->cursor_changed_cb_id);
+      self->cursor_changed_cb_id = 0;
+    }
+
     // Stop rendering.
     fl_renderer_remove_view(FL_RENDERER(self->renderer), self->view_id);
 
@@ -587,9 +641,9 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->window_state_monitor);
   g_clear_object(&self->scrolling_manager);
   g_clear_object(&self->pointer_manager);
+  g_clear_object(&self->touch_manager);
   g_clear_object(&self->keyboard_manager);
   g_clear_object(&self->keyboard_handler);
-  g_clear_object(&self->mouse_cursor_handler);
   g_clear_object(&self->view_accessible);
   g_clear_object(&self->cancellable);
 
@@ -637,7 +691,7 @@ static void fl_view_class_init(FlViewClass* klass) {
   widget_class->key_press_event = fl_view_key_press_event;
   widget_class->key_release_event = fl_view_key_release_event;
 
-  fl_view_signals[kSignalFirstFrame] =
+  fl_view_signals[SIGNAL_FIRST_FRAME] =
       g_signal_new("first-frame", fl_view_get_type(), G_SIGNAL_RUN_LAST, 0,
                    NULL, NULL, NULL, G_TYPE_NONE, 0);
 
@@ -664,7 +718,7 @@ static void fl_view_init(FlView* self) {
   gtk_widget_add_events(event_box,
                         GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK |
                             GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK |
-                            GDK_SMOOTH_SCROLL_MASK);
+                            GDK_SMOOTH_SCROLL_MASK | GDK_TOUCH_MASK);
 
   g_signal_connect_swapped(event_box, "button-press-event",
                            G_CALLBACK(button_press_event_cb), self);
@@ -690,6 +744,8 @@ static void fl_view_init(FlView* self) {
   g_signal_connect_swapped(rotate, "angle-changed",
                            G_CALLBACK(gesture_rotation_update_cb), self);
   g_signal_connect_swapped(rotate, "end", G_CALLBACK(gesture_rotation_end_cb),
+                           self);
+  g_signal_connect_swapped(event_box, "touch-event", G_CALLBACK(touch_event_cb),
                            self);
 
   self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
@@ -749,6 +805,8 @@ G_MODULE_EXPORT FlView* fl_view_new_for_engine(FlEngine* engine) {
                              FL_RENDERABLE(self));
 
   self->pointer_manager = fl_pointer_manager_new(self->view_id, engine);
+
+  setup_cursor(self);
 
   return self;
 }

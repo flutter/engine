@@ -5,9 +5,9 @@
 #include <memory>
 #include <vector>
 
-#include "display_list/dl_color.h"
+#include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_sampling_options.h"
-#include "flutter/display_list/effects/dl_color_source.h"
+#include "flutter/display_list/effects/dl_color_sources.h"
 #include "flutter/display_list/effects/dl_runtime_effect.h"
 #include "flutter/display_list/image/dl_image.h"
 #include "flutter/display_list/testing/dl_test_equality.h"
@@ -47,14 +47,16 @@ static const sk_sp<DlImage> kTestImage1 = MakeTestImage(10, 10, SK_ColorGREEN);
 static const sk_sp<DlImage> kTestAlphaImage1 =
     MakeTestImage(10, 10, SK_ColorTRANSPARENT);
 // clang-format off
-static const SkMatrix kTestMatrix1 =
-    SkMatrix::MakeAll(2, 0, 10,
-                      0, 3, 12,
-                      0, 0, 1);
-static const SkMatrix kTestMatrix2 =
-    SkMatrix::MakeAll(4, 0, 15,
-                      0, 7, 17,
-                      0, 0, 1);
+static const DlMatrix kTestMatrix1 =
+    DlMatrix::MakeRow(2, 0, 0, 10,
+                      0, 3, 0, 12,
+                      0, 0, 1, 0,
+                      0, 0, 0, 1);
+static const DlMatrix kTestMatrix2 =
+    DlMatrix::MakeRow(4, 0, 0, 15,
+                      0, 7, 0, 17,
+                      0, 0, 1, 0,
+                      0, 0, 0, 1);
 // clang-format on
 static constexpr int kTestStopCount = 3;
 static constexpr DlColor kTestColors[kTestStopCount] = {
@@ -77,61 +79,14 @@ static constexpr float kTestStops2[kTestStopCount] = {
     0.3f,
     1.0f,
 };
-static constexpr SkPoint kTestPoints[2] = {
-    SkPoint::Make(5, 15),
-    SkPoint::Make(7, 18),
+static constexpr DlPoint kTestPoints[2] = {
+    DlPoint(5, 15),
+    DlPoint(7, 18),
 };
-static constexpr SkPoint kTestPoints2[2] = {
-    SkPoint::Make(100, 115),
-    SkPoint::Make(107, 118),
+static constexpr DlPoint kTestPoints2[2] = {
+    DlPoint(100, 115),
+    DlPoint(107, 118),
 };
-
-TEST(DisplayListColorSource, ColorConstructor) {
-  DlColorColorSource source(DlColor::kRed());
-}
-
-TEST(DisplayListColorSource, ColorShared) {
-  DlColorColorSource source(DlColor::kRed());
-  ASSERT_NE(source.shared().get(), &source);
-  ASSERT_EQ(*source.shared(), source);
-}
-
-TEST(DisplayListColorSource, ColorAsColor) {
-  DlColorColorSource source(DlColor::kRed());
-  ASSERT_NE(source.asColor(), nullptr);
-  ASSERT_EQ(source.asColor(), &source);
-
-  ASSERT_EQ(source.asImage(), nullptr);
-  ASSERT_EQ(source.asLinearGradient(), nullptr);
-  ASSERT_EQ(source.asRadialGradient(), nullptr);
-  ASSERT_EQ(source.asConicalGradient(), nullptr);
-  ASSERT_EQ(source.asSweepGradient(), nullptr);
-  ASSERT_EQ(source.asRuntimeEffect(), nullptr);
-}
-
-TEST(DisplayListColorSource, ColorContents) {
-  DlColorColorSource source(DlColor::kRed());
-  ASSERT_EQ(source.color(), DlColor::kRed());
-  ASSERT_EQ(source.is_opaque(), true);
-  for (int i = 0; i < 255; i++) {
-    SkColor alpha_color = SkColorSetA(SK_ColorRED, i);
-    auto const alpha_source = DlColorColorSource(DlColor(alpha_color));
-    ASSERT_EQ(alpha_source.color(), alpha_color);
-    ASSERT_EQ(alpha_source.is_opaque(), false);
-  }
-}
-
-TEST(DisplayListColorSource, ColorEquals) {
-  DlColorColorSource source1(DlColor::kRed());
-  DlColorColorSource source2(DlColor::kRed());
-  TestEquals(source1, source2);
-}
-
-TEST(DisplayListColorSource, ColorNotEquals) {
-  DlColorColorSource source1(DlColor::kRed());
-  DlColorColorSource source2(DlColor::kBlue());
-  TestNotEquals(source1, source2, "Color differs");
-}
 
 TEST(DisplayListColorSource, ImageConstructor) {
   DlImageColorSource source(kTestImage1, DlTileMode::kClamp, DlTileMode::kClamp,
@@ -151,11 +106,11 @@ TEST(DisplayListColorSource, ImageAsImage) {
   ASSERT_NE(source.asImage(), nullptr);
   ASSERT_EQ(source.asImage(), &source);
 
-  ASSERT_EQ(source.asColor(), nullptr);
   ASSERT_EQ(source.asLinearGradient(), nullptr);
   ASSERT_EQ(source.asRadialGradient(), nullptr);
   ASSERT_EQ(source.asConicalGradient(), nullptr);
   ASSERT_EQ(source.asSweepGradient(), nullptr);
+  ASSERT_EQ(source.asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, ImageContents) {
@@ -234,6 +189,32 @@ TEST(DisplayListColorSource, LinearGradientConstructor) {
       DlTileMode::kClamp, &kTestMatrix1);
 }
 
+TEST(DisplayListColorSource, LinearGradientARGBConstructor) {
+  std::array<DlScalar, kTestStopCount * 4> colors;
+  for (int i = 0; i < kTestStopCount; ++i) {
+    colors[i * 4 + 0] = kTestColors[i].getAlphaF();  //
+    colors[i * 4 + 1] = kTestColors[i].getRedF();    //
+    colors[i * 4 + 2] = kTestColors[i].getGreenF();  //
+    colors[i * 4 + 3] = kTestColors[i].getBlueF();
+  }
+  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+      kTestPoints[0], kTestPoints[1], kTestStopCount, colors.data(), kTestStops,
+      DlTileMode::kClamp, &kTestMatrix1);
+  ASSERT_TRUE(source);
+  ASSERT_TRUE(source->asLinearGradient());
+  EXPECT_EQ(source->asLinearGradient()->start_point(), kTestPoints[0]);
+  EXPECT_EQ(source->asLinearGradient()->end_point(), kTestPoints[1]);
+  EXPECT_EQ(source->asLinearGradient()->stop_count(), kTestStopCount);
+  for (int i = 0; i < kTestStopCount; i++) {
+    EXPECT_EQ(source->asLinearGradient()->colors()[i],
+              kTestColors[i].withColorSpace(DlColorSpace::kExtendedSRGB));
+    EXPECT_EQ(source->asLinearGradient()->stops()[i], kTestStops[i]);
+  }
+  EXPECT_EQ(source->asLinearGradient()->tile_mode(), DlTileMode::kClamp);
+  EXPECT_EQ(source->asLinearGradient()->matrix(), kTestMatrix1);
+  EXPECT_EQ(source->is_opaque(), true);
+}
+
 TEST(DisplayListColorSource, LinearGradientShared) {
   std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
@@ -249,7 +230,6 @@ TEST(DisplayListColorSource, LinearGradientAsLinear) {
   ASSERT_NE(source->asLinearGradient(), nullptr);
   ASSERT_EQ(source->asLinearGradient(), source.get());
 
-  ASSERT_EQ(source->asColor(), nullptr);
   ASSERT_EQ(source->asImage(), nullptr);
   ASSERT_EQ(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
@@ -353,6 +333,32 @@ TEST(DisplayListColorSource, RadialGradientConstructor) {
       DlTileMode::kClamp, &kTestMatrix1);
 }
 
+TEST(DisplayListColorSource, RadialGradientARGBConstructor) {
+  std::array<DlScalar, kTestStopCount * 4> colors;
+  for (int i = 0; i < kTestStopCount; ++i) {
+    colors[i * 4 + 0] = kTestColors[i].getAlphaF();  //
+    colors[i * 4 + 1] = kTestColors[i].getRedF();    //
+    colors[i * 4 + 2] = kTestColors[i].getGreenF();  //
+    colors[i * 4 + 3] = kTestColors[i].getBlueF();
+  }
+  std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
+      kTestPoints[0], 10.f, kTestStopCount, colors.data(), kTestStops,
+      DlTileMode::kClamp, &kTestMatrix1);
+  ASSERT_TRUE(source);
+  ASSERT_TRUE(source->asRadialGradient());
+  EXPECT_EQ(source->asRadialGradient()->center(), kTestPoints[0]);
+  EXPECT_EQ(source->asRadialGradient()->radius(), 10.f);
+  EXPECT_EQ(source->asRadialGradient()->stop_count(), kTestStopCount);
+  for (int i = 0; i < kTestStopCount; i++) {
+    EXPECT_EQ(source->asRadialGradient()->colors()[i],
+              kTestColors[i].withColorSpace(DlColorSpace::kExtendedSRGB));
+    EXPECT_EQ(source->asRadialGradient()->stops()[i], kTestStops[i]);
+  }
+  EXPECT_EQ(source->asRadialGradient()->tile_mode(), DlTileMode::kClamp);
+  EXPECT_EQ(source->asRadialGradient()->matrix(), kTestMatrix1);
+  EXPECT_EQ(source->is_opaque(), true);
+}
+
 TEST(DisplayListColorSource, RadialGradientShared) {
   std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
       kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
@@ -368,7 +374,6 @@ TEST(DisplayListColorSource, RadialGradientAsRadial) {
   ASSERT_NE(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asRadialGradient(), source.get());
 
-  ASSERT_EQ(source->asColor(), nullptr);
   ASSERT_EQ(source->asImage(), nullptr);
   ASSERT_EQ(source->asLinearGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), nullptr);
@@ -472,6 +477,34 @@ TEST(DisplayListColorSource, ConicalGradientConstructor) {
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
 }
 
+TEST(DisplayListColorSource, ConicalGradientARGBConstructor) {
+  std::array<DlScalar, kTestStopCount * 4> colors;
+  for (int i = 0; i < kTestStopCount; ++i) {
+    colors[i * 4 + 0] = kTestColors[i].getAlphaF();  //
+    colors[i * 4 + 1] = kTestColors[i].getRedF();    //
+    colors[i * 4 + 2] = kTestColors[i].getGreenF();  //
+    colors[i * 4 + 3] = kTestColors[i].getBlueF();
+  }
+  std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
+      kTestPoints[0], 10.f, kTestPoints[1], 20.f, kTestStopCount, colors.data(),
+      kTestStops, DlTileMode::kClamp, &kTestMatrix1);
+  ASSERT_TRUE(source);
+  ASSERT_TRUE(source->asConicalGradient());
+  EXPECT_EQ(source->asConicalGradient()->start_center(), kTestPoints[0]);
+  EXPECT_EQ(source->asConicalGradient()->start_radius(), 10.f);
+  EXPECT_EQ(source->asConicalGradient()->end_center(), kTestPoints[1]);
+  EXPECT_EQ(source->asConicalGradient()->end_radius(), 20.f);
+  EXPECT_EQ(source->asConicalGradient()->stop_count(), kTestStopCount);
+  for (int i = 0; i < kTestStopCount; i++) {
+    EXPECT_EQ(source->asConicalGradient()->colors()[i],
+              kTestColors[i].withColorSpace(DlColorSpace::kExtendedSRGB));
+    EXPECT_EQ(source->asConicalGradient()->stops()[i], kTestStops[i]);
+  }
+  EXPECT_EQ(source->asConicalGradient()->tile_mode(), DlTileMode::kClamp);
+  EXPECT_EQ(source->asConicalGradient()->matrix(), kTestMatrix1);
+  EXPECT_EQ(source->is_opaque(), true);
+}
+
 TEST(DisplayListColorSource, ConicalGradientShared) {
   std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
       kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
@@ -487,7 +520,6 @@ TEST(DisplayListColorSource, ConicalGradientAsConical) {
   ASSERT_NE(source->asConicalGradient(), nullptr);
   ASSERT_EQ(source->asConicalGradient(), source.get());
 
-  ASSERT_EQ(source->asColor(), nullptr);
   ASSERT_EQ(source->asImage(), nullptr);
   ASSERT_EQ(source->asLinearGradient(), nullptr);
   ASSERT_EQ(source->asRadialGradient(), nullptr);
@@ -607,6 +639,33 @@ TEST(DisplayListColorSource, SweepGradientConstructor) {
       DlTileMode::kClamp, &kTestMatrix1);
 }
 
+TEST(DisplayListColorSource, SweepGradientARGBConstructor) {
+  std::array<DlScalar, kTestStopCount * 4> colors;
+  for (int i = 0; i < kTestStopCount; ++i) {
+    colors[i * 4 + 0] = kTestColors[i].getAlphaF();  //
+    colors[i * 4 + 1] = kTestColors[i].getRedF();    //
+    colors[i * 4 + 2] = kTestColors[i].getGreenF();  //
+    colors[i * 4 + 3] = kTestColors[i].getBlueF();
+  }
+  std::shared_ptr<DlColorSource> source = DlColorSource::MakeSweep(
+      kTestPoints[0], 10.f, 20.f, kTestStopCount, colors.data(), kTestStops,
+      DlTileMode::kClamp, &kTestMatrix1);
+  ASSERT_TRUE(source);
+  ASSERT_TRUE(source->asSweepGradient());
+  EXPECT_EQ(source->asSweepGradient()->center(), kTestPoints[0]);
+  EXPECT_EQ(source->asSweepGradient()->start(), 10.f);
+  EXPECT_EQ(source->asSweepGradient()->end(), 20.f);
+  EXPECT_EQ(source->asSweepGradient()->stop_count(), kTestStopCount);
+  for (int i = 0; i < kTestStopCount; i++) {
+    EXPECT_EQ(source->asSweepGradient()->colors()[i],
+              kTestColors[i].withColorSpace(DlColorSpace::kExtendedSRGB));
+    EXPECT_EQ(source->asSweepGradient()->stops()[i], kTestStops[i]);
+  }
+  EXPECT_EQ(source->asSweepGradient()->tile_mode(), DlTileMode::kClamp);
+  EXPECT_EQ(source->asSweepGradient()->matrix(), kTestMatrix1);
+  EXPECT_EQ(source->is_opaque(), true);
+}
+
 TEST(DisplayListColorSource, SweepGradientShared) {
   std::shared_ptr<DlColorSource> source = DlColorSource::MakeSweep(
       kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
@@ -622,7 +681,6 @@ TEST(DisplayListColorSource, SweepGradientAsSweep) {
   ASSERT_NE(source->asSweepGradient(), nullptr);
   ASSERT_EQ(source->asSweepGradient(), source.get());
 
-  ASSERT_EQ(source->asColor(), nullptr);
   ASSERT_EQ(source->asImage(), nullptr);
   ASSERT_EQ(source->asLinearGradient(), nullptr);
   ASSERT_EQ(source->asRadialGradient(), nullptr);
@@ -729,22 +787,18 @@ TEST(DisplayListColorSource, SweepGradientNotEquals) {
 }
 
 TEST(DisplayListColorSource, RuntimeEffect) {
-  std::shared_ptr<DlRuntimeEffectColorSource> source1 =
-      DlColorSource::MakeRuntimeEffect(
-          kTestRuntimeEffect1, {}, std::make_shared<std::vector<uint8_t>>());
-  std::shared_ptr<DlRuntimeEffectColorSource> source2 =
-      DlColorSource::MakeRuntimeEffect(
-          kTestRuntimeEffect2, {}, std::make_shared<std::vector<uint8_t>>());
-  std::shared_ptr<DlRuntimeEffectColorSource> source3 =
-      DlColorSource::MakeRuntimeEffect(
-          nullptr, {}, std::make_shared<std::vector<uint8_t>>());
+  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeRuntimeEffect(
+      kTestRuntimeEffect1, {}, std::make_shared<std::vector<uint8_t>>());
+  std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeRuntimeEffect(
+      kTestRuntimeEffect2, {}, std::make_shared<std::vector<uint8_t>>());
+  std::shared_ptr<DlColorSource> source3 = DlColorSource::MakeRuntimeEffect(
+      nullptr, {}, std::make_shared<std::vector<uint8_t>>());
 
   ASSERT_EQ(source1->type(), DlColorSourceType::kRuntimeEffect);
   ASSERT_EQ(source1->asRuntimeEffect(), source1.get());
   ASSERT_NE(source2->asRuntimeEffect(), source1.get());
 
   ASSERT_EQ(source1->asImage(), nullptr);
-  ASSERT_EQ(source1->asColor(), nullptr);
   ASSERT_EQ(source1->asLinearGradient(), nullptr);
   ASSERT_EQ(source1->asRadialGradient(), nullptr);
   ASSERT_EQ(source1->asConicalGradient(), nullptr);

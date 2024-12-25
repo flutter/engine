@@ -66,6 +66,18 @@ bool DisplayListMatrixClipState::mapAndClipRect(const SkRect& src,
   return false;
 }
 
+bool DisplayListMatrixClipState::mapAndClipRect(const DlRect& src,
+                                                DlRect* mapped) const {
+  DlRect dl_mapped = src.TransformAndClipBounds(matrix_);
+  auto dl_intersected = dl_mapped.Intersection(cull_rect_);
+  if (dl_intersected.has_value()) {
+    *mapped = dl_intersected.value();
+    return true;
+  }
+  *mapped = DlRect();
+  return false;
+}
+
 void DisplayListMatrixClipState::clipRect(const DlRect& rect,
                                           ClipOp op,
                                           bool is_aa) {
@@ -241,7 +253,7 @@ DlRect DisplayListMatrixClipState::GetLocalCullCoverage() const {
     // We could do a 4-point long-form conversion, but since this is
     // only used for culling, let's just return a non-constricting
     // cull rect.
-    return ToDlRect(DisplayListBuilder::kMaxCullRect);
+    return DisplayListBuilder::kMaxCullRect;
   }
   DlMatrix inverse = matrix_.Invert();
   // We eliminated perspective above so we can use the cheaper non-clipping

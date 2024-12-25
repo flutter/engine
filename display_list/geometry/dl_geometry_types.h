@@ -23,6 +23,7 @@ using DlDegrees = impeller::Degrees;
 using DlRadians = impeller::Radians;
 
 using DlPoint = impeller::Point;
+using DlVector2 = impeller::Vector2;
 using DlIPoint = impeller::IPoint32;
 using DlSize = impeller::Size;
 using DlISize = impeller::ISize32;
@@ -30,6 +31,7 @@ using DlRect = impeller::Rect;
 using DlIRect = impeller::IRect32;
 using DlRoundRect = impeller::RoundRect;
 using DlMatrix = impeller::Matrix;
+using DlQuad = impeller::Quad;
 
 static_assert(sizeof(SkPoint) == sizeof(DlPoint));
 static_assert(sizeof(SkIPoint) == sizeof(DlIPoint));
@@ -38,6 +40,20 @@ static_assert(sizeof(SkISize) == sizeof(DlISize));
 static_assert(sizeof(SkRect) == sizeof(DlRect));
 static_assert(sizeof(SkIRect) == sizeof(DlIRect));
 static_assert(sizeof(SkVector) == sizeof(DlSize));
+
+static constexpr DlScalar kEhCloseEnough = impeller::kEhCloseEnough;
+static constexpr DlScalar kPi = impeller::kPi;
+
+constexpr inline bool DlScalarNearlyZero(DlScalar x,
+                                         DlScalar tolerance = kEhCloseEnough) {
+  return impeller::ScalarNearlyZero(x, tolerance);
+}
+
+constexpr inline bool DlScalarNearlyEqual(DlScalar x,
+                                          DlScalar y,
+                                          DlScalar tolerance = kEhCloseEnough) {
+  return impeller::ScalarNearlyEqual(x, y, tolerance);
+}
 
 inline const DlPoint& ToDlPoint(const SkPoint& point) {
   return *reinterpret_cast<const DlPoint*>(&point);
@@ -127,11 +143,16 @@ inline const SkIRect& ToSkIRect(const DlIRect& rect) {
   return *reinterpret_cast<const SkIRect*>(&rect);
 }
 
+inline std::optional<const SkIRect> ToOptSkIRect(
+    std::optional<const DlIRect> rect) {
+  return rect.has_value() ? std::optional(ToSkIRect(*rect)) : std::nullopt;
+}
+
 inline const SkRect* ToSkRect(const DlRect* rect) {
   return rect == nullptr ? nullptr : reinterpret_cast<const SkRect*>(rect);
 }
 
-inline const SkRect* ToSkRect(std::optional<const DlRect>& rect) {
+inline const SkRect* ToSkRect(const std::optional<DlRect>& rect) {
   return rect.has_value() ? &ToSkRect(rect.value()) : nullptr;
 }
 
@@ -141,6 +162,14 @@ inline SkRect* ToSkRect(DlRect* rect) {
 
 inline const SkRect* ToSkRects(const DlRect* rects) {
   return rects == nullptr ? nullptr : reinterpret_cast<const SkRect*>(rects);
+}
+
+inline const SkIRect* ToSkIRects(const DlIRect* rects) {
+  return rects == nullptr ? nullptr : reinterpret_cast<const SkIRect*>(rects);
+}
+
+inline const SkSize& ToSkSize(const DlSize& size) {
+  return *reinterpret_cast<const SkSize*>(&size);
 }
 
 inline const SkISize& ToSkISize(const DlISize& size) {

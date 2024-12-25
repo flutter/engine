@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/render_pass.h"
+
+#include <utility>
 #include "fml/status.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/vertex_buffer.h"
@@ -63,15 +65,6 @@ bool RenderPass::AddCommand(Command&& command) {
     return false;
   }
 
-  if (command.scissor.has_value()) {
-    auto target_rect = IRect::MakeSize(render_target_.GetRenderTargetSize());
-    if (!target_rect.Contains(command.scissor.value())) {
-      VALIDATION_LOG << "Cannot apply a scissor that lies outside the bounds "
-                        "of the render target.";
-      return false;
-    }
-  }
-
   if (command.element_count == 0u || command.instance_count == 0u) {
     // Essentially a no-op. Don't record the command but this is not necessary
     // an error either.
@@ -90,9 +83,15 @@ const std::shared_ptr<const Context>& RenderPass::GetContext() const {
   return context_;
 }
 
+void RenderPass::SetPipeline(PipelineRef pipeline) {
+  // On debug this makes a difference, but not on release builds.
+  // NOLINTNEXTLINE(performance-move-const-arg)
+  pending_.pipeline = std::move(pipeline);
+}
+
 void RenderPass::SetPipeline(
     const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
-  pending_.pipeline = pipeline;
+  SetPipeline(PipelineRef(pipeline));
 }
 
 void RenderPass::SetCommandLabel(std::string_view label) {
@@ -151,9 +150,13 @@ bool RenderPass::SetVertexBuffer(BufferView vertex_buffers[],
     return false;
   }
 
-  pending_.vertex_buffer_count = vertex_buffer_count;
+  if (!vertex_buffers_start_.has_value()) {
+    vertex_buffers_start_ = vertex_buffers_.size();
+  }
+
+  pending_.vertex_buffers.length += vertex_buffer_count;
   for (size_t i = 0; i < vertex_buffer_count; i++) {
-    pending_.vertex_buffers[i] = std::move(vertex_buffers[i]);
+    vertex_buffers_.push_back(vertex_buffers[i]);
   }
   return true;
 }
@@ -203,8 +206,14 @@ bool RenderPass::ValidateIndexBuffer(const BufferView& index_buffer,
 }
 
 fml::Status RenderPass::Draw() {
+  pending_.bound_buffers.offset = bound_buffers_start_.value_or(0u);
+  pending_.bound_textures.offset = bound_textures_start_.value_or(0u);
+  pending_.vertex_buffers.offset = vertex_buffers_start_.value_or(0u);
   auto result = AddCommand(std::move(pending_));
   pending_ = Command{};
+  bound_textures_start_ = std::nullopt;
+  bound_buffers_start_ = std::nullopt;
+  vertex_buffers_start_ = std::nullopt;
   if (result) {
     return fml::Status();
   }
@@ -216,29 +225,94 @@ fml::Status RenderPass::Draw() {
 bool RenderPass::BindResource(ShaderStage stage,
                               DescriptorType type,
                               const ShaderUniformSlot& slot,
-                              const ShaderMetadata& metadata,
+                              const ShaderMetadata* metadata,
                               BufferView view) {
-  return pending_.BindResource(stage, type, slot, metadata, view);
-}
-
-bool RenderPass::BindResource(
-    ShaderStage stage,
-    DescriptorType type,
-    const ShaderUniformSlot& slot,
-    const std::shared_ptr<const ShaderMetadata>& metadata,
-    BufferView view) {
-  return pending_.BindResource(stage, type, slot, metadata, std::move(view));
+  FML_DCHECK(slot.ext_res_0 != VertexDescriptor::kReservedVertexBufferIndex);
+  if (!view) {
+    return false;
+  }
+  BufferResource resouce = BufferResource(metadata, std::move(view));
+  return BindBuffer(stage, slot, std::move(resouce));
 }
 
 // |ResourceBinder|
 bool RenderPass::BindResource(ShaderStage stage,
                               DescriptorType type,
                               const SampledImageSlot& slot,
-                              const ShaderMetadata& metadata,
+                              const ShaderMetadata* metadata,
                               std::shared_ptr<const Texture> texture,
-                              const std::unique_ptr<const Sampler>& sampler) {
-  return pending_.BindResource(stage, type, slot, metadata, std::move(texture),
-                               sampler);
+                              raw_ptr<const Sampler> sampler) {
+  if (!sampler) {
+    return false;
+  }
+  if (!texture || !texture->IsValid()) {
+    return false;
+  }
+  TextureResource resource = TextureResource(metadata, std::move(texture));
+  return BindTexture(stage, slot, std::move(resource), sampler);
+}
+
+bool RenderPass::BindDynamicResource(ShaderStage stage,
+                                     DescriptorType type,
+                                     const ShaderUniformSlot& slot,
+                                     std::unique_ptr<ShaderMetadata> metadata,
+                                     BufferView view) {
+  FML_DCHECK(slot.ext_res_0 != VertexDescriptor::kReservedVertexBufferIndex);
+  if (!view) {
+    return false;
+  }
+  BufferResource resouce =
+      BufferResource::MakeDynamic(std::move(metadata), std::move(view));
+
+  return BindBuffer(stage, slot, std::move(resouce));
+}
+
+bool RenderPass::BindDynamicResource(ShaderStage stage,
+                                     DescriptorType type,
+                                     const SampledImageSlot& slot,
+                                     std::unique_ptr<ShaderMetadata> metadata,
+                                     std::shared_ptr<const Texture> texture,
+                                     raw_ptr<const Sampler> sampler) {
+  if (!sampler) {
+    return false;
+  }
+  if (!texture || !texture->IsValid()) {
+    return false;
+  }
+  TextureResource resource =
+      TextureResource::MakeDynamic(std::move(metadata), std::move(texture));
+  return BindTexture(stage, slot, std::move(resource), sampler);
+}
+
+bool RenderPass::BindBuffer(ShaderStage stage,
+                            const ShaderUniformSlot& slot,
+                            BufferResource resource) {
+  if (!bound_buffers_start_.has_value()) {
+    bound_buffers_start_ = bound_buffers_.size();
+  }
+
+  pending_.bound_buffers.length++;
+  bound_buffers_.push_back(std::move(resource));
+  return true;
+}
+
+bool RenderPass::BindTexture(ShaderStage stage,
+                             const SampledImageSlot& slot,
+                             TextureResource resource,
+                             raw_ptr<const Sampler> sampler) {
+  TextureAndSampler data = TextureAndSampler{
+      .stage = stage,
+      .texture = std::move(resource),
+      .sampler = sampler,
+  };
+
+  if (!bound_textures_start_.has_value()) {
+    bound_textures_start_ = bound_textures_.size();
+  }
+
+  pending_.bound_textures.length++;
+  bound_textures_.push_back(std::move(data));
+  return true;
 }
 
 }  // namespace impeller

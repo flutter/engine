@@ -15,13 +15,7 @@
 
 static_assert(__has_feature(objc_arc), "ARC must be enabled.");
 
-namespace flutter {
-
-// TOOD(cbracken): https://github.com/flutter/flutter/issues/157942
-struct MetalObjCFields {
-  id<MTLDevice> device;
-  id<MTLCommandQueue> command_queue;
-};
+namespace flutter::testing {
 
 TestMetalContext::TestMetalContext() {
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
@@ -48,22 +42,21 @@ TestMetalContext::TestMetalContext() {
     FML_LOG(ERROR) << "Could not create the GrDirectContext from the Metal Device "
                       "and command queue.";
   }
-
-  metal_ = std::make_unique<MetalObjCFields>(MetalObjCFields{device, command_queue});
+  device_ = device;
+  command_queue_ = command_queue;
 }
 
 TestMetalContext::~TestMetalContext() {
   std::scoped_lock lock(textures_mutex_);
   textures_.clear();
-  metal_.reset();
 }
 
-void* TestMetalContext::GetMetalDevice() const {
-  return metal_ ? (__bridge void*)metal_->device : nil;
+id<MTLDevice> TestMetalContext::GetMetalDevice() const {
+  return device_;
 }
 
-void* TestMetalContext::GetMetalCommandQueue() const {
-  return metal_ ? (__bridge void*)metal_->command_queue : nil;
+id<MTLCommandQueue> TestMetalContext::GetMetalCommandQueue() const {
+  return command_queue_;
 }
 
 sk_sp<GrDirectContext> TestMetalContext::GetSkiaContext() const {
@@ -88,12 +81,12 @@ TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const SkISize
     return {.texture_id = -1, .texture = nullptr};
   }
 
-  if (!metal_) {
+  if (!device_) {
     FML_CHECK(false) << "Invalid Metal device.";
     return {.texture_id = -1, .texture = nullptr};
   }
 
-  id<MTLTexture> texture = [metal_->device newTextureWithDescriptor:texture_descriptor];
+  id<MTLTexture> texture = [device_ newTextureWithDescriptor:texture_descriptor];
   if (!texture) {
     FML_CHECK(false) << "Could not create texture from texture descriptor.";
     return {.texture_id = -1, .texture = nullptr};
@@ -133,4 +126,4 @@ TestMetalContext::TextureInfo TestMetalContext::GetTextureInfo(int64_t texture_i
   }
 }
 
-}  // namespace flutter
+}  // namespace flutter::testing

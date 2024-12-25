@@ -15,10 +15,18 @@ namespace testing {
 class SemanticsActionObservation {
  public:
   SemanticsActionObservation(int32_t observed_id, SemanticsAction observed_action)
-      : id(observed_id), action(observed_action) {}
+      : id(observed_id), action(observed_action), args({}) {}
+
+  SemanticsActionObservation(int32_t observed_id,
+                             SemanticsAction observed_action,
+                             fml::MallocMapping& args)
+      : id(observed_id),
+        action(observed_action),
+        args(args.GetMapping(), args.GetMapping() + args.GetSize()) {}
 
   int32_t id;
   SemanticsAction action;
+  std::vector<uint8_t> args;
 };
 
 class MockAccessibilityBridge : public AccessibilityBridgeIos {
@@ -38,14 +46,12 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
                                fml::MallocMapping args) override {
-    SemanticsActionObservation observation(id, action);
+    SemanticsActionObservation observation(id, action, args);
     observations.push_back(observation);
   }
   void AccessibilityObjectDidBecomeFocused(int32_t id) override {}
   void AccessibilityObjectDidLoseFocus(int32_t id) override {}
-  std::shared_ptr<PlatformViewsController> GetPlatformViewsController() const override {
-    return nil;
-  }
+  FlutterPlatformViewsController* GetPlatformViewsController() const override { return nil; }
   std::vector<SemanticsActionObservation> observations;
   bool isVoiceOverRunningValue;
 
@@ -69,14 +75,12 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
                                fml::MallocMapping args) override {
-    SemanticsActionObservation observation(id, action);
+    SemanticsActionObservation observation(id, action, args);
     observations.push_back(observation);
   }
   void AccessibilityObjectDidBecomeFocused(int32_t id) override {}
   void AccessibilityObjectDidLoseFocus(int32_t id) override {}
-  std::shared_ptr<PlatformViewsController> GetPlatformViewsController() const override {
-    return nil;
-  }
+  FlutterPlatformViewsController* GetPlatformViewsController() const override { return nil; }
   std::vector<SemanticsActionObservation> observations;
   bool isVoiceOverRunningValue;
 

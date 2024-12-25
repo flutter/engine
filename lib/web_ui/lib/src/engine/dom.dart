@@ -169,6 +169,12 @@ extension DomWindowExtension on DomWindow {
   /// The Trusted Types API (when available).
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API
   external DomTrustedTypePolicyFactory? get trustedTypes;
+
+  @JS('createImageBitmap')
+  external JSPromise<JSAny?> _createImageBitmap(DomImageData source);
+  Future<DomImageBitmap> createImageBitmap(DomImageData source) {
+    return js_util.promiseToFuture<DomImageBitmap>(_createImageBitmap(source));
+  }
 }
 
 typedef DomRequestAnimationFrameCallback = void Function(JSNumber highResTime);
@@ -983,6 +989,22 @@ extension DomHTMLImageElementExtension on DomHTMLImageElement {
   @JS('height')
   external set _height(JSNumber? value);
   set height(double? value) => _height = value?.toJS;
+
+  @JS('crossOrigin')
+  external JSString? get _crossOrigin;
+  String? get crossOrigin => _crossOrigin?.toDart;
+
+  @JS('crossOrigin')
+  external set _crossOrigin(JSString? value);
+  set crossOrigin(String? value) => _crossOrigin = value?.toJS;
+
+  @JS('decoding')
+  external JSString? get _decoding;
+  String? get decoding => _decoding?.toDart;
+
+  @JS('decoding')
+  external set _decoding(JSString? value);
+  set decoding(String? value) => _decoding = value?.toJS;
 
   @JS('decode')
   external JSPromise<JSAny?> _decode();

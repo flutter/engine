@@ -418,6 +418,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     return (name, flags, extra_env)
 
   unittests = [
+      make_test('assets_unittests'),
       make_test('client_wrapper_glfw_unittests'),
       make_test('client_wrapper_unittests'),
       make_test('common_cpp_core_unittests'),
@@ -431,6 +432,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('fml_unittests'),
       make_test('no_dart_plugin_registrant_unittests'),
       make_test('runtime_unittests'),
+      make_test('testing_unittests'),
       make_test('tonic_unittests'),
       # The image release unit test can take a while on slow machines.
       make_test('ui_unittests', flags=repeat_flags + ['--timeout=90']),

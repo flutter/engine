@@ -15,12 +15,19 @@ TextureVK::TextureVK(std::weak_ptr<Context> context,
                      std::shared_ptr<TextureSourceVK> source)
     : Texture(source->GetTextureDescriptor()),
       context_(std::move(context)),
-      source_(std::move(source)) {}
+      source_(std::move(source)) {
+#ifdef IMPELLER_DEBUG
+  has_validation_layers_ = HasValidationLayers();
+#endif  // IMPELLER_DEBUG
+}
 
 TextureVK::~TextureVK() = default;
 
 void TextureVK::SetLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
+  if (!has_validation_layers_) {
+    return;
+  }
   auto context = context_.lock();
   if (!context) {
     // The context may have died.
@@ -220,7 +227,7 @@ std::shared_ptr<SamplerVK> TextureVK::GetImmutableSamplerVariant(
   if (!source_) {
     return nullptr;
   }
-  auto conversion = source_->GetYUVConversion();
+  std::shared_ptr<YUVConversionVK> conversion = source_->GetYUVConversion();
   if (!conversion) {
     // Most textures don't need a sampler conversion and will go down this path.
     // Only needed for YUV sampling from external textures.

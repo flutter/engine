@@ -7,30 +7,6 @@
 
 #include "flutter/shell/platform/linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
-
-typedef FlValue* (*FlValueConverter)(FlValue*);
-
-/**
- * FlKeyChannelResponderMock:
- *
- * Allows mocking of FlKeyChannelResponder methods and values. Only used in
- * unittests.
- */
-typedef struct _FlKeyChannelResponderMock {
-  /**
-   * FlKeyChannelResponderMock::value_converter:
-   * If #value_converter is not nullptr, then this function is applied to the
-   * reply of the message, whose return value is taken as the message reply.
-   */
-  FlValueConverter value_converter;
-
-  /**
-   * FlKeyChannelResponderMock::channel_name:
-   * Mocks the channel name to send the message.
-   */
-  const char* channel_name;
-} FlKeyChannelResponderMock;
 
 G_BEGIN_DECLS
 
@@ -39,18 +15,6 @@ G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
                      FL,
                      KEY_CHANNEL_RESPONDER,
                      GObject);
-
-/**
- * FlKeyChannelResponderAsyncCallback:
- * @event: whether the event has been handled.
- * @user_data: the same value as user_data sent by
- * #fl_key_responder_handle_event.
- *
- * The signature for a callback with which a #FlKeyChannelResponder
- *asynchronously reports whether the responder handles the event.
- **/
-typedef void (*FlKeyChannelResponderAsyncCallback)(bool handled,
-                                                   gpointer user_data);
 
 /**
  * FlKeyChannelResponder:
@@ -64,15 +28,13 @@ typedef void (*FlKeyChannelResponderAsyncCallback)(bool handled,
 /**
  * fl_key_channel_responder_new:
  * @messenger: the messenger that the message channel should be built on.
- * @mock: options to mock several functionalities. Only used in unittests.
  *
  * Creates a new #FlKeyChannelResponder.
  *
  * Returns: a new #FlKeyChannelResponder.
  */
 FlKeyChannelResponder* fl_key_channel_responder_new(
-    FlBinaryMessenger* messenger,
-    FlKeyChannelResponderMock* mock = nullptr);
+    FlBinaryMessenger* messenger);
 
 /**
  * fl_key_channel_responder_handle_event:
@@ -80,21 +42,37 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
  * @event: the event to be handled. Must not be null. The object is managed by
  * callee and must not be assumed available after this function.
  * @specified_logical_key:
- * @callback: the callback to report the result. It should be called exactly
- * once. Must not be null.
- * @user_data: a value that will be sent back in the callback. Can be null.
+ * @cancellable: (allow-none): a #GCancellable or %NULL.
+ * @callback: (scope async): a #GAsyncReadyCallback to call when the event has
+ * been processed.
+ * @user_data: (closure): user data to pass to @callback.
  *
- * Let the responder handle an event, expecting the responder to report
- *  whether to handle the event. The result will be reported by invoking
- * `callback` exactly once, which might happen after
- * `fl_key_channel_responder_handle_event` or during it.
+ * Let the responder handle an event.
  */
-void fl_key_channel_responder_handle_event(
+void fl_key_channel_responder_handle_event(FlKeyChannelResponder* responder,
+                                           FlKeyEvent* event,
+                                           uint64_t specified_logical_key,
+                                           GCancellable* cancellable,
+                                           GAsyncReadyCallback callback,
+                                           gpointer user_data);
+
+/**
+ * fl_key_channel_responder_handle_event_finish:
+ * @responder: an #FlKeyChannelResponder.
+ * @result: a #GAsyncResult.
+ * @handled: location to write if this event was handled by the platform.
+ * @error: (allow-none): #GError location to store the error occurring, or %NULL
+ * to ignore.
+ *
+ * Completes request started with fl_key_channel_responder_handle_event().
+ *
+ * Returns %TRUE on success.
+ */
+gboolean fl_key_channel_responder_handle_event_finish(
     FlKeyChannelResponder* responder,
-    FlKeyEvent* event,
-    uint64_t specified_logical_key,
-    FlKeyChannelResponderAsyncCallback callback,
-    gpointer user_data);
+    GAsyncResult* result,
+    gboolean* handled,
+    GError** error);
 
 G_END_DECLS
 

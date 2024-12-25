@@ -51,9 +51,9 @@ bool EmbedderTestCompositor::CollectBackingStore(
   return true;
 }
 
-void EmbedderTestCompositor::SetBackingStoreProducer(
-    std::unique_ptr<EmbedderTestBackingStoreProducer> backingstore_producer) {
-  backingstore_producer_ = std::move(backingstore_producer);
+sk_sp<SkSurface> EmbedderTestCompositor::GetSurface(
+    const FlutterBackingStore* backing_store) const {
+  return backingstore_producer_->GetSurface(backing_store);
 }
 
 sk_sp<SkImage> EmbedderTestCompositor::GetLastComposition() {

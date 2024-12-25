@@ -104,15 +104,15 @@ static MTLRenderPassDescriptor* ToMTLRenderPassDescriptor(
     const RenderTarget& desc) {
   auto result = [MTLRenderPassDescriptor renderPassDescriptor];
 
-  const auto& colors = desc.GetColorAttachments();
+  bool configured_attachment = desc.IterateAllColorAttachments(
+      [&result](size_t index, const ColorAttachment& attachment) -> bool {
+        return ConfigureColorAttachment(attachment,
+                                        result.colorAttachments[index]);
+      });
 
-  for (const auto& color : colors) {
-    if (!ConfigureColorAttachment(color.second,
-                                  result.colorAttachments[color.first])) {
-      VALIDATION_LOG << "Could not configure color attachment at index "
-                     << color.first;
-      return nil;
-    }
+  if (!configured_attachment) {
+    VALIDATION_LOG << "Could not configure color attachments";
+    return nil;
   }
 
   const auto& depth = desc.GetDepthAttachment();
@@ -210,7 +210,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
 static bool Bind(PassBindingsCacheMTL& pass,
                  ShaderStage stage,
                  size_t bind_index,
-                 const std::unique_ptr<const Sampler>& sampler,
+                 raw_ptr<const Sampler> sampler,
                  const Texture& texture) {
   if (!sampler || !texture.IsValid()) {
     return false;
@@ -233,8 +233,7 @@ static bool Bind(PassBindingsCacheMTL& pass,
 }
 
 // |RenderPass|
-void RenderPassMTL::SetPipeline(
-    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
+void RenderPassMTL::SetPipeline(PipelineRef pipeline) {
   const PipelineDescriptor& pipeline_desc = pipeline->GetDescriptor();
   primitive_type_ = pipeline_desc.GetPrimitiveType();
   pass_bindings_.SetRenderPipelineState(
@@ -385,29 +384,41 @@ fml::Status RenderPassMTL::Draw() {
 bool RenderPassMTL::BindResource(ShaderStage stage,
                                  DescriptorType type,
                                  const ShaderUniformSlot& slot,
-                                 const ShaderMetadata& metadata,
+                                 const ShaderMetadata* metadata,
                                  BufferView view) {
   return Bind(pass_bindings_, stage, slot.ext_res_0, view);
 }
 
 // |RenderPass|
-bool RenderPassMTL::BindResource(
+bool RenderPassMTL::BindDynamicResource(
     ShaderStage stage,
     DescriptorType type,
     const ShaderUniformSlot& slot,
-    const std::shared_ptr<const ShaderMetadata>& metadata,
+    std::unique_ptr<ShaderMetadata> metadata,
     BufferView view) {
   return Bind(pass_bindings_, stage, slot.ext_res_0, view);
 }
 
 // |RenderPass|
-bool RenderPassMTL::BindResource(
+bool RenderPassMTL::BindResource(ShaderStage stage,
+                                 DescriptorType type,
+                                 const SampledImageSlot& slot,
+                                 const ShaderMetadata* metadata,
+                                 std::shared_ptr<const Texture> texture,
+                                 raw_ptr<const Sampler> sampler) {
+  if (!texture) {
+    return false;
+  }
+  return Bind(pass_bindings_, stage, slot.texture_index, sampler, *texture);
+}
+
+bool RenderPassMTL::BindDynamicResource(
     ShaderStage stage,
     DescriptorType type,
     const SampledImageSlot& slot,
-    const ShaderMetadata& metadata,
+    std::unique_ptr<ShaderMetadata> metadata,
     std::shared_ptr<const Texture> texture,
-    const std::unique_ptr<const Sampler>& sampler) {
+    raw_ptr<const Sampler> sampler) {
   if (!texture) {
     return false;
   }

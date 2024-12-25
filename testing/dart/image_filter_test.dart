@@ -14,9 +14,9 @@ import 'impeller_enabled.dart';
 const Color red = Color(0xFFAA0000);
 const Color green = Color(0xFF00AA00);
 
-const int greenCenterBlurred = 0x1C001300;
-const int greenSideBlurred = 0x15000E00;
-const int greenCornerBlurred = 0x10000A00;
+const int greenCenterBlurred = 0x29001B00;
+const int greenSideBlurred = 0x19001000;
+const int greenCornerBlurred = 0x0F000A00;
 
 const int greenCenterScaled = 0xFF00AA00;
 const int greenSideScaled = 0x80005500;
@@ -92,7 +92,8 @@ void main() async {
 
   List<ColorFilter> colorFilters() {
     // Create new color filter instances on each invocation.
-    return <ColorFilter> [                        // ignore: prefer_const_constructors
+    // ignore: prefer_const_constructors
+    return <ColorFilter> [
       ColorFilter.mode(green, BlendMode.color),   // ignore: prefer_const_constructors
       ColorFilter.mode(red, BlendMode.color),     // ignore: prefer_const_constructors
       ColorFilter.mode(red, BlendMode.screen),    // ignore: prefer_const_constructors

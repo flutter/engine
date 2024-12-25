@@ -14,6 +14,10 @@
 
 namespace impeller {
 
+static constexpr size_t kMaxColorAttachments = 16;
+static constexpr size_t kMaxAttachments =
+    (kMaxColorAttachments * 2) + 1;  // MSAA + resolve plus depth/stencil
+
 class RenderPassBuilderVK {
  public:
   RenderPassBuilderVK();
@@ -54,10 +58,20 @@ class RenderPassBuilderVK {
   // Visible for testing.
   const std::optional<vk::AttachmentDescription>& GetDepthStencil() const;
 
+  // Visible for testing.
+  std::optional<vk::AttachmentDescription> GetColor0() const;
+
+  // Visible for testing.
+  std::optional<vk::AttachmentDescription> GetColor0Resolve() const;
+
  private:
+  std::optional<vk::AttachmentDescription> color0_;
+  std::optional<vk::AttachmentDescription> color0_resolve_;
+  std::optional<vk::AttachmentDescription> depth_stencil_;
+
+  // Color attachment 0 is stored in the field above and not in these maps.
   std::map<size_t, vk::AttachmentDescription> colors_;
   std::map<size_t, vk::AttachmentDescription> resolves_;
-  std::optional<vk::AttachmentDescription> depth_stencil_;
 };
 
 //------------------------------------------------------------------------------

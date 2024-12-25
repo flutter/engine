@@ -7,6 +7,7 @@
 
 #include "gmock/gmock.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/runtime_types.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/command_buffer.h"
@@ -128,6 +129,7 @@ class MockCommandBuffer : public CommandBuffer {
               OnSubmitCommands,
               (CompletionCallback callback),
               (override));
+  MOCK_METHOD(void, OnWaitUntilCompleted, (), (override));
   MOCK_METHOD(void, OnWaitUntilScheduled, (), (override));
   MOCK_METHOD(std::shared_ptr<ComputePass>,
               OnCreateComputePass,
@@ -181,6 +183,11 @@ class MockImpellerContext : public Context {
 
   MOCK_METHOD(std::shared_ptr<CommandQueue>,
               GetCommandQueue,
+              (),
+              (const, override));
+
+  MOCK_METHOD(RuntimeStageBackend,
+              GetRuntimeStageBackend,
               (),
               (const, override));
 };
@@ -237,9 +244,9 @@ class MockCommandQueue : public CommandQueue {
 
 class MockSamplerLibrary : public SamplerLibrary {
  public:
-  MOCK_METHOD(const std::unique_ptr<const Sampler>&,
+  MOCK_METHOD(raw_ptr<const Sampler>,
               GetSampler,
-              (SamplerDescriptor descriptor),
+              (const SamplerDescriptor& descriptor),
               (override));
 };
 

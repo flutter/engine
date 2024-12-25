@@ -50,7 +50,7 @@ enum MutatorType {
 // https://github.com/flutter/flutter/issues/108470
 class ImageFilterMutation {
  public:
-  ImageFilterMutation(std::shared_ptr<const DlImageFilter> filter,
+  ImageFilterMutation(std::shared_ptr<DlImageFilter> filter,
                       const SkRect& filter_rect)
       : filter_(std::move(filter)), filter_rect_(filter_rect) {}
 
@@ -66,7 +66,7 @@ class ImageFilterMutation {
   }
 
  private:
-  std::shared_ptr<const DlImageFilter> filter_;
+  std::shared_ptr<DlImageFilter> filter_;
   const SkRect filter_rect_;
 };
 
@@ -111,11 +111,19 @@ class Mutator {
   explicit Mutator(const SkMatrix& matrix)
       : type_(kTransform), matrix_(matrix) {}
   explicit Mutator(const int& alpha) : type_(kOpacity), alpha_(alpha) {}
-  explicit Mutator(const std::shared_ptr<const DlImageFilter>& filter,
+  explicit Mutator(const std::shared_ptr<DlImageFilter>& filter,
                    const SkRect& filter_rect)
       : type_(kBackdropFilter),
         filter_mutation_(
             std::make_shared<ImageFilterMutation>(filter, filter_rect)) {}
+
+  explicit Mutator(const DlRect& rect) : Mutator(ToSkRect(rect)) {}
+  explicit Mutator(const DlRoundRect& rrect) : Mutator(ToSkRRect(rrect)) {}
+  explicit Mutator(const DlPath& path) : Mutator(path.GetSkPath()) {}
+  explicit Mutator(const DlMatrix& matrix) : Mutator(ToSkMatrix(matrix)) {}
+  explicit Mutator(const std::shared_ptr<DlImageFilter>& filter,
+                   const DlRect& filter_rect)
+      : Mutator(filter, ToSkRect(filter_rect)) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }
@@ -197,7 +205,7 @@ class MutatorsStack {
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
   // `filter_rect` is in global coordinates.
-  void PushBackdropFilter(const std::shared_ptr<const DlImageFilter>& filter,
+  void PushBackdropFilter(const std::shared_ptr<DlImageFilter>& filter,
                           const SkRect& filter_rect);
 
   // Removes the `Mutator` on the top of the stack
@@ -296,7 +304,7 @@ class EmbeddedViewParams {
   // Pushes the stored DlImageFilter object to the mutators stack.
   //
   // `filter_rect` is in global coordinates.
-  void PushImageFilter(const std::shared_ptr<const DlImageFilter>& filter,
+  void PushImageFilter(const std::shared_ptr<DlImageFilter>& filter,
                        const SkRect& filter_rect) {
     mutators_stack_.PushBackdropFilter(filter, filter_rect);
   }
@@ -339,8 +347,9 @@ class EmbedderViewSlice {
   virtual DlCanvas* canvas() = 0;
   virtual void end_recording() = 0;
   virtual const DlRegion& getRegion() const = 0;
-  DlRegion region(const SkRect& query) const {
-    return DlRegion::MakeIntersection(getRegion(), DlRegion(query.roundOut()));
+  DlRegion region(const DlRect& query) const {
+    DlRegion rquery = DlRegion(DlIRect::RoundOut(query));
+    return DlRegion::MakeIntersection(getRegion(), rquery);
   }
 
   virtual void render_into(DlCanvas* canvas) = 0;
@@ -510,7 +519,7 @@ class ExternalViewEmbedder {
   // See also: |PushVisitedPlatformView| for pushing platform view ids to the
   // visited platform views list.
   virtual void PushFilterToVisitedPlatformViews(
-      const std::shared_ptr<const DlImageFilter>& filter,
+      const std::shared_ptr<DlImageFilter>& filter,
       const SkRect& filter_rect) {}
 
  private:

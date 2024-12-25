@@ -92,16 +92,16 @@ static vk::UniqueSampler CreateSampler(
   }
 
   if (!desc.label.empty()) {
-    ContextVK::SetDebugName(device, sampler.value.get(), desc.label.c_str());
+    ContextVK::SetDebugName(device, sampler.value.get(), desc.label.data());
   }
 
   return std::move(sampler.value);
 }
 
 SamplerVK::SamplerVK(const vk::Device& device,
-                     SamplerDescriptor desc,
+                     const SamplerDescriptor& desc,
                      std::shared_ptr<YUVConversionVK> yuv_conversion)
-    : Sampler(std::move(desc)),
+    : Sampler(desc),
       device_(device),
       sampler_(MakeSharedVK<vk::Sampler>(
           CreateSampler(device, desc_, yuv_conversion))),

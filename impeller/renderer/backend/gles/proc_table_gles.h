@@ -168,6 +168,7 @@ struct GLProc {
   PROC(DrawElements);                        \
   PROC(Enable);                              \
   PROC(EnableVertexAttribArray);             \
+  PROC(Finish);                              \
   PROC(Flush);                               \
   PROC(FramebufferRenderbuffer);             \
   PROC(FramebufferTexture2D);                \
@@ -237,7 +238,16 @@ void(glDepthRange)(GLdouble n, GLdouble f);
   PROC(ClearDepth);                               \
   PROC(DepthRange);
 
-#define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
+#define FOR_EACH_IMPELLER_GLES3_PROC(PROC) \
+  PROC(FenceSync);                         \
+  PROC(DeleteSync);                        \
+  PROC(GetActiveUniformBlockiv);           \
+  PROC(GetActiveUniformBlockName);         \
+  PROC(GetUniformBlockIndex);              \
+  PROC(UniformBlockBinding);               \
+  PROC(BindBufferRange);                   \
+  PROC(WaitSync);                          \
+  PROC(BlitFramebuffer);
 
 #define FOR_EACH_IMPELLER_EXT_PROC(PROC)    \
   PROC(DebugMessageControlKHR);             \
@@ -261,6 +271,7 @@ enum class DebugResourceType {
   kShader,
   kRenderBuffer,
   kFrameBuffer,
+  kFence,
 };
 
 class ProcTableGLES {
@@ -303,9 +314,11 @@ class ProcTableGLES {
 
   bool IsCurrentFramebufferComplete() const;
 
+  bool SupportsDebugLabels() const;
+
   bool SetDebugLabel(DebugResourceType type,
                      GLint name,
-                     const std::string& label) const;
+                     std::string_view label) const;
 
   void PushDebugGroup(const std::string& string) const;
 

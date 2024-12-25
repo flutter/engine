@@ -222,9 +222,25 @@ class Context {
   /// rendering a 2D workload.
   [[nodiscard]] virtual bool FlushCommandBuffers();
 
-  virtual std::shared_ptr<const IdleWaiter> GetIdleWaiter() const {
-    return nullptr;
-  }
+  virtual bool AddTrackingFence(const std::shared_ptr<Texture>& texture) const;
+
+  virtual std::shared_ptr<const IdleWaiter> GetIdleWaiter() const;
+
+  //----------------------------------------------------------------------------
+  /// Resets any thread local state that may interfere with embedders.
+  ///
+  /// Today, only the OpenGL backend can trample on thread local state that the
+  /// embedder can access. This call puts the GL state in a sane "clean" state.
+  ///
+  /// Impeller itself is resilient to a dirty thread local state table.
+  ///
+  virtual void ResetThreadLocalState() const;
+
+  /// @brief Retrieve the runtime stage for this context type.
+  ///
+  /// This is used by the engine shell and other subsystems for loading the
+  /// correct shader types.
+  virtual RuntimeStageBackend GetRuntimeStageBackend() const = 0;
 
  protected:
   Context();

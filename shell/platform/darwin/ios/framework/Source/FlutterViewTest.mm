@@ -13,23 +13,18 @@ FLUTTER_ASSERT_ARC
 @property(nonatomic, assign) BOOL isUsingImpeller;
 @end
 
-@implementation FakeDelegate {
-  std::shared_ptr<flutter::PlatformViewsController> _platformViewsController;
-}
+@implementation FakeDelegate
+
+@synthesize platformViewsController = _platformViewsController;
 
 - (instancetype)init {
   _callbackCalled = NO;
-  _platformViewsController = std::shared_ptr<flutter::PlatformViewsController>(nullptr);
   return self;
 }
 
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
                                   asBase64Encoded:(BOOL)base64Encode {
   return {};
-}
-
-- (std::shared_ptr<flutter::PlatformViewsController>&)platformViewsController {
-  return _platformViewsController;
 }
 
 - (void)flutterViewAccessibilityDidCall {
@@ -62,7 +57,7 @@ FLUTTER_ASSERT_ARC
   delegate.isUsingImpeller = NO;
   FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO enableWideGamut:YES];
   [view layoutSubviews];
-  XCTAssertTrue([view.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]);
+  XCTAssertTrue([view.layer isKindOfClass:[CAMetalLayer class]]);
   CAMetalLayer* layer = (CAMetalLayer*)view.layer;
   XCTAssertEqual(layer.pixelFormat, MTLPixelFormatBGRA8Unorm);
 }

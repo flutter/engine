@@ -89,6 +89,12 @@ static gboolean is_nvidia() {
   return strstr(vendor, "NVIDIA") != nullptr;
 }
 
+// Check if running on an Vivante Corporation driver.
+static gboolean is_vivante() {
+  const gchar* vendor = reinterpret_cast<const gchar*>(glGetString(GL_VENDOR));
+  return strstr(vendor, "Vivante Corporation") != nullptr;
+}
+
 // Returns the log for the given OpenGL shader. Must be freed by the caller.
 static gchar* get_shader_log(GLuint shader) {
   GLint log_length;
@@ -265,7 +271,8 @@ static void render_with_textures(FlRenderer* self,
     GLint texcoord_index = glGetAttribLocation(priv->program, "in_texcoord");
     glEnableVertexAttribArray(texcoord_index);
     glVertexAttribPointer(texcoord_index, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
+                          sizeof(GLfloat) * 4,
+                          reinterpret_cast<void*>(sizeof(GLfloat) * 2));
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -317,9 +324,9 @@ static void fl_renderer_init(FlRenderer* self) {
       fl_renderer_get_instance_private(self));
   priv->views = g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr,
                                       free_weak_ref);
-  priv->framebuffers_by_view_id =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, nullptr,
-                            (GDestroyNotify)g_ptr_array_unref);
+  priv->framebuffers_by_view_id = g_hash_table_new_full(
+      g_direct_hash, g_direct_equal, nullptr,
+      reinterpret_cast<GDestroyNotify>(g_ptr_array_unref));
 }
 
 void fl_renderer_set_engine(FlRenderer* self, FlEngine* engine) {
@@ -568,11 +575,12 @@ void fl_renderer_setup(FlRenderer* self) {
 
   g_return_if_fail(FL_IS_RENDERER(self));
 
-  // Note: NVIDIA is temporarily disabled due to
+  // Note: NVIDIA and Vivante are temporarily disabled due to
   // https://github.com/flutter/flutter/issues/152099
   priv->has_gl_framebuffer_blit =
-      !is_nvidia() && (epoxy_gl_version() >= 30 ||
-                       epoxy_has_gl_extension("GL_EXT_framebuffer_blit"));
+      !is_nvidia() && !is_vivante() &&
+      (epoxy_gl_version() >= 30 ||
+       epoxy_has_gl_extension("GL_EXT_framebuffer_blit"));
 
   if (!priv->has_gl_framebuffer_blit) {
     setup_shader(self);

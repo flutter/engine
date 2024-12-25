@@ -4,6 +4,9 @@
 
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 
+#include "flutter/display_list/effects/dl_color_filters.h"
+#include "flutter/display_list/effects/dl_color_sources.h"
+#include "flutter/display_list/effects/dl_image_filters.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
@@ -69,6 +72,7 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
   if (!source) {
     return nullptr;
   }
+  SkMatrix scratch;
   static auto ToSkColors =
       [](const DlGradientColorSourceBase* gradient) -> std::vector<SkColor> {
     std::vector<SkColor> sk_colors;
@@ -79,11 +83,6 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
     return sk_colors;
   };
   switch (source->type()) {
-    case DlColorSourceType::kColor: {
-      const DlColorColorSource* color_source = source->asColor();
-      FML_DCHECK(color_source != nullptr);
-      return SkShaders::Color(ToSk(color_source->color()));
-    }
     case DlColorSourceType::kImage: {
       const DlImageColorSource* image_source = source->asImage();
       FML_DCHECK(image_source != nullptr);
@@ -94,51 +93,53 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
       return image->skia_image()->makeShader(
           ToSk(image_source->horizontal_tile_mode()),
           ToSk(image_source->vertical_tile_mode()),
-          ToSk(image_source->sampling()), image_source->matrix_ptr());
+          ToSk(image_source->sampling()),
+          ToSk(image_source->matrix_ptr(), scratch));
     }
     case DlColorSourceType::kLinearGradient: {
       const DlLinearGradientColorSource* linear_source =
           source->asLinearGradient();
       FML_DCHECK(linear_source != nullptr);
-      SkPoint pts[] = {linear_source->start_point(),
-                       linear_source->end_point()};
+      SkPoint pts[] = {ToSkPoint(linear_source->start_point()),
+                       ToSkPoint(linear_source->end_point())};
       std::vector<SkColor> skcolors = ToSkColors(linear_source);
       return SkGradientShader::MakeLinear(
           pts, skcolors.data(), linear_source->stops(),
           linear_source->stop_count(), ToSk(linear_source->tile_mode()), 0,
-          linear_source->matrix_ptr());
+          ToSk(linear_source->matrix_ptr(), scratch));
     }
     case DlColorSourceType::kRadialGradient: {
       const DlRadialGradientColorSource* radial_source =
           source->asRadialGradient();
       FML_DCHECK(radial_source != nullptr);
       return SkGradientShader::MakeRadial(
-          radial_source->center(), radial_source->radius(),
+          ToSkPoint(radial_source->center()), radial_source->radius(),
           ToSkColors(radial_source).data(), radial_source->stops(),
           radial_source->stop_count(), ToSk(radial_source->tile_mode()), 0,
-          radial_source->matrix_ptr());
+          ToSk(radial_source->matrix_ptr(), scratch));
     }
     case DlColorSourceType::kConicalGradient: {
       const DlConicalGradientColorSource* conical_source =
           source->asConicalGradient();
       FML_DCHECK(conical_source != nullptr);
       return SkGradientShader::MakeTwoPointConical(
-          conical_source->start_center(), conical_source->start_radius(),
-          conical_source->end_center(), conical_source->end_radius(),
+          ToSkPoint(conical_source->start_center()),
+          conical_source->start_radius(),
+          ToSkPoint(conical_source->end_center()), conical_source->end_radius(),
           ToSkColors(conical_source).data(), conical_source->stops(),
           conical_source->stop_count(), ToSk(conical_source->tile_mode()), 0,
-          conical_source->matrix_ptr());
+          ToSk(conical_source->matrix_ptr(), scratch));
     }
     case DlColorSourceType::kSweepGradient: {
       const DlSweepGradientColorSource* sweep_source =
           source->asSweepGradient();
       FML_DCHECK(sweep_source != nullptr);
       return SkGradientShader::MakeSweep(
-          sweep_source->center().x(), sweep_source->center().y(),
+          sweep_source->center().x, sweep_source->center().y,
           ToSkColors(sweep_source).data(), sweep_source->stops(),
           sweep_source->stop_count(), ToSk(sweep_source->tile_mode()),
           sweep_source->start(), sweep_source->end(), 0,
-          sweep_source->matrix_ptr());
+          ToSk(sweep_source->matrix_ptr(), scratch));
     }
     case DlColorSourceType::kRuntimeEffect: {
       const DlRuntimeEffectColorSource* runtime_source =
@@ -203,7 +204,8 @@ sk_sp<SkImageFilter> ToSk(const DlImageFilter* filter) {
       const DlMatrixImageFilter* matrix_filter = filter->asMatrix();
       FML_DCHECK(matrix_filter != nullptr);
       return SkImageFilters::MatrixTransform(
-          matrix_filter->matrix(), ToSk(matrix_filter->sampling()), nullptr);
+          ToSkMatrix(matrix_filter->matrix()), ToSk(matrix_filter->sampling()),
+          nullptr);
     }
     case DlImageFilterType::kCompose: {
       const DlComposeImageFilter* compose_filter = filter->asCompose();
@@ -229,7 +231,7 @@ sk_sp<SkImageFilter> ToSk(const DlImageFilter* filter) {
       if (!skia_filter) {
         return nullptr;
       }
-      return skia_filter->makeWithLocalMatrix(lm_filter->matrix());
+      return skia_filter->makeWithLocalMatrix(ToSkMatrix(lm_filter->matrix()));
     }
     case DlImageFilterType::kRuntimeEffect:
       // UNSUPPORTED.
