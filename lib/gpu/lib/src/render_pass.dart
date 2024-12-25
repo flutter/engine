@@ -534,7 +534,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       int y,
       int width,
       int height);
-  
+
   @Native<Void Function(Pointer<Void>, Int, Int, Int, Int, Float, Float)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetViewport')
   external void _setViewport(

@@ -552,18 +552,19 @@ void InternalFlutterGpu_RenderPass_SetScissor(flutter::gpu::RenderPass* wrapper,
   wrapper->scissor = impeller::TRect<int64_t>::MakeXYWH(x, y, width, height);
 }
 
-void InternalFlutterGpu_RenderPass_SetViewport(flutter::gpu::RenderPass* wrapper,
-                                              int x,
-                                              int y,
-                                              int width,
-                                              int height,
-                                              float z_near,
-                                              float z_far) {
+void InternalFlutterGpu_RenderPass_SetViewport(
+    flutter::gpu::RenderPass* wrapper,
+    int x,
+    int y,
+    int width,
+    int height,
+    float z_near,
+    float z_far) {
   auto rect = impeller::TRect<float>::MakeXYWH(x, y, width, height);
 
   auto depth_range = impeller::DepthRange();
   depth_range.z_near = z_near;
-  depth_range.z_far = z_far;    
+  depth_range.z_far = z_far;
 
   auto viewport = impeller::Viewport();
   viewport.rect = rect;
