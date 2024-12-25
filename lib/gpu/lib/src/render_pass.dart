@@ -163,7 +163,7 @@ base class Scissor {
 }
 
 base class DepthRange {
-  DepthRange({this.zNear = 0.0, this.zFar = 0.0});
+  DepthRange({this.zNear = 0.0, this.zFar = 1.0});
 
   double zNear;
   double zFar;
