@@ -55,7 +55,7 @@ public class SensitiveContentPlugin
     final int currentContentSensitivity = flutterView.getContentSensitivity();
     flutterView.setContentSensitivity(contentSensitivity);
 
-    final boolean shouldInvalidateView = currentContentSensitivity == View...sensitive && contentSensitivity != View...sensitive;
+    final boolean shouldInvalidateView = currentContentSensitivity == View.CONTENT_SENSITIVITY_SENSITIVE && contentSensitivity != View.CONTENT_SENSITIVITY_SENSITIVE;
     if (shouldInvalidateView) {
       flutterView.invalidate();
     }
