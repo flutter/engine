@@ -10,11 +10,6 @@ import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.SensitiveContentChannel;
 import io.flutter.plugin.common.MethodChannel;
 
-import io.flutter.Log;
-import android.os.IBinder;
-import android.view.Window;
-import android.view.WindowId;
-
 /**
  * {@link SensitiveContentPlugin} is the implementation of all functionality needed to set content
  * sensitive on a native Flutter Android {@code View}.
@@ -55,7 +50,9 @@ public class SensitiveContentPlugin
     final int currentContentSensitivity = flutterView.getContentSensitivity();
     flutterView.setContentSensitivity(contentSensitivity);
 
-    final boolean shouldInvalidateView = currentContentSensitivity == View.CONTENT_SENSITIVITY_SENSITIVE && contentSensitivity != View.CONTENT_SENSITIVITY_SENSITIVE;
+    final boolean shouldInvalidateView =
+        currentContentSensitivity == View.CONTENT_SENSITIVITY_SENSITIVE
+            && contentSensitivity != View.CONTENT_SENSITIVITY_SENSITIVE;
     if (shouldInvalidateView) {
       flutterView.invalidate();
     }
