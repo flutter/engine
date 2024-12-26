@@ -36,6 +36,7 @@ import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.plugin.view.SensitiveContentPlugin;
 import java.util.Arrays;
 import java.util.List;
 
@@ -90,6 +91,7 @@ import java.util.List;
   @Nullable private FlutterEngine flutterEngine;
   @VisibleForTesting @Nullable FlutterView flutterView;
   @Nullable private PlatformPlugin platformPlugin;
+  @Nullable private SensitiveContentPlugin sensitiveContentPlugin;
   @VisibleForTesting @Nullable OnPreDrawListener activePreDrawListener;
   private boolean isFlutterEngineFromHost;
   private boolean isFlutterUiDisplayed;
@@ -141,6 +143,7 @@ import java.util.List;
     this.flutterEngine = null;
     this.flutterView = null;
     this.platformPlugin = null;
+    this.sensitiveContentPlugin = null;
   }
 
   /**
@@ -216,6 +219,7 @@ import java.util.List;
     //                    control of the entire window. This is unacceptable for non-fullscreen
     //                    use-cases.
     platformPlugin = host.providePlatformPlugin(host.getActivity(), flutterEngine);
+    sensitiveContentPlugin = host.provideSensitiveContentPlugin(host.getActivity(), flutterEngine);
 
     host.configureFlutterEngine(flutterEngine);
     isAttached = true;
@@ -763,6 +767,11 @@ import java.util.List;
       platformPlugin = null;
     }
 
+    if (sensitiveContentPlugin != null) {
+      sensitiveContentPlugin.destroy();
+      sensitiveContentPlugin = null;
+    }
+
     if (host.shouldDispatchAppLifecycleState() && flutterEngine != null) {
       flutterEngine.getLifecycleChannel().appIsDetached();
     }
@@ -1189,6 +1198,14 @@ import java.util.List;
      */
     @Nullable
     PlatformPlugin providePlatformPlugin(
+        @Nullable Activity activity, @NonNull FlutterEngine flutterEngine);
+
+    /**
+     * Hook for host to create/provide a {@link SensitiveContentPlugin} if the associated Flutter
+     * experience should set content sensitivity.
+     */
+    @Nullable
+    SensitiveContentPlugin provideSensitiveContentPlugin(
         @Nullable Activity activity, @NonNull FlutterEngine flutterEngine);
 
     /**
