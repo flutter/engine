@@ -107,7 +107,7 @@ TaskRunners GetTaskRunnersForFixture() {
 }
 
 TEST(AndroidExternalViewEmbedder, CompositeEmbeddedView) {
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, nullptr, nullptr, GetTaskRunnersForFixture());
 
@@ -123,7 +123,7 @@ TEST(AndroidExternalViewEmbedder, CompositeEmbeddedView) {
 }
 
 TEST(AndroidExternalViewEmbedder, CancelFrame) {
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, nullptr, nullptr, GetTaskRunnersForFixture());
 
@@ -136,7 +136,7 @@ TEST(AndroidExternalViewEmbedder, CancelFrame) {
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
 
@@ -171,7 +171,7 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
 
@@ -192,7 +192,7 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
 TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
   auto jni_mock = std::make_shared<JNIMock>();
 
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
   fml::Thread rasterizer_thread("rasterizer");
@@ -220,7 +220,7 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
 TEST(AndroidExternalViewEmbedder, PlatformViewRectChangedParams) {
   auto jni_mock = std::make_shared<JNIMock>();
 
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
   fml::Thread rasterizer_thread("rasterizer");
@@ -260,7 +260,7 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRectChangedParams) {
 TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
   auto jni_mock = std::make_shared<JNIMock>();
   auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kImpellerVulkan);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
@@ -477,7 +477,7 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
 
   auto jni_mock = std::make_shared<JNIMock>();
   auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kImpellerVulkan);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
@@ -579,7 +579,7 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
 TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
   auto jni_mock = std::make_shared<JNIMock>();
   auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kImpellerVulkan);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
@@ -686,7 +686,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
 TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
   auto jni_mock = std::make_shared<JNIMock>();
   auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kImpellerVulkan);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
@@ -758,7 +758,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
 TEST(AndroidExternalViewEmbedder, DoesNotCallJNIPlatformThreadOnlyMethods) {
   auto jni_mock = std::make_shared<JNIMock>();
 
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
 
@@ -779,7 +779,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
   auto jni_mock = std::make_shared<JNIMock>();
 
   auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kImpellerVulkan);
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
@@ -870,7 +870,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
 TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
   auto jni_mock = std::make_shared<JNIMock>();
   auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kImpellerVulkan);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
@@ -962,7 +962,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
 
 TEST(AndroidExternalViewEmbedder, SupportsDynamicThreadMerging) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
   ASSERT_TRUE(embedder->SupportsDynamicThreadMerging());
@@ -970,7 +970,7 @@ TEST(AndroidExternalViewEmbedder, SupportsDynamicThreadMerging) {
 
 TEST(AndroidExternalViewEmbedder, DisableThreadMerger) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
 
@@ -1001,7 +1001,7 @@ TEST(AndroidExternalViewEmbedder, DisableThreadMerger) {
 TEST(AndroidExternalViewEmbedder, Teardown) {
   auto jni_mock = std::make_shared<JNIMock>();
   auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kImpellerVulkan);
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
@@ -1073,7 +1073,7 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
 TEST(AndroidExternalViewEmbedder, TeardownDoesNotCallJNIMethod) {
   auto jni_mock = std::make_shared<JNIMock>();
   auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kImpellerVulkan);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       *android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
 
