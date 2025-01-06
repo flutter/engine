@@ -214,6 +214,9 @@ void WindowingHandler::HandleCreateWindow(WindowArchetype archetype,
     if (!positioner_parent_anchor) {
       return;
     }
+    auto const parent_anchor =
+        static_cast<WindowPositioner::Anchor>(positioner_parent_anchor.value());
+
     auto const positioner_child_anchor = GetSingleValueForKeyOrSendError<int>(
         kPositionerChildAnchorKey, map, result);
     if (!positioner_child_anchor) {
@@ -235,8 +238,7 @@ void WindowingHandler::HandleCreateWindow(WindowArchetype archetype,
     }
     positioner = WindowPositioner{
         .anchor_rect = anchor_rect,
-        .parent_anchor = static_cast<WindowPositioner::Anchor>(
-            positioner_parent_anchor.value()),
+        .parent_anchor = parent_anchor,
         .child_anchor = child_anchor,
         .offset = {positioner_offset_list->at(0),
                    positioner_offset_list->at(1)},
