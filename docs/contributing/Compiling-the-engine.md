@@ -43,11 +43,11 @@ source files, pass the flag `--no-prebuilt-dart-sdk` to `//flutter/tools/gn`.
 
 These steps build the engine used by `flutter run` for Android devices.
 
-Run the following steps, from the `src` directory created in [Setting up the Engine development environment](Setting-up-the-Engine-development-environment.md):
+Run the following steps from the `engine/src` directory in your local checkout. See [Setting up the Engine development environment](Setting-up-the-Engine-development-environment.md).
 
-1. `git pull upstream main` in `src/flutter` to update the Flutter Engine repo.
+1. Make sure your branch is up to date. Run `git pull upstream master` if needed.
 
-2. `gclient sync` to update dependencies.
+2. `gclient sync -D` to update dependencies.
 
 3. Prepare your build files
     * `./flutter/tools/gn --android --unoptimized` for device-side executables.
@@ -92,12 +92,12 @@ host build available next to it: if you use `android_debug_unopt`, you should ha
 
 ### Compiling everything that matters on Linux
 
-The following script will update all the builds that matter if you're developing on Linux and testing on Android and created the `.gclient` file in `~/dev/engine`:
+The following script will update all the builds that matter if you're developing on Linux and testing on Android if your `.gclient` file is located at `~/dev/flutter/engine/.gclient`:
 
 ```bash
 set -ex
 
-cd ~/dev/engine/src/flutter
+cd ~/dev/flutter/engine/src/flutter
 git fetch upstream
 git rebase upstream/main
 gclient sync
@@ -263,7 +263,7 @@ python3 flutter/tools/fuchsia/with_envs.py flutter/testing/fuchsia/run_tests.py 
 
 ## Compiling for the Web
 
-For building the engine for the Web we use the [felt](https://github.com/flutter/engine/blob/main/lib/web_ui/README.md) tool.
+For building the engine for the Web we use the [felt](https://github.com/flutter/flutter/blob/master/engine/src/flutter/lib/web_ui/README.md) tool.
 
 To test Flutter with a local build of the Web engine, add `--local-web-sdk=wasm_release` to your `flutter` command, e.g.:
 
