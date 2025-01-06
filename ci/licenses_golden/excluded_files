@@ -347,10 +347,8 @@
 ../../../flutter/shell/platform/embedder/platform_view_embedder_unittests.cc
 ../../../flutter/shell/platform/embedder/tests
 ../../../flutter/shell/platform/fuchsia/dart-pkg/fuchsia/README.md
-../../../flutter/shell/platform/fuchsia/dart-pkg/fuchsia/analysis_options.yaml
 ../../../flutter/shell/platform/fuchsia/dart-pkg/fuchsia/pubspec.yaml
 ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/README.md
-../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/analysis_options.yaml
 ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/pubspec.yaml
 ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/test
 ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon_ffi/pubspec.yaml
@@ -360,7 +358,6 @@
 ../../../flutter/shell/platform/fuchsia/dart_runner/kernel/libraries.json
 ../../../flutter/shell/platform/fuchsia/dart_runner/kernel/libraries.yaml
 ../../../flutter/shell/platform/fuchsia/dart_runner/tests
-../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/analysis_options.yaml
 ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/pubspec.yaml
 ../../../flutter/shell/platform/fuchsia/flutter/README.md
 ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unittest.cc
@@ -3321,6 +3318,7 @@
 ../../../fuchsia/sdk/linux/bind/fuchsia.register/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.regulator/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.sdio/meta.json
+../../../fuchsia/sdk/linux/bind/fuchsia.sdmmc/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.serial/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.spmi/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.sysmem/meta.json

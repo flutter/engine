@@ -108,6 +108,11 @@ TEST(ReactorGLES, NameUntrackedHandle) {
       MockGLES::Init(std::move(mock_gles_impl));
   ProcTableGLES::Resolver resolver = kMockResolverGLES;
   auto proc_table = std::make_unique<ProcTableGLES>(resolver);
+
+  if (!proc_table->SupportsDebugLabels()) {
+    GTEST_SKIP() << "This device doesn't support labelling.";
+  }
+
   auto worker = std::make_shared<TestWorker>();
   auto reactor = std::make_shared<ReactorGLES>(std::move(proc_table));
   reactor->AddWorker(worker);
@@ -131,8 +136,8 @@ TEST(ReactorGLES, PerThreadOperationQueues) {
   fml::AutoResetWaitableEvent event;
   bool op2_called = false;
   std::thread thread([&] {
-    EXPECT_TRUE(
-        reactor->AddOperation([&](const ReactorGLES&) { op2_called = true; }));
+    EXPECT_TRUE(reactor->AddOperation(
+        [&](const ReactorGLES&) { op2_called = true; }, true));
     event.Wait();
     EXPECT_TRUE(reactor->React());
   });

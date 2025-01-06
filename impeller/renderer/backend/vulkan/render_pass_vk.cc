@@ -6,7 +6,6 @@
 
 #include <array>
 #include <cstdint>
-#include <vector>
 
 #include "fml/status.h"
 #include "impeller/base/validation.h"
@@ -52,15 +51,16 @@ static vk::ClearDepthStencilValue VKClearValueFromDepthStencil(uint32_t stencil,
   return value;
 }
 
-static std::vector<vk::ClearValue> GetVKClearValues(
-    const RenderTarget& target) {
-  std::vector<vk::ClearValue> clears;
-
+static size_t GetVKClearValues(
+    const RenderTarget& target,
+    std::array<vk::ClearValue, kMaxAttachments>& values) {
+  size_t offset = 0u;
   target.IterateAllColorAttachments(
-      [&clears](size_t index, const ColorAttachment& attachment) -> bool {
-        clears.emplace_back(VKClearValueFromColor(attachment.clear_color));
+      [&values, &offset](size_t index,
+                         const ColorAttachment& attachment) -> bool {
+        values.at(offset++) = VKClearValueFromColor(attachment.clear_color);
         if (attachment.resolve_texture) {
-          clears.emplace_back(VKClearValueFromColor(attachment.clear_color));
+          values.at(offset++) = VKClearValueFromColor(attachment.clear_color);
         }
         return true;
       });
@@ -69,14 +69,13 @@ static std::vector<vk::ClearValue> GetVKClearValues(
   const auto& stencil = target.GetStencilAttachment();
 
   if (depth.has_value()) {
-    clears.emplace_back(VKClearValueFromDepthStencil(
-        stencil ? stencil->clear_stencil : 0u, depth->clear_depth));
+    values.at(offset++) = VKClearValueFromDepthStencil(
+        stencil ? stencil->clear_stencil : 0u, depth->clear_depth);
   } else if (stencil.has_value()) {
-    clears.emplace_back(VKClearValueFromDepthStencil(
-        stencil->clear_stencil, depth ? depth->clear_depth : 0.0f));
+    values.at(offset++) = VKClearValueFromDepthStencil(
+        stencil->clear_stencil, depth ? depth->clear_depth : 0.0f);
   }
-
-  return clears;
+  return offset;
 }
 
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
@@ -191,7 +190,8 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
     TextureVK::Cast(*resolve_image_vk_).SetCachedRenderPass(render_pass_);
   }
 
-  auto clear_values = GetVKClearValues(render_target_);
+  std::array<vk::ClearValue, kMaxAttachments> clears;
+  size_t clear_count = GetVKClearValues(render_target_, clears);
 
   vk::RenderPassBeginInfo pass_info;
   pass_info.renderPass = *render_pass_;
@@ -199,7 +199,8 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
   pass_info.renderArea.extent.width = static_cast<uint32_t>(target_size.width);
   pass_info.renderArea.extent.height =
       static_cast<uint32_t>(target_size.height);
-  pass_info.setClearValues(clear_values);
+  pass_info.setPClearValues(clears.data());
+  pass_info.setClearValueCount(clear_count);
 
   command_buffer_vk_.beginRenderPass(pass_info, vk::SubpassContents::eInline);
 
@@ -252,34 +253,37 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   fb_info.height = target_size.height;
   fb_info.layers = 1u;
 
-  std::vector<vk::ImageView> attachments;
+  std::array<vk::ImageView, kMaxAttachments> attachments;
+  size_t count = 0;
 
   // This bit must be consistent to ensure compatibility with the pass created
   // earlier. Follow this order: Color attachments, then depth-stencil, then
   // stencil.
   render_target_.IterateAllColorAttachments(
-      [&attachments](size_t index, const ColorAttachment& attachment) -> bool {
+      [&attachments, &count](size_t index,
+                             const ColorAttachment& attachment) -> bool {
         // The bind point doesn't matter here since that information is present
         // in the render pass.
-        attachments.emplace_back(
-            TextureVK::Cast(*attachment.texture).GetRenderTargetView());
+        attachments[count++] =
+            TextureVK::Cast(*attachment.texture).GetRenderTargetView();
         if (attachment.resolve_texture) {
-          attachments.emplace_back(TextureVK::Cast(*attachment.resolve_texture)
-                                       .GetRenderTargetView());
+          attachments[count++] = TextureVK::Cast(*attachment.resolve_texture)
+                                     .GetRenderTargetView();
         }
         return true;
       });
 
   if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
-    attachments.emplace_back(
-        TextureVK::Cast(*depth->texture).GetRenderTargetView());
+    attachments[count++] =
+        TextureVK::Cast(*depth->texture).GetRenderTargetView();
   } else if (auto stencil = render_target_.GetStencilAttachment();
              stencil.has_value()) {
-    attachments.emplace_back(
-        TextureVK::Cast(*stencil->texture).GetRenderTargetView());
+    attachments[count++] =
+        TextureVK::Cast(*stencil->texture).GetRenderTargetView();
   }
 
-  fb_info.setAttachments(attachments);
+  fb_info.setPAttachments(attachments.data());
+  fb_info.setAttachmentCount(count);
 
   auto [result, framebuffer] =
       context.GetDevice().createFramebufferUnique(fb_info);
@@ -293,9 +297,8 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
 }
 
 // |RenderPass|
-void RenderPassVK::SetPipeline(
-    const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
-  pipeline_ = pipeline.get();
+void RenderPassVK::SetPipeline(PipelineRef pipeline) {
+  pipeline_ = pipeline;
   if (!pipeline_) {
     return;
   }
@@ -305,7 +308,7 @@ void RenderPassVK::SetPipeline(
 
   if (pipeline_uses_input_attachments_) {
     if (bound_image_offset_ >= kMaxBindings) {
-      pipeline_ = nullptr;
+      pipeline_ = PipelineRef(nullptr);
       return;
     }
     vk::DescriptorImageInfo image_info;
@@ -464,7 +467,7 @@ fml::Status RenderPassVK::Draw() {
   /// Jank can be completely eliminated by pre-populating known YUV conversion
   /// pipelines.
   if (immutable_sampler_) {
-    std::shared_ptr<PipelineVK> pipeline_variant =
+    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline_variant =
         PipelineVK::Cast(*pipeline_)
             .CreateVariantForImmutableSamplers(immutable_sampler_);
     if (!pipeline_variant) {
@@ -472,7 +475,7 @@ fml::Status RenderPassVK::Draw() {
           fml::StatusCode::kAborted,
           "Could not create pipeline variant with immutable sampler.");
     }
-    pipeline_ = pipeline_variant.get();
+    pipeline_ = raw_ptr(pipeline_variant);
   }
 
   const auto& context_vk = ContextVK::Cast(*context_);
@@ -539,7 +542,7 @@ fml::Status RenderPassVK::Draw() {
   instance_count_ = 1u;
   base_vertex_ = 0u;
   element_count_ = 0u;
-  pipeline_ = nullptr;
+  pipeline_ = PipelineRef(nullptr);
   pipeline_uses_input_attachments_ = false;
   immutable_sampler_ = nullptr;
   return fml::Status();
@@ -598,13 +601,12 @@ bool RenderPassVK::BindResource(size_t binding,
   return true;
 }
 
-bool RenderPassVK::BindDynamicResource(
-    ShaderStage stage,
-    DescriptorType type,
-    const SampledImageSlot& slot,
-    std::unique_ptr<ShaderMetadata> metadata,
-    std::shared_ptr<const Texture> texture,
-    const std::unique_ptr<const Sampler>& sampler) {
+bool RenderPassVK::BindDynamicResource(ShaderStage stage,
+                                       DescriptorType type,
+                                       const SampledImageSlot& slot,
+                                       std::unique_ptr<ShaderMetadata> metadata,
+                                       std::shared_ptr<const Texture> texture,
+                                       raw_ptr<const Sampler> sampler) {
   return BindResource(stage, type, slot, nullptr, texture, sampler);
 }
 
@@ -613,7 +615,7 @@ bool RenderPassVK::BindResource(ShaderStage stage,
                                 const SampledImageSlot& slot,
                                 const ShaderMetadata* metadata,
                                 std::shared_ptr<const Texture> texture,
-                                const std::unique_ptr<const Sampler>& sampler) {
+                                raw_ptr<const Sampler> sampler) {
   if (bound_buffer_offset_ >= kMaxBindings) {
     return false;
   }

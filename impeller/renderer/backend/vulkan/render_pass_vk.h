@@ -49,7 +49,7 @@ class RenderPassVK final : public RenderPass {
   size_t element_count_ = 0u;
   bool has_index_buffer_ = false;
   bool has_label_ = false;
-  const Pipeline<PipelineDescriptor>* pipeline_;
+  PipelineRef pipeline_ = PipelineRef(nullptr);
   bool pipeline_uses_input_attachments_ = false;
   std::shared_ptr<SamplerVK> immutable_sampler_;
 
@@ -58,8 +58,7 @@ class RenderPassVK final : public RenderPass {
                std::shared_ptr<CommandBufferVK> command_buffer);
 
   // |RenderPass|
-  void SetPipeline(
-      const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) override;
+  void SetPipeline(PipelineRef pipeline) override;
 
   // |RenderPass|
   void SetCommandLabel(std::string_view label) override;
@@ -105,7 +104,7 @@ class RenderPassVK final : public RenderPass {
                     const SampledImageSlot& slot,
                     const ShaderMetadata* metadata,
                     std::shared_ptr<const Texture> texture,
-                    const std::unique_ptr<const Sampler>& sampler) override;
+                    raw_ptr<const Sampler> sampler) override;
 
   // |RenderPass|
   bool BindDynamicResource(ShaderStage stage,
@@ -115,13 +114,12 @@ class RenderPassVK final : public RenderPass {
                            BufferView view) override;
 
   // |RenderPass|
-  bool BindDynamicResource(
-      ShaderStage stage,
-      DescriptorType type,
-      const SampledImageSlot& slot,
-      std::unique_ptr<ShaderMetadata> metadata,
-      std::shared_ptr<const Texture> texture,
-      const std::unique_ptr<const Sampler>& sampler) override;
+  bool BindDynamicResource(ShaderStage stage,
+                           DescriptorType type,
+                           const SampledImageSlot& slot,
+                           std::unique_ptr<ShaderMetadata> metadata,
+                           std::shared_ptr<const Texture> texture,
+                           raw_ptr<const Sampler> sampler) override;
 
   bool BindResource(size_t binding, DescriptorType type, BufferView view);
 

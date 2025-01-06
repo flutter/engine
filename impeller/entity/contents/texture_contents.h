@@ -33,7 +33,7 @@ class TextureContents final : public Contents {
 
   std::shared_ptr<Texture> GetTexture() const;
 
-  void SetSamplerDescriptor(SamplerDescriptor desc);
+  void SetSamplerDescriptor(const SamplerDescriptor& desc);
 
   const SamplerDescriptor& GetSamplerDescriptor() const;
 
@@ -62,7 +62,7 @@ class TextureContents final : public Contents {
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
       int32_t mip_count = 1,
-      const std::string& label = "Texture Snapshot") const override;
+      std::string_view label = "Texture Snapshot") const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
