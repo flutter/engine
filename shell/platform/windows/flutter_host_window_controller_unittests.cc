@@ -16,11 +16,11 @@ namespace testing {
 
 namespace {
 
-static constexpr char kChannelName[] = "flutter/windowing";
-static constexpr char kOnWindowCreatedMethod[] = "onWindowCreated";
-static constexpr char kOnWindowDestroyedMethod[] = "onWindowDestroyed";
-static constexpr char kViewIdKey[] = "viewId";
-static constexpr char kParentViewIdKey[] = "parentViewId";
+constexpr char kChannelName[] = "flutter/windowing";
+constexpr char kOnWindowCreatedMethod[] = "onWindowCreated";
+constexpr char kOnWindowDestroyedMethod[] = "onWindowDestroyed";
+constexpr char kViewIdKey[] = "viewId";
+constexpr char kParentViewIdKey[] = "parentViewId";
 
 // Process the next Win32 message if there is one. This can be used to
 // pump the Windows platform thread task runner.
