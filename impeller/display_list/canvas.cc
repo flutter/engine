@@ -543,13 +543,17 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   return true;
 }
 
-void Canvas::DrawLine(const Point& p0, const Point& p1, const Paint& paint) {
+void Canvas::DrawLine(const Point& p0,
+                      const Point& p1,
+                      const Paint& paint,
+                      bool reuse_depth) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
 
   LineGeometry geom(p0, p1, paint.stroke_width, paint.stroke_cap);
-  AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint);
+  AddRenderEntityWithFiltersToCurrentPass(entity, &geom, paint,
+                                          /*reuse_depth=*/reuse_depth);
 }
 
 void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
