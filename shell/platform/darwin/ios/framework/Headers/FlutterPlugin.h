@@ -69,11 +69,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
  */
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 - (void)application:(UIApplication*)application
     didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings
     API_DEPRECATED(
         "See -[UIApplicationDelegate application:didRegisterUserNotificationSettings:] deprecation",
         ios(8.0, 10.0));
+#endif
 
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
@@ -99,11 +101,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
  */
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 - (void)application:(UIApplication*)application
     didReceiveLocalNotification:(UILocalNotification*)notification
     API_DEPRECATED(
         "See -[UIApplicationDelegate application:didReceiveLocalNotification:] deprecation",
         ios(4.0, 10.0));
+#endif
 
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
@@ -136,10 +140,12 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * @return `YES` if this handles the request.
  */
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 - (BOOL)application:(UIApplication*)application
     performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
                completionHandler:(void (^)(BOOL succeeded))completionHandler
     API_AVAILABLE(ios(9.0));
+#endif
 
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.

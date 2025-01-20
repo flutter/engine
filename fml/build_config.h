@@ -26,10 +26,10 @@
 // is really mac/ios.
 #include <TargetConditionals.h>
 #define FML_OS_MACOSX 1
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#if (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE) || (defined(TARGET_OS_TV) && TARGET_OS_TV)
 #define FML_OS_IOS 1
 #endif  // defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-#if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
+#if (defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR) || (defined(TARGET_TV_SIMULATOR) && TARGET_TV_SIMULATOR)
 #define FML_OS_IOS_SIMULATOR 1
 #endif  // defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 #elif defined(__linux__)

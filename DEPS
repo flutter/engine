@@ -152,7 +152,7 @@ vars = {
   "upstream_benchmark": "https://github.com/google/benchmark.git",
   "upstream_boringssl": "https://github.com/openssl/openssl.git",
   "upstream_brotli": "https://github.com/google/brotli.git",
-  "upstream_buildroot": "https://github.com/flutter/buildroot.git",
+  "upstream_buildroot": "https://github.com/easion/buildroot_tvos.git",
   "upstream_dart_style": "https://github.com/dart-lang/dart_style.git",
   "upstream_dartdoc": "https://github.com/dart-lang/dartdoc.git",
   "upstream_equatable": "https://github.com/felangel/equatable.git",
@@ -253,7 +253,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'cc9bcddf1524812c80ef741191d5db7469e705de',
+  'src': 'https://github.com/easion/buildroot_tvos.git' + '@' + 'master',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',

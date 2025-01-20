@@ -27,14 +27,20 @@ static bool DeviceSupportsFramebufferFetch(id<MTLDevice> device) {
   return false;
 #else  // FML_OS_IOS_SIMULATOR
 
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
     return [device supportsFamily:MTLGPUFamilyApple2];
   }
+#endif
   // According to
   // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf , Apple2
   // corresponds to iOS GPU family 2, which supports A8 devices.
 #if FML_OS_IOS
-  return [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily2_v1];
+  #if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
+    return [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily2_v1];
+  #else  
+    return [device supportsFeatureSet:MTLFeatureSet_tvOS_GPUFamily1_v1];
+  #endif 
 #else
   return false;
 #endif  // FML_OS_IOS
@@ -43,12 +49,15 @@ static bool DeviceSupportsFramebufferFetch(id<MTLDevice> device) {
 
 static bool DeviceSupportsComputeSubgroups(id<MTLDevice> device) {
   bool supports_subgroups = false;
-  // Refer to the "SIMD-scoped reduction operations" feature in the table
-  // below: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
-  if (@available(ios 13.0, tvos 13.0, macos 10.15, *)) {
-    supports_subgroups = [device supportsFamily:MTLGPUFamilyApple7] ||
-                         [device supportsFamily:MTLGPUFamilyMac2];
-  }
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
+    // Refer to the "SIMD-scoped reduction operations" feature in the table
+    // below: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+    if (@available(ios 13.0, tvos 13.0, macos 10.15, *)) {
+        supports_subgroups = [device supportsFamily:MTLGPUFamilyApple7] ||
+                            [device supportsFamily:MTLGPUFamilyMac2];
+    }
+#endif
+ 
   return supports_subgroups;
 }
 

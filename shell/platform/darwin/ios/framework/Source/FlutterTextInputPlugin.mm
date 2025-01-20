@@ -818,7 +818,9 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   bool _isFloatingCursorActive;
   CGPoint _floatingCursorOffset;
   bool _enableInteractiveSelection;
+  #if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   UITextInteraction* _textInteraction API_AVAILABLE(ios(13.0));
+  #endif
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -858,6 +860,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     _smartDashesType = UITextSmartDashesTypeYes;
     _selectionRects = [[NSArray alloc] init];
 
+  #if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
     if (@available(iOS 14.0, *)) {
       UIScribbleInteraction* interaction = [[UIScribbleInteraction alloc] initWithDelegate:self];
       [self addInteraction:interaction];
@@ -868,7 +871,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     _editMenuInteraction = [[UIEditMenuInteraction alloc] initWithDelegate:self];
     [self addInteraction:_editMenuInteraction];
   }
-
+  #endif
   return self;
 }
 
@@ -989,6 +992,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 - (id<FlutterTextInputDelegate>)textInputDelegate {
   return _textInputPlugin.textInputDelegate;
 }
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 
 - (BOOL)respondsToSelector:(SEL)selector {
   if (@available(iOS 17.0, *)) {
@@ -1005,6 +1009,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   _hasPlaceholder = NO;
 }
 
+
 - (UITextInteraction*)textInteraction API_AVAILABLE(ios(13.0)) {
   if (!_textInteraction) {
     _textInteraction = [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
@@ -1012,6 +1017,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   }
   return _textInteraction;
 }
+#endif
 
 - (void)setTextInputState:(NSDictionary*)state {
   if (@available(iOS 13.0, *)) {
@@ -1020,9 +1026,11 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     // and selection changes when that happens, add a dummy UITextInteraction to this
     // view so it sets a valid inputDelegate that we can call textWillChange et al. on.
     // See https://github.com/flutter/engine/pull/32881.
+    #if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
     if (!self.inputDelegate && self.isFirstResponder) {
       [self addInteraction:self.textInteraction];
     }
+    #endif
   }
 
   NSString* newText = state[@"text"];
@@ -1060,12 +1068,13 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   if (textChanged) {
     [self.inputDelegate textDidChange:self];
   }
-
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   if (@available(iOS 13.0, *)) {
     if (_textInteraction) {
       [self removeInteraction:_textInteraction];
     }
   }
+#endif
 }
 
 // Forward touches to the viewResponder to allow tapping inside the UITextField as normal.
@@ -1132,6 +1141,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 // Checks whether Scribble features are possibly available – meaning this is an iPad running iOS
 // 14 or higher.
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 - (BOOL)isScribbleAvailable {
   if (@available(iOS 14.0, *)) {
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
@@ -1140,7 +1150,9 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   }
   return NO;
 }
+#endif
 
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
   _scribbleInteractionStatus = FlutterScribbleInteractionStatusStarted;
@@ -1162,6 +1174,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     API_AVAILABLE(ios(14.0)) {
   return NO;
 }
+#endif
 
 #pragma mark - UIResponder Overrides
 
@@ -1185,6 +1198,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   if (action == @selector(paste:)) {
     // Forbid pasting images, memojis, or other non-string content.
     return [UIPasteboard generalPasteboard].hasStrings;
@@ -1195,24 +1209,31 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     return self.hasText;
   }
   return [super canPerformAction:action withSender:sender];
+#endif
 }
 
 #pragma mark - UIResponderStandardEditActions Overrides
 
 - (void)cut:(id)sender {
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   [UIPasteboard generalPasteboard].string = [self textInRange:_selectedTextRange];
   [self replaceRange:_selectedTextRange withText:@""];
+#endif
 }
 
 - (void)copy:(id)sender {
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   [UIPasteboard generalPasteboard].string = [self textInRange:_selectedTextRange];
+#endif
 }
 
 - (void)paste:(id)sender {
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV) 
   NSString* pasteboardString = [UIPasteboard generalPasteboard].string;
   if (pasteboardString != nil) {
     [self insertText:pasteboardString];
   }
+#endif
 }
 
 - (void)delete:(id)sender {

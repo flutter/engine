@@ -180,9 +180,11 @@ constexpr float kScrollExtentMaxForInf = 1000;
 
 /// The semantics object for switch buttons. This class creates an UISwitch to interact with the
 /// iOS.
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 @interface FlutterSwitchSemanticsObject : SemanticsObject
 
 @end
+#endif
 
 /// The semantics object for scrollable. This class creates an UIScrollView to interact with the
 /// iOS.

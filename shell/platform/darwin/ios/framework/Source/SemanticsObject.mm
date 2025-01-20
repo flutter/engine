@@ -93,11 +93,13 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 }  // namespace
-
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 @interface FlutterSwitchSemanticsObject ()
 @property(nonatomic, retain, readonly) UISwitch* nativeSwitch;
 @end
+#endif
 
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 @implementation FlutterSwitchSemanticsObject
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
@@ -140,6 +142,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 @end  // FlutterSwitchSemanticsObject
+#endif
 
 @interface FlutterScrollableSemanticsObject ()
 @property(nonatomic) FlutterSemanticsScrollView* scrollView;
@@ -420,12 +423,14 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
         break;
       }
       case flutter::StringAttributeType::kSpellOut: {
-        if (@available(iOS 13.0, *)) {
+        #if !(defined(TARGET_OS_TV) && TARGET_OS_TV)   
+        if (@available(iOS 13.0, tvOS 13.0, *)) {
           NSDictionary* attributeDict = @{
             UIAccessibilitySpeechAttributeSpellOut : @YES,
           };
           [attributedString setAttributes:attributeDict range:range];
         }
+        #endif
         break;
       }
     }

@@ -21,10 +21,14 @@ namespace flutter {
 
 bool ShouldUseMetalRenderer() {
   bool ios_version_supports_metal = false;
+#ifdef TARGET_OS_TV
+ ios_version_supports_metal = true; // min tvos GPU Family is same as IOS GPU family 2
+#else
   if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
     id<MTLDevice> device = MTLCreateSystemDefaultDevice();
     ios_version_supports_metal = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v3];
   }
+#endif
   return ios_version_supports_metal;
 }
 
@@ -65,8 +69,10 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
         if ([FlutterMetalLayer enabled]) {
           return [FlutterMetalLayer class];
         } else {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunguarded-availability-new"
           return [CAMetalLayer class];
-        }
+#pragma GCC diagnostic pop
       }
       FML_CHECK(false) << "Metal availability should already have been checked";
       break;

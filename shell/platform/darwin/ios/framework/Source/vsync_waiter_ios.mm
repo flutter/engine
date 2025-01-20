@@ -96,6 +96,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
     return;
   }
   double maxFrameRate = fmax(refreshRate, 60);
+  #if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   double minFrameRate = fmax(maxFrameRate / 2, 60);
   if (@available(iOS 15.0, *)) {
     _displayLink.preferredFrameRateRange =
@@ -103,6 +104,9 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   } else {
     _displayLink.preferredFramesPerSecond = maxFrameRate;
   }
+  #else
+    display_link_.get().preferredFramesPerSecond = maxFrameRate;
+  #endif
 }
 
 - (void)await {

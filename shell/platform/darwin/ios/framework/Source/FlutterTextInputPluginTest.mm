@@ -101,8 +101,10 @@ FLUTTER_ASSERT_ARC
   viewController = [[FlutterViewController alloc] init];
   textInputPlugin.viewController = viewController;
 
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   // Clear pasteboard between tests.
   UIPasteboard.generalPasteboard.items = @[];
+#endif
 }
 
 - (void)tearDown {
@@ -416,10 +418,10 @@ FLUTTER_ASSERT_ARC
     [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
     // showAutocorrectionPromptRectForStart fires in response to firstRectForRange
     XCTAssertEqual(callCount, 1);
-
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
     UIScribbleInteraction* scribbleInteraction =
         [[UIScribbleInteraction alloc] initWithDelegate:inputView];
-
+#endif
     [inputView scribbleInteractionWillBeginWriting:scribbleInteraction];
     [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
     // showAutocorrectionPromptRectForStart does not fire in response to setMarkedText during a
@@ -653,9 +655,10 @@ FLUTTER_ASSERT_ARC
   [self setClientId:123 configuration:config];
   NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
   FlutterTextInputView* inputView = inputFields[0];
-
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   UIPasteboard.generalPasteboard.color = UIColor.redColor;
   XCTAssertNil(UIPasteboard.generalPasteboard.string);
+#endif
   XCTAssertFalse([inputView canPerformAction:@selector(paste:) withSender:nil]);
   [inputView paste:nil];
 
@@ -1356,10 +1359,10 @@ FLUTTER_ASSERT_ARC
     [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
     // updateEditingClient fires in response to setMarkedText.
     XCTAssertEqual(updateCount, 1);
-
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
     UIScribbleInteraction* scribbleInteraction =
         [[UIScribbleInteraction alloc] initWithDelegate:inputView];
-
+#endif
     [inputView scribbleInteractionWillBeginWriting:scribbleInteraction];
     [inputView setMarkedText:@"during writing" selectedRange:NSMakeRange(1, 2)];
     // updateEditingClient does not fire in response to setMarkedText during a scribble interaction.

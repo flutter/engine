@@ -264,7 +264,7 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
       !node.HasFlag(flutter::SemanticsFlags::kIsReadOnly)) {
     // Text fields are backed by objects that implement UITextInput.
     return [[TextInputSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id];
-  } else if (!node.HasFlag(flutter::SemanticsFlags::kIsInMutuallyExclusiveGroup) &&
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
              (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
               node.HasFlag(flutter::SemanticsFlags::kHasCheckedState))) {
     return [[FlutterSwitchSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id];
@@ -278,6 +278,7 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:weak_ptr
                                                                      uid:node.id
                                                             platformView:touchInterceptingView];
+#endif                                                                 
   } else {
     return [[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id];
   }
