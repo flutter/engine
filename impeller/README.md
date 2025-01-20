@@ -192,20 +192,20 @@ under the top-level `<dict>` tag:
 ```
 
 ### Android
+  
+Flutter enables Impeller by **default** on Android. On devices that don't support Vulkan, Impeller will fallback to the the legacy OpenGL renderer. No action on your part is necessary for this fallback behavior.
 
-Impeller is in preview on Android.
+* To **disable** Impeller when debugging, pass --no-enable-impeller to the flutter run command.
+  ```flutter run --no-enable-impeller```
 
-To your `AndroidManifest.xml` file, add under the `<application>` tag:
-
-```xml
+* To **disable** Impeller when deploying your app, add the following setting to your project's `AndroidManifest.xml` file under the `<application>` tag:
+  ```xml
   <meta-data
     android:name="io.flutter.embedding.android.EnableImpeller"
-    android:value="true" />
-```
+    android:value="false" />
+  ```
 
-Impeller will use Vulkan on Android by default when opted into. Where Vulkan
-is unavailable, Impeller will fallback to Skia. However, Impellers OpenGL backend
-is well under construction. To try that with your application, add the following
+Impellers OpenGL backend is well under construction. To try that with your application, add the following
 under the `<application>` tag:
 
 > [!Warning]
