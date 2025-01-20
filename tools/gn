@@ -278,8 +278,8 @@ def setup_apple_sdks():
 
   prefixes = [
       ('MacOSX', 'mac_sdk_path'),
-      ('iPhoneOS', 'ios_device_sdk_path'),
-      ('iPhoneSimulator', 'ios_simulator_sdk_path'),
+      ('AppleTVOS', 'ios_device_sdk_path'),
+      ('AppleTVSimulator', 'ios_simulator_sdk_path'),
   ]
   sdks_path = os.path.join(SRC_ROOT, 'flutter', 'prebuilts', 'SDKs')
   sdk_entries = os.listdir(sdks_path)

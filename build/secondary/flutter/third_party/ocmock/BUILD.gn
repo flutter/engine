@@ -23,7 +23,7 @@ source_set("ocmock_src") {
     "-Wno-misleading-indentation",
   ]
   if (is_ios) {
-    cflags += [ "-mios-simulator-version-min=$ios_testing_deployment_target" ]
+    cflags += [ "-mtvos-simulator-version-min=$ios_testing_deployment_target" ]
   }
 
   sources = [
@@ -115,7 +115,7 @@ static_library("ocmock") {
   # Force the static lib to include code from dependencies
   complete_static_lib = true
   if (is_ios) {
-    cflags = [ "-mios-simulator-version-min=$ios_testing_deployment_target" ]
+    cflags = [ "-mtvos-simulator-version-min=$ios_testing_deployment_target" ]
   }
   public_deps = [ ":ocmock_src" ]
 }
