@@ -1,0 +1,102 @@
+diff --git a/runtime/bin/process_macos.cc b/runtime/bin/process_macos.cc
+index d7eb45e4ae0..58f0ff268b7 100644
+--- a/runtime/bin/process_macos.cc
++++ b/runtime/bin/process_macos.cc
+@@ -164,12 +164,12 @@ class ExitCodeHandler {
+     // Set terminate_done_ to false, so we can use it as a guard for our
+     // monitor.
+     running_ = false;
+-
++#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
+     // Fork to wake up waitpid.
+     if (TEMP_FAILURE_RETRY(fork()) == 0) {
+       _Exit(0);
+     }
+-
++#endif
+     monitor_->Notify();
+ 
+     while (!terminate_done_) {
+@@ -299,6 +299,7 @@ class ProcessStarter {
+   }
+ 
+   int Start() {
++#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
+     // Create pipes required.
+     int err = CreatePipes();
+     if (err != 0) {
+@@ -388,6 +389,7 @@ class ProcessStarter {
+     ASSERT(exec_control_[1] == -1);
+ 
+     *id_ = pid;
++#endif
+     return 0;
+   }
+ 
+@@ -446,6 +448,7 @@ class ProcessStarter {
+   }
+ 
+   void ExecProcess() {
++#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
+     if (mode_ == kNormal) {
+       if (TEMP_FAILURE_RETRY(dup2(write_out_[0], STDIN_FILENO)) == -1) {
+         ReportChildError();
+@@ -476,9 +479,11 @@ class ProcessStarter {
+ 
+     execvp(path_, const_cast<char* const*>(program_arguments_));
+     ReportChildError();
++#endif
+   }
+ 
+   void ExecDetachedProcess() {
++#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
+     if (mode_ == kDetached) {
+       ASSERT(write_out_[0] == -1);
+       ASSERT(write_out_[1] == -1);
+@@ -541,6 +546,7 @@ class ProcessStarter {
+       // to prevent deadlocks.
+       _Exit(0);
+     }
++#endif
+   }
+ 
+   int RegisterProcess(pid_t pid) {
+diff --git a/runtime/platform/globals.h b/runtime/platform/globals.h
+index 124b85be8d6..8d59f0538e0 100644
+--- a/runtime/platform/globals.h
++++ b/runtime/platform/globals.h
+@@ -119,7 +119,7 @@
+ // Define the flavor of Mac OS we are running on.
+ #include <TargetConditionals.h>
+ #define DART_HOST_OS_MACOS 1
+-#if TARGET_OS_IPHONE
++#if defined(TARGET_OS_IPHONE) || defined(TARGET_OS_TV)
+ #define DART_HOST_OS_IOS 1
+ #endif
+ 
+diff --git a/runtime/vm/compiler/ffi/abi.cc b/runtime/vm/compiler/ffi/abi.cc
+index 66fa5a8d564..8f0a4458794 100644
+--- a/runtime/vm/compiler/ffi/abi.cc
++++ b/runtime/vm/compiler/ffi/abi.cc
+@@ -54,7 +54,7 @@ static_assert(offsetof(AbiAlignmentUint64, i) == 8,
+ #elif defined(DART_TARGET_OS_LINUX)
+ #define DART_TARGET_OS_NAME Linux
+ #elif defined(DART_TARGET_OS_MACOS)
+-#if DART_TARGET_OS_MACOS_IOS
++#if defined(DART_TARGET_OS_MACOS_IOS) || defined(TARGET_OS_TV)
+ #define DART_TARGET_OS_NAME IOS
+ #else
+ #define DART_TARGET_OS_NAME MacOS
+diff --git a/runtime/vm/cpu_arm.cc b/runtime/vm/cpu_arm.cc
+index d40147b2ea0..5e970fe5113 100644
+--- a/runtime/vm/cpu_arm.cc
++++ b/runtime/vm/cpu_arm.cc
+@@ -54,7 +54,7 @@ DEFINE_FLAG(bool,
+             "Use integer division instruction if supported");
+ 
+ #if defined(TARGET_HOST_MISMATCH)
+-#if defined(DART_TARGET_OS_ANDROID) || defined(DART_TARGET_OS_MACOS_IOS)
++#if  defined(DART_TARGET_OS_ANDROID) || defined(DART_TARGET_OS_MACOS_IOS) || defined(TARGET_OS_TV)
+ DEFINE_FLAG(bool, sim_use_hardfp, false, "Use the hardfp ABI.");
+ #else
+ DEFINE_FLAG(bool, sim_use_hardfp, true, "Use the hardfp ABI.");
