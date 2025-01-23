@@ -33,6 +33,7 @@ static BOOL DoesHardwareSupportWideGamut() {
   static dispatch_once_t once_token = 0;
   dispatch_once(&once_token, ^{
     id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
     if (@available(iOS 13.0, *)) {
       // MTLGPUFamilyApple2 = A9/A10
       result = [device supportsFamily:MTLGPUFamilyApple2];
@@ -40,6 +41,9 @@ static BOOL DoesHardwareSupportWideGamut() {
       // A9/A10 on iOS 10+
       result = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v2];
     }
+#else
+	result = [device supportsFamily:MTLGPUFamilyApple2];
+#endif
   });
   return result;
 }

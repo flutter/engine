@@ -97,11 +97,13 @@ static NSString* const kCanRedo = @"canRedo";
   }
   UIView<UITextInput>* textInputView = self.undoManagerDelegate.activeTextInputView;
   if (textInputView != nil) {
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
     // This is needed to notify the iPadOS keyboard that it needs to update the
     // state of the UIBarButtons. Otherwise, the state changes to NSUndoManager
     // will not show up until the next keystroke (or other trigger).
     UITextInputAssistantItem* assistantItem = textInputView.inputAssistantItem;
     assistantItem.leadingBarButtonGroups = assistantItem.leadingBarButtonGroups;
+#endif
   }
   undoManager.groupsByEvent = groupsByEvent;
 }

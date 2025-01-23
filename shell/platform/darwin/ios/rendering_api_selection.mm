@@ -65,6 +65,7 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
     case IOSRenderingAPI::kSoftware:
       return [CALayer class];
     case IOSRenderingAPI::kMetal:
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
       if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
         if ([FlutterMetalLayer enabled]) {
           return [FlutterMetalLayer class];
@@ -74,6 +75,7 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
           return [CAMetalLayer class];
 #pragma GCC diagnostic pop
       }
+#endif
       FML_CHECK(false) << "Metal availability should already have been checked";
       break;
     default:

@@ -4,7 +4,9 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 #import <WebKit/WebKit.h>
+#endif
 
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
@@ -571,6 +573,7 @@ static BOOL _preparedOnce = NO;
 }
 
 - (BOOL)containsWebView:(UIView*)view remainingSubviewDepth:(int)remainingSubviewDepth {
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)     
   if (remainingSubviewDepth < 0) {
     return NO;
   }
@@ -582,6 +585,7 @@ static BOOL _preparedOnce = NO;
       return YES;
     }
   }
+#endif
   return NO;
 }
 

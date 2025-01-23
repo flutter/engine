@@ -31,9 +31,11 @@ raw_ptr<const Sampler> SamplerLibraryMTL::GetSampler(
   desc.sAddressMode = ToMTLSamplerAddressMode(descriptor.width_address_mode);
   desc.tAddressMode = ToMTLSamplerAddressMode(descriptor.height_address_mode);
   desc.rAddressMode = ToMTLSamplerAddressMode(descriptor.depth_address_mode);
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   if (@available(iOS 14.0, macos 10.12, *)) {
     desc.borderColor = MTLSamplerBorderColorTransparentBlack;
   }
+#endif
 #ifdef IMPELLER_DEBUG
   if (!descriptor.label.empty()) {
     desc.label = @(descriptor.label.data());

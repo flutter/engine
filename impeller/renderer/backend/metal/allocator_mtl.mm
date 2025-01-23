@@ -97,6 +97,7 @@ ISize DeviceMaxTextureSizeSupported(id<MTLDevice> device) {
  
 }
 
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 static bool SupportsLossyTextureCompression(id<MTLDevice> device) {
 #ifdef FML_OS_IOS_SIMULATOR
   return false;
@@ -107,6 +108,7 @@ static bool SupportsLossyTextureCompression(id<MTLDevice> device) {
   return false;
 #endif
 }
+#endif
 
 void DebugAllocatorStats::Increment(size_t size) {
   size_.fetch_add(size, std::memory_order_relaxed);

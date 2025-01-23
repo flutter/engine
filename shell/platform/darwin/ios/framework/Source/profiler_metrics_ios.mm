@@ -58,6 +58,7 @@ namespace {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || \
     FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE
 
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 std::optional<GpuUsageInfo> FindGpuUsageInfo(io_iterator_t iterator) {
   for (fml::CFRef<io_registry_entry_t> reg_entry(IOIteratorNext(iterator)); reg_entry.Get();
        reg_entry.Reset(IOIteratorNext(iterator))) {
@@ -77,6 +78,7 @@ std::optional<GpuUsageInfo> FindGpuUsageInfo(io_iterator_t iterator) {
   }
   return std::nullopt;
 }
+#endif
 
 [[maybe_unused]] std::optional<GpuUsageInfo> FindSimulatorGpuUsageInfo() {
 #if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
@@ -125,6 +127,7 @@ std::optional<GpuUsageInfo> PollGpuUsage() {
 #elif TARGET_OS_IOS
   return FindDeviceGpuUsageInfo();
 #elif TARGET_OS_TV
+  return FindDeviceGpuUsageInfo();
 #endif  // TARGET_IPHONE_SIMULATOR
 }
 }  // namespace

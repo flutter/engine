@@ -10,6 +10,11 @@
 #include <memory>
 
 #include "flutter/common/constants.h"
+
+#ifdef TARGET_OS_TV
+#include <GameController/GameController.h>
+#include <MediaPlayer/MediaPlayer.h>
+#endif
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
@@ -59,7 +64,13 @@ typedef struct MouseState {
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
+#ifdef TARGET_OS_TV
+@interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate, UIGestureRecognizerDelegate>
+@property(nonatomic, strong) FlutterBasicMessageChannel* keyEventChannel;
+@property(nonatomic, strong) FlutterBasicMessageChannel* gamepadTouchEventChannel;
+#else
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
+#endif
 // TODO(dkwingsmt): Make the view ID property public once the iOS shell
 // supports multiple views.
 // https://github.com/flutter/flutter/issues/138168
@@ -71,7 +82,9 @@ typedef struct MouseState {
 @property(nonatomic, strong) void (^flutterViewRenderedCallback)(void);
 
 @property(nonatomic, assign) UIInterfaceOrientationMask orientationPreferences;
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 @property(nonatomic, assign) UIStatusBarStyle statusBarStyle;
+#endif
 @property(nonatomic, assign) BOOL initialized;
 @property(nonatomic, assign) BOOL engineNeedsLaunch;
 
@@ -125,6 +138,7 @@ typedef struct MouseState {
 /// the same with frame rate of rendering.
 @property(nonatomic, strong) VSyncClient* touchRateCorrectionVSyncClient;
 
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 /*
  * Mouse and trackpad gesture recognizers
  */
@@ -143,16 +157,18 @@ typedef struct MouseState {
 // Trackpad rotating
 @property(nonatomic, strong)
     UIRotationGestureRecognizer* rotationGestureRecognizer API_AVAILABLE(ios(13.4));
-
+#endif
 /// Creates and registers plugins used by this view controller.
 - (void)addInternalPlugins;
 - (void)deregisterNotifications;
 
 /// Called when the first frame has been rendered. Invokes any registered first-frame callback.
 - (void)onFirstFrameRendered;
-
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)   
 /// Handles updating viewport metrics on keyboard animation.
 - (void)handleKeyboardAnimationCallbackWithTargetTime:(fml::TimePoint)targetTime;
+#endif //
+
 @end
 
 @implementation FlutterViewController {
@@ -313,6 +329,7 @@ typedef struct MouseState {
 
 - (void)setUpNotificationCenterObservers {
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
   [center addObserver:self
              selector:@selector(onOrientationPreferencesUpdated:)
                  name:@(flutter::kOrientationUpdateNotificationName)
@@ -322,6 +339,7 @@ typedef struct MouseState {
              selector:@selector(onPreferredStatusBarStyleUpdated:)
                  name:@(flutter::kOverlayStyleUpdateNotificationName)
                object:nil];
+#endif //TARGET_OS_TV
 
 #if APPLICATION_EXTENSION_API_ONLY
   if (@available(iOS 13.0, *)) {
@@ -1529,6 +1547,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+  #ifdef TARGET_OS_TV
+    for (UITouch* touch in touches) {
+      CGPoint location = [touch locationInView:self.view];
+      [self sendGamepadTouchesWithType:@"ended" x:location.x y:location.y];
+    }
   #else
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr event:event];
   #endif
@@ -1701,6 +1724,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 #pragma mark - Keyboard events
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)   
 
 - (void)keyboardWillShowNotification:(NSNotification*)notification {
   // Immediately prior to a docked keyboard being shown or when a keyboard goes from
@@ -2082,6 +2106,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     [self updateViewportMetricsIfNeeded];
   }
 }
+#endif
 
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4)) {
@@ -2548,7 +2573,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 #pragma mark - Status bar style
-
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 - (UIStatusBarStyle)preferredStatusBarStyle {
   return self.statusBarStyle;
 }
@@ -2586,6 +2611,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (BOOL)prefersStatusBarHidden {
   return self.flutterPrefersStatusBarHidden;
 }
+
+#endif
 
 #pragma mark - Platform views
 
@@ -2935,3 +2962,4 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 @end
+

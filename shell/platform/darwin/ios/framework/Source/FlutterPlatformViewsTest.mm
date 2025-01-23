@@ -6,7 +6,9 @@
 
 #import <OCMock/OCMock.h>
 #import <UIKit/UIKit.h>
+#if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
 #import <WebKit/WebKit.h>
+#endif
 #import <XCTest/XCTest.h>
 
 #include <memory>

@@ -105,7 +105,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
     _displayLink.preferredFramesPerSecond = maxFrameRate;
   }
   #else
-    display_link_.get().preferredFramesPerSecond = maxFrameRate;
+    _displayLink.preferredFramesPerSecond = maxFrameRate;
   #endif
 }
 

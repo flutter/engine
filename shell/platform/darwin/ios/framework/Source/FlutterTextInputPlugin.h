@@ -170,9 +170,9 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic) FlutterScribbleFocusStatus scribbleFocusStatus;
 @property(nonatomic, strong) NSArray<FlutterTextSelectionRect*>* selectionRects;
 
-@property(nonatomic, strong) UIEditMenuInteraction* editMenuInteraction API_AVAILABLE(ios(16.0));
 - (void)resetScribbleInteractionStatusIfEnding;
 #if !(defined(TARGET_OS_TV) && TARGET_OS_TV)
+@property(nonatomic, strong) UIEditMenuInteraction* editMenuInteraction API_AVAILABLE(ios(16.0));
 - (BOOL)isScribbleAvailable;
 #endif
 - (instancetype)init NS_UNAVAILABLE;
