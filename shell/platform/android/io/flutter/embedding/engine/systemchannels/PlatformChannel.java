@@ -686,7 +686,7 @@ public class PlatformChannel {
 
     @NonNull private String encodedName;
 
-    /** Returens the encoded {@link SystemUiMode} */
+    /** Returns the encoded {@link SystemUiMode} */
     SystemUiMode(@NonNull String encodedName) {
       this.encodedName = encodedName;
     }

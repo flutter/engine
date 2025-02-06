@@ -30,7 +30,7 @@ class TestSwitchableGLContext : public SwitchableGLContext {
   //------------------------------------------------------------------------------
   /// Set the current context
   ///
-  /// This is to mimic how other programs outside flutter sets the context.
+  // This is to mimic how other programs outside flutter set the context.
   static void SetCurrentContext(int context);
 
  private:
