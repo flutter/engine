@@ -189,6 +189,12 @@ static gboolean get_mouse_button(GdkEvent* event, int64_t* button) {
     case 3:
       *button = kFlutterPointerButtonMouseSecondary;
       return TRUE;
+    case 4:
+      *button = kFlutterPointerButtonMouseBack;
+      return TRUE;
+    case 5:
+      *button = kFlutterPointerButtonMouseForward;
+      return TRUE;
     default:
       return FALSE;
   }
